@@ -203,7 +203,7 @@ def execute_market_buy_order(order_info):
             r.orders.cancel_option_order(order_result['id'])
         except:
             pass
-        time.sleep(5)
+        time.sleep(4)
     log.append('Cancelled all order IDs.')
 
     # log trade metrics
@@ -307,7 +307,7 @@ def execute_market_sell_order(order_info):
             r.orders.cancel_option_order(order_result['id'])
         except:
             pass
-        time.sleep(5)
+        time.sleep(4)
     log.append('Cancelled all order IDs.')
 
     # log trade metrics
