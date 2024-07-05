@@ -6,7 +6,8 @@ import db
 import tradeapi
 
 menu_options = ['create order (c)', 'delete order (d)', 'delete all orders (da)',
-                'cancel all robinhood orders direct (car)', 'login (li)', 'logout (lo)']
+                'cancel all robinhood orders direct (car)', 'login (li)',
+                'logout (lo)', 'execute order # (e)']
 
 
 def create_order():
@@ -69,6 +70,11 @@ def print_open_positions():
     print(res)
 
 
+def execute_order():
+    order_number = pyip.inputInt('execute order#> ')
+    tradeapi.execute_order(order_number)
+
+
 if __name__ == '__main__':
     # make sure tradebox is logged in
     tradeapi.login()
@@ -108,6 +114,8 @@ if __name__ == '__main__':
             tradeapi.login()
         elif menu_choice == 'lo':
             tradeapi.logout()
+        elif menu_choice == 'e':
+            execute_order()
         elif menu_choice == 'quit' or menu_choice == 'q':
             quit()
         elif menu_choice == 'exit':
