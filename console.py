@@ -92,6 +92,7 @@ if __name__ == '__main__':
             print("NOT LOGGED IN!!!")
             print("Not logged in. Could not print open option positions.")
 
+        print('TRADEBOX ORDERS')
         print_orders()
         print('\nMenu:')
 
