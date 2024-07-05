@@ -1,0 +1,6 @@
+wheel
+flask
+gunicorn
+robin_stocks
+pandas
+pyinputplus
