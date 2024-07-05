@@ -65,6 +65,8 @@ def print_orders():
 
 
 if __name__ == '__main__':
+    db.create_orders_table()
+
     while True:
         print('TRADEBOX CONSOLE\n')
         print_orders()
