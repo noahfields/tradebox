@@ -15,28 +15,20 @@ import config
 
 
 def login():
-    try:
-        res = r.login(config.robinhood_username,
-                      config.robinhood_password, expiresIn='172800')
-        log.append(json.dumps(res))
-    except Exception as e:
-        tb = traceback.format_exception(e)
-        tb = ''.join(tb)
-        log.append('Problem at tradeapi.login()')
-        log.append(tb)
+    r.login(config.robinhood_username,
+            config.robinhood_password, expiresIn='172800')
 
 
 def logout():
     try:
         r.logout()
-        os.remove('~/.tokens/robinhood.pickle')
-    except Exception as e:
-        tb = traceback.format_exception(e)
-        tb = ''.join(tb)
-        print('Problem at tradeapi.logout()')
-        print(tb)
-        log.append('Problem at tradeapi.logout()')
-        log.append(tb)
+    except:
+        pass
+    home_dir = os.path.expanduser("~")
+    data_dir = os.path.join(home_dir, ".tokens")
+    creds_file = "robinhood.pickle"
+    pickle_path = os.path.join(data_dir, creds_file)
+    os.remove(pickle_path)
 
 
 # ready for live testing
@@ -46,12 +38,6 @@ def create_order(buy_sell, symbol, expiration_date, strike, call_put, quantity,
                  market_limit, limit_price=0, active=True, message_on_success='',
                  message_on_failure='', execute_only_after_id='',
                  execution_deactivates_order_id='', max_order_attempts=10):
-    print(f'buysell {buy_sell}')
-    print(f'symbol {symbol}')
-    print(f'expiration_date {expiration_date}')
-    print(type(expiration_date))
-    print(f'strike {strike}')
-    print(f'callput {call_put}')
     instrument_data = r.options.get_option_instrument_data(
         symbol, expiration_date, strike, call_put)
     if instrument_data == None:
@@ -344,3 +330,35 @@ def execute_limit_sell_order():
 def cancel_all_robinhood_orders():
     login()
     r.orders.cancel_all_option_orders()
+
+
+def get_console_open_robinhood_positions():
+    open_positions = r.options.get_open_option_positions()
+
+    display_positions = []
+
+    for open_position in open_positions:
+        instrument_data = r.options.get_option_instrument_data_by_id(
+            open_position['option_id'])
+        quantity = int(float(open_position['quantity']))
+        symbol = open_position['chain_symbol']
+        average_price = round(float(open_position['average_price']), 2)
+        strike = round(float(instrument_data['strike_price']), 2)
+        call_put = instrument_data['type']
+        expiration_date = instrument_data['expiration_date']
+
+        market_data = r.options.get_option_market_data_by_id(
+            open_position['option_id'])[0]
+
+        adjusted_mark_price = round(
+            float(market_data['adjusted_mark_price']), 2)
+
+        display_position = {'symbol': symbol, 'call_put': call_put,
+                            'expiration_date': expiration_date, 'strike': strike,
+                            'quantity': quantity, 'average_price': average_price,
+                            'current_mark': adjusted_mark_price}
+
+        display_positions.append(display_position)
+
+    positions_dataframe = pd.DataFrame(display_positions)
+    return positions_dataframe

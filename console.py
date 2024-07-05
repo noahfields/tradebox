@@ -64,11 +64,28 @@ def print_orders():
     print(orders.to_string())
 
 
+def print_open_positions():
+    res = tradeapi.get_console_open_robinhood_positions()
+    print(res)
+
+
 if __name__ == '__main__':
+    # make sure tradebox is logged in
+    tradeapi.login()
+
     db.create_orders_table()
 
     while True:
         print('TRADEBOX CONSOLE\n')
+
+        try:
+            print('OPEN POSITIONS')
+            print_open_positions()
+            print('\n')
+        except:
+            print("NOT LOGGED IN!!!")
+            print("Not logged in. Could not print open option positions.")
+
         print_orders()
         print('\nMenu:')
 
