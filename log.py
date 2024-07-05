@@ -1,9 +1,13 @@
 import datetime
 import os
 
+try:
+    os.mkdir('logs')
+except:
+    pass
+
 
 def append(message):
-    os.mkdir('logs')
     log_filename = f'logs/log-{datetime.datetime.now().strftime("%Y-%m-%d")}.txt'
     log_file = open(log_filename, "a")
     log_file.write(datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f"))
