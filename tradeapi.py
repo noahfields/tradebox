@@ -63,7 +63,14 @@ def execute_order(order_id):
     log.append(f'Begin execute_order for order {order_id}.')
 
     login()
-    order_info = db.fetch_order_dataframe(order_id)
+
+    try:
+        order_info = db.fetch_order_dataframe(order_id)
+    except:
+        msg = f'Looks like order #{order_id} does not exist. Aborting tradeapi.execute_order({order_id}).'
+        print(msg)
+        log.append(msg)
+        return
 
     # is order active?
     if bool(order_info['active']) == False:
