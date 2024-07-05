@@ -1,4 +1,5 @@
 import json
+import os
 import traceback
 import time
 
@@ -28,6 +29,7 @@ def login():
 def logout():
     try:
         r.logout()
+        os.remove('~/.tokens/robinhood.pickle')
     except Exception as e:
         tb = traceback.format_exception(e)
         tb = ''.join(tb)
