@@ -25,7 +25,15 @@ def login():
 
 
 def logout():
-    r.logout()
+    try:
+        r.logout()
+    except Exception as e:
+        tb = traceback.format_exception(e)
+        tb = ''.join(tb)
+        print('Problem at tradeapi.logout()')
+        print(tb)
+        log.append('Problem at tradeapi.logout()')
+        log.append(tb)
 
 
 # ready for live testing

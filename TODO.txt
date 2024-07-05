@@ -1,0 +1,2 @@
+console: add a current listing of current option positions to the console loop
+
