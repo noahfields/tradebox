@@ -1,6 +1,6 @@
 wheel
 flask
 gunicorn
-robin_stocks
 pandas
+robin_stocks
 pyinputplus
