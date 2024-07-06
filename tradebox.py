@@ -1,5 +1,6 @@
 from flask import Flask
 
+import config
 import log
 import tradeapi
 
@@ -24,4 +25,9 @@ def console():
 
 
 if __name__ == "__main__":
-    app.run(host='0.0.0.0')
+    if config.ENVIRONMENT == 'production':
+        app.run(host='0.0.0.0', debug=True)
+    elif config.ENVIRONMENT == 'development':
+        app.run(host='0.0.0.0', port=5555, debug=True)
+    else:
+        app.run(host='0.0.0.0', debug=True)
