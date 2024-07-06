@@ -175,16 +175,14 @@ def set_execution_deactivates_order_id(order_id):
     order_id_to_deactivate = str(cur.fetchall()[0][0])
 
     if order_id_to_deactivate == '':
-        print(f'Order #{order_id} has to no order to deactivate. Moving on.')
         log.append(
-            f'Order #{order_id} has to no order to deactivate. Moving on.')
+            f'Order #{order_id} has no order to deactivate. Moving on.')
         return
 
     cur.execute('UPDATE orders SET active=? WHERE order_id=?',
                 (0, order_id_to_deactivate))
 
-    print(f'Deactivated order #{order_id_to_deactivate}')
-    log.append(f'Deactivated order #{order_id_to_deactivate}')
+    log.append(f'Deactivated order #{order_id_to_deactivate}.')
 
     conn.commit()
     cur.close()

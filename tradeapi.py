@@ -7,6 +7,7 @@ import pandas as pd
 import robin_stocks.robinhood as r
 
 import db
+import notify
 import log
 import config
 
@@ -129,7 +130,7 @@ def execute_market_buy_order(order_info):
 
     # metrics to report at conclusion
     number_of_trades_placed = 0
-    opening_position_size = 'none'
+    opening_position_size = 0
     actual_closing_position_size = 'none'
 
     current_position_size = 0
@@ -207,6 +208,13 @@ def execute_market_buy_order(order_info):
     log.append(f'Actual closing position size: {actual_closing_position_size}')
     log.append(f'Final number of trades placed: {number_of_trades_placed}')
 
+    # send email notification of trade
+    quantity_bought = actual_closing_position_size - opening_position_size
+    message = f'Tradebox executed order #{order_info["order_id"]}. Bought {quantity_bought} {order_info["symbol"]} {order_info["call_put"]} {order_info["expiration_date"]} {order_info["strike"]}. Current position size: {actual_closing_position_size}.'
+    notify.send_plaintext_email(message)
+    log.append('Email/text notification sent.')
+    log.append(message)
+
 
 def execute_market_sell_order(order_info):
     log.append(
@@ -215,7 +223,7 @@ def execute_market_sell_order(order_info):
 
     # metrics to report at conclusion
     number_of_trades_placed = 0
-    opening_position_size = 'none'
+    opening_position_size = 0
     actual_closing_position_size = 'none'
 
     current_position_size = 0
@@ -308,6 +316,13 @@ def execute_market_sell_order(order_info):
     log.append(f'Goal final position size: {final_position_size}')
     log.append(f'Actual closing position size: {actual_closing_position_size}')
     log.append(f'Final number of trades placed: {number_of_trades_placed}')
+
+    # send email notification of trade
+    quantity_sold = opening_position_size - actual_closing_position_size
+    message = f'Tradebox executed order #{order_info["order_id"]}. Sold {quantity_sold} {order_info["symbol"]} {order_info["call_put"]} {order_info["expiration_date"]} {order_info["strike"]}. Current position size: {actual_closing_position_size}.'
+    notify.send_plaintext_email(message)
+    log.append('Email/text notification sent.')
+    log.append(message)
 
 
 def execute_limit_buy_order():
