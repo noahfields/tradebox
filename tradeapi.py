@@ -11,9 +11,6 @@ import log
 import config
 
 
-# ready for live testing
-
-
 def login():
     r.login(config.robinhood_username,
             config.robinhood_password, expiresIn='172800')
