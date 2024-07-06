@@ -31,9 +31,6 @@ def logout():
     os.remove(pickle_path)
 
 
-# ready for live testing
-
-
 def create_order(buy_sell, symbol, expiration_date, strike, call_put, quantity,
                  market_limit, limit_price=0, active=True, message_on_success='',
                  message_on_failure='', execute_only_after_id='',
@@ -55,8 +52,6 @@ def create_order(buy_sell, symbol, expiration_date, strike, call_put, quantity,
 
     msg = f'Successfully created order for {buy_sell} {quantity} {symbol}, {expiration_date}, {strike}, {call_put}.'
     log.append(msg)
-
-# ready for live testing
 
 
 def execute_order(order_id):
@@ -112,7 +107,8 @@ def execute_order(order_id):
     db.set_order_active_status(order_id, False)
     log.append(f'Marked order number {order_id} as inactive.')
 
-# ready for live testing
+    # deactivate check
+    db.checkset_execution_deactivates_order_id(order_id)
 
 
 def get_option_instrument_data(symbol, call_put, strike, expiration_date):
@@ -127,8 +123,6 @@ def get_option_instrument_data(symbol, call_put, strike, expiration_date):
     option_uuid = data['id']
 
     return below_tick, above_tick, cutoff_price, option_uuid
-
-# ready for live testing
 
 
 def execute_market_buy_order(order_info):
@@ -215,8 +209,6 @@ def execute_market_buy_order(order_info):
     log.append(f'Goal final position size: {final_position_size}')
     log.append(f'Actual closing position size: {actual_closing_position_size}')
     log.append(f'Final number of trades placed: {number_of_trades_placed}')
-
-# ready for live testing
 
 
 def execute_market_sell_order(order_info):
@@ -321,13 +313,8 @@ def execute_market_sell_order(order_info):
     log.append(f'Final number of trades placed: {number_of_trades_placed}')
 
 
-# postponed
-
-
 def execute_limit_buy_order():
     pass
-
-# postponed
 
 
 def execute_limit_sell_order():

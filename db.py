@@ -160,6 +160,32 @@ def has_executed(order_id):
 def fetch_console_order_dataframe():
     conn = connection()
     order_dataframe = pd.read_sql(
-        'SELECT order_id, active, executed, execute_only_after_id, buy_sell, symbol, strike, call_put, expiration_date, quantity FROM orders;', conn)
+        'SELECT order_id, active, executed, execute_only_after_id, execution_deactivates_order_id,  buy_sell, symbol, strike, call_put, expiration_date, quantity FROM orders;', conn)
     conn.close()
     return order_dataframe
+
+
+def checkset_execution_deactivates_order_id(order_id):
+    conn = connection()
+    cur = conn.cursor()
+
+    cur.execute(
+        'SELECT execution_deactivates_order_id FROM orders WHERE order_id = ?', (order_id,))
+
+    order_id_to_deactivate = str(cur.fetchall()[0][0])
+
+    if order_id_to_deactivate == '':
+        print(f'Order #{order_id} has to no order to deactivate. Moving on.')
+        log.append(
+            f'Order #{order_id} has to no order to deactivate. Moving on.')
+        return
+
+    cur.execute('UPDATE orders SET active=? WHERE order_id=?',
+                (0, order_id_to_deactivate))
+
+    print(f'Deactivated order #{order_id_to_deactivate}')
+    log.append(f'Deactivated order #{order_id_to_deactivate}')
+
+    conn.commit()
+    cur.close()
+    conn.close()
