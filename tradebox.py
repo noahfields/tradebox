@@ -12,7 +12,7 @@ def hello():
     return "tradebox"
 
 
-@app.route("/orders/execute/<order_id>")
+@app.route("/orders/execute/<order_id>", methods=['POST', 'GET'])
 def execute_order(order_id):
     log.append(f'TRADEBOX flask: executing order_id {order_id}')
     tradeapi.execute_order(order_id)
