@@ -108,7 +108,7 @@ def execute_order(order_id):
     log.append(f'Marked order number {order_id} as inactive.')
 
     # deactivate check
-    db.checkset_execution_deactivates_order_id(order_id)
+    db.set_execution_deactivates_order_id(order_id)
 
 
 def get_option_instrument_data(symbol, call_put, strike, expiration_date):

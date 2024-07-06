@@ -165,7 +165,7 @@ def fetch_console_order_dataframe():
     return order_dataframe
 
 
-def checkset_execution_deactivates_order_id(order_id):
+def set_execution_deactivates_order_id(order_id):
     conn = connection()
     cur = conn.cursor()
 
