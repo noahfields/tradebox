@@ -13,8 +13,8 @@ import config
 
 
 def login():
-    r.login(config.robinhood_username,
-            config.robinhood_password, expiresIn='172800')
+    r.login(config.ROBINHOOD_USERNAME,
+            config.ROBINHOOD_PASSWORD, expiresIn='172800')
 
 
 def logout():

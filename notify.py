@@ -3,17 +3,17 @@ import ssl
 
 import config
 
-EMAIL = config.smtp_username
-PASSWORD = config.smtp_password
-SERVER = config.smtp_server
-PORT = config.smtp_port
-RECIPIENT = config.notifcation_address
+USEREMAIL = config.SMTP_USERNAME
+PASSWORD = config.SMTP_PASSWORD
+SERVER = config.SMTP_SERVER
+PORT = config.SMTP_PORT
+RECIPIENT = config.NOTIFICATION_ADDRESS
 
 
 def send_plaintext_email(message):
     context = ssl.create_default_context()
 
     with smtplib.SMTP_SSL(SERVER, PORT, context=context) as server:
-        server.login(EMAIL, PASSWORD)
+        server.login(USEREMAIL, PASSWORD)
         # TODO: Send email here
-        server.sendmail(EMAIL, RECIPIENT, message)
+        server.sendmail(USEREMAIL, RECIPIENT, message)

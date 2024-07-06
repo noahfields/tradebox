@@ -2,12 +2,15 @@
 # YOU MUST CHANGE THE NAME OF THIS FILE to 'config.py'
 # FOR TRADEBOX TO RUN
 
-# ENTER ROBINHOOD USERNAME AND PASSWORD
-robinhood_username = ''
-robinhood_password = ''
+# ENVIRONMENT = 'production' or ENVIRONMENT = 'development'
+ENVIRONMENT = ''
 
-smtp_username = ''
-smtp_password = ''
-smtp_server = ''
-smtp_port = 465  # port for gmail ssl if using gmail's app smtp service
-notifcation_address = ''
+# ENTER ROBINHOOD USERNAME AND PASSWORD
+ROBINHOOD_USERNAME = ''
+ROBINHOOD_PASSWORD = ''
+
+SMTP_USERNAME = ''
+SMTP_PASSWORD = ''
+SMTP_SERVER = ''
+SMTP_PORT = 465  # port for Gmail SSL if using Gmail's SMTP servers
+NOTIFICATION_ADDRESS = ''
