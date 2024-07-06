@@ -57,6 +57,17 @@ def execute_order(order_id):
 
     login()
 
+    # mark trade as executed
+    db.mark_order_executed(order_id)
+    log.append(f'Marked order number {order_id} as executed.')
+
+    # set order as inactive
+    db.set_order_active_status(order_id, False)
+    log.append(f'Marked order number {order_id} as inactive.')
+
+    # deactivate check
+    db.set_execution_deactivates_order_id(order_id)
+
     try:
         order_info = db.fetch_order_dataframe(order_id)
     except:
@@ -96,17 +107,6 @@ def execute_order(order_id):
             execute_market_sell_order(order_info)
         if order_info['market_limit'] == 'limit':
             execute_limit_sell_order(order_info)
-
-    # mark trade as executed
-    db.mark_order_executed(order_id)
-    log.append(f'Marked order number {order_id} as executed.')
-
-    # set order as inactive
-    db.set_order_active_status(order_id, False)
-    log.append(f'Marked order number {order_id} as inactive.')
-
-    # deactivate check
-    db.set_execution_deactivates_order_id(order_id)
 
 
 def get_option_instrument_data(symbol, call_put, strike, expiration_date):
