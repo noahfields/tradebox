@@ -48,7 +48,8 @@ def create_order(buy_sell, symbol, expiration_date, strike, call_put, quantity,
     db.create_order(rh_option_uuid, buy_sell, symbol, expiration_date, strike, call_put, quantity, market_limit, below_tick,
                     above_tick, cutoff_price, limit_price, message_on_success, message_on_failure, execute_only_after_id, execution_deactivates_order_id, max_order_attempts, active)
 
-    msg = f'Successfully created order for {buy_sell} {quantity} {symbol}, {expiration_date}, {strike}, {call_put}.'
+    msg = f'Successfully created order for {buy_sell} {quantity} {
+        symbol}, {expiration_date}, {strike}, {call_put}.'
     log.append(msg)
 
 
@@ -57,21 +58,11 @@ def execute_order(order_id):
 
     login()
 
-    # mark trade as executed
-    db.mark_order_executed(order_id)
-    log.append(f'Marked order number {order_id} as executed.')
-
-    # set order as inactive
-    db.set_order_active_status(order_id, False)
-    log.append(f'Marked order number {order_id} as inactive.')
-
-    # deactivate check
-    db.set_execution_deactivates_order_id(order_id)
-
     try:
         order_info = db.fetch_order_dataframe(order_id)
     except:
-        msg = f'Looks like order #{order_id} does not exist. Aborting tradeapi.execute_order({order_id}).'
+        msg = f'Looks like order #{
+            order_id} does not exist. Aborting tradeapi.execute_order({order_id}).'
         print(msg)
         log.append(msg)
         return
@@ -94,6 +85,17 @@ def execute_order(order_id):
             log.append(
                 f'rhapi.execute_order(): prerequisite {order_info["execute_only_after_id"]} not executed. Cancelling execution of order #{order_id}')
             return
+
+    # mark trade as executed
+    db.mark_order_executed(order_id)
+    log.append(f'Marked order number {order_id} as executed.')
+
+    # set order as inactive
+    db.set_order_active_status(order_id, False)
+    log.append(f'Marked order number {order_id} as inactive.')
+
+    # deactivate check
+    db.set_execution_deactivates_order_id(order_id)
 
     # select correct order function
     if order_info['buy_sell'] == 'buy':
@@ -210,7 +212,8 @@ def execute_market_buy_order(order_info):
 
     # send email notification of trade
     quantity_bought = actual_closing_position_size - opening_position_size
-    message = f'Tradebox executed order #{order_info["order_id"]}. Bought {quantity_bought} {order_info["symbol"]} {order_info["call_put"]} {order_info["expiration_date"]} {order_info["strike"]}. Current position size: {actual_closing_position_size}.'
+    message = f'Tradebox executed order #{order_info["order_id"]}. Bought {quantity_bought} {order_info["symbol"]} {
+        order_info["call_put"]} {order_info["expiration_date"]} {order_info["strike"]}. Current position size: {actual_closing_position_size}.'
     notify.send_plaintext_email(message)
     log.append('Email/text notification sent.')
     log.append(message)
@@ -319,7 +322,8 @@ def execute_market_sell_order(order_info):
 
     # send email notification of trade
     quantity_sold = opening_position_size - actual_closing_position_size
-    message = f'Tradebox executed order #{order_info["order_id"]}. Sold {quantity_sold} {order_info["symbol"]} {order_info["call_put"]} {order_info["expiration_date"]} {order_info["strike"]}. Current position size: {actual_closing_position_size}.'
+    message = f'Tradebox executed order #{order_info["order_id"]}. Sold {quantity_sold} {order_info["symbol"]} {order_info["call_put"]} {
+        order_info["expiration_date"]} {order_info["strike"]}. Current position size: {actual_closing_position_size}.'
     notify.send_plaintext_email(message)
     log.append('Email/text notification sent.')
     log.append(message)
