@@ -7,7 +7,7 @@ import tradeapi
 
 menu_options = ['create order (c)', 'delete order (d)', 'delete all orders (da)',
                 'cancel all robinhood orders direct (car)', 'login (li)',
-                'logout (lo)', 'execute order # (e)']
+                'logout (lo)', 'execute order # (e)', 'print https link for order (l)']
 
 
 def create_order():
@@ -70,6 +70,11 @@ def print_open_positions():
     print(res)
 
 
+def print_http_link():
+    order_id = pyip.inputInt('order #> ')
+    print(f'https://noahtradebox.duckdns.org/orders/execute/{order_id}')
+
+
 def execute_order():
     order_number = pyip.inputInt('execute order#> ')
     tradeapi.execute_order(order_number)
@@ -117,6 +122,8 @@ if __name__ == '__main__':
             tradeapi.logout()
         elif menu_choice == 'e':
             execute_order()
+        elif menu_choice == 'l':
+            print_http_link()
         elif menu_choice == 'quit' or menu_choice == 'q':
             quit()
         elif menu_choice == 'exit':
