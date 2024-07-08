@@ -1,4 +1,5 @@
 import sys
+import datetime
 
 from flask import Flask
 
@@ -28,7 +29,9 @@ def console():
 
 @app.route('/pythonversion')
 def python_version():
-    return sys.version
+    now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+    python_version = sys.version
+    return f'{now}\n{python_version}'
 
 
 if __name__ == '__main__':
