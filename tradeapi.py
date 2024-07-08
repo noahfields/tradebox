@@ -2,6 +2,7 @@ import json
 import os
 import traceback
 import time
+import datetime
 
 import pandas as pd
 import robin_stocks.robinhood as r
@@ -431,9 +432,10 @@ def execute_sell_emergency_fill(order_info='', quantity_to_sell=0, prepend_messa
     log.append(f'emergency sell: quantity after {
                after_emergency_position_quantity}')
 
-    message = f'E.S.. new qty: {after_emergency_position_quantity}.'
+    message = f'ES new qty: {after_emergency_position_quantity}.'
 
-    log.append(f'{prepend_message} {message}')
+    log.append(f'{prepend_message} {message} {
+               datetime.datetime.now().strftime("%d %H:%M:%S")}')
     notify.send_plaintext_email(f'{prepend_message} {message}')
     log.append('Email/text notification sent. Emergency fill executed.')
 
