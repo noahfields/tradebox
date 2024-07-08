@@ -31,7 +31,7 @@ def console():
 def python_version():
     now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
     python_version = sys.version
-    return f'{now}\n{python_version}'
+    return f'{now} <br/><br/> {python_version}'
 
 
 if __name__ == '__main__':
