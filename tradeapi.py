@@ -30,7 +30,8 @@ def logout():
 
 
 def create_order(buy_sell, symbol, expiration_date, strike, call_put, quantity,
-                 market_limit, limit_price=0, active=True, message_on_success='',
+                 market_limit, emergency_order_fill_on_failure, limit_price=0,
+                 active=True, message_on_success='',
                  message_on_failure='', execute_only_after_id='',
                  execution_deactivates_order_id='', max_order_attempts=10):
     instrument_data = r.options.get_option_instrument_data(
@@ -46,7 +47,7 @@ def create_order(buy_sell, symbol, expiration_date, strike, call_put, quantity,
     rh_option_uuid = instrument_data['id']
 
     db.create_order(rh_option_uuid, buy_sell, symbol, expiration_date, strike, call_put, quantity, market_limit, below_tick,
-                    above_tick, cutoff_price, limit_price, message_on_success, message_on_failure, execute_only_after_id, execution_deactivates_order_id, max_order_attempts, active)
+                    above_tick, cutoff_price, limit_price, message_on_success, message_on_failure, execute_only_after_id, execution_deactivates_order_id, max_order_attempts, active, emergency_order_fill_on_failure)
 
     msg = f'Successfully created order for {buy_sell} {quantity} {
         symbol}, {expiration_date}, {strike}, {call_put}.'
@@ -242,20 +243,21 @@ def execute_market_sell_order(order_info):
     log.append(f'Opening position size: {opening_position_size}')
     log.append(f'Current position size: {current_position_size}')
 
-    final_position_size = current_position_size - int(order_info['quantity'])
+    goal_final_position_size = current_position_size - \
+        int(order_info['quantity'])
     # in case the quantity to sell is greater than the total owned
     # this will close the position to zero
     # and stop the sell orders from failing
-    if final_position_size < 0:
-        final_position_size = 0
+    if goal_final_position_size < 0:
+        goal_final_position_size = 0
         log.append(
-            f'Tradebox order is asking to sell more positions than are currently held in account. final_position_size revised to {final_position_size} (should read 0).')
-    log.append(f'Calculated final position size: {final_position_size}')
+            f'Tradebox order is asking to sell more positions than are currently held in account. final_position_size revised to {goal_final_position_size} (should read 0).')
+    log.append(f'Calculated final position size: {goal_final_position_size}')
 
     order_cancel_ids = []
 
-    while (current_position_size > final_position_size) and (number_of_trades_placed < order_info['max_order_attempts']):
-        remaining_quantity = current_position_size - final_position_size
+    while (current_position_size > goal_final_position_size) and (number_of_trades_placed < order_info['max_order_attempts']):
+        remaining_quantity = current_position_size - goal_final_position_size
         log.append(f'Remaining quantity to sell: {remaining_quantity}')
 
         option_market_data = r.options.get_option_market_data_by_id(
@@ -299,6 +301,33 @@ def execute_market_sell_order(order_info):
 
     time.sleep(1)
 
+    # log trade metrics
+    open_option_positions = r.options.get_open_option_positions()
+    for open_pos in open_option_positions:
+        if open_pos['option_id'] == order_info['rh_option_uuid']:
+            actual_closing_position_size = int(float(open_pos['quantity']))
+    log.append(f'Opening position size: {opening_position_size}')
+    log.append(f'Goal final position size: {goal_final_position_size}')
+    log.append(f'Actual closing position size: {actual_closing_position_size}')
+    log.append(f'Final number of trades placed: {number_of_trades_placed}')
+
+    # build initial message report
+    if actual_closing_position_size != 'none':
+        quantity_sold = opening_position_size - actual_closing_position_size
+    message = f'Ex\'d ord{order_info["order_id"]}. Sold {quantity_sold} {order_info["symbol"]} {order_info["call_put"]} {
+        order_info["expiration_date"]} {order_info["strike"]}. Cur pos: {actual_closing_position_size}.'
+
+    log.append(message)
+
+    if bool(int(order_info['emergency_order_fill_on_failure'])) == True:
+        if actual_closing_position_size != 'none' and (actual_closing_position_size > goal_final_position_size):
+            execute_sell_emergency_fill(
+                order_info=order_info, quantity_to_sell=(actual_closing_position_size - goal_final_position_size), prepend_message=message)
+    else:
+        notify.send_plaintext_email(
+            f'{message}. No emergency order submitted.')
+        log.append('Email/text notification sent. No emergency fill.')
+
     # make sure all orders are actually cancelled at conclusion
     log.append(f'Cancelling {len(order_cancel_ids)} orders for safety.')
     for cancel_id in order_cancel_ids:
@@ -308,25 +337,7 @@ def execute_market_sell_order(order_info):
         except:
             pass
         time.sleep(4)
-    log.append('Cancelled all order IDs.')
-
-    # log trade metrics
-    open_option_positions = r.options.get_open_option_positions()
-    for open_pos in open_option_positions:
-        if open_pos['option_id'] == order_info['rh_option_uuid']:
-            actual_closing_position_size = int(float(open_pos['quantity']))
-    log.append(f'Opening position size: {opening_position_size}')
-    log.append(f'Goal final position size: {final_position_size}')
-    log.append(f'Actual closing position size: {actual_closing_position_size}')
-    log.append(f'Final number of trades placed: {number_of_trades_placed}')
-
-    # send email notification of trade
-    quantity_sold = opening_position_size - actual_closing_position_size
-    message = f'Tradebox executed order #{order_info["order_id"]}. Sold {quantity_sold} {order_info["symbol"]} {order_info["call_put"]} {
-        order_info["expiration_date"]} {order_info["strike"]}. Current position size: {actual_closing_position_size}.'
-    notify.send_plaintext_email(message)
-    log.append('Email/text notification sent.')
-    log.append(message)
+    log.append('Cancelled all order IDs from main sell function.')
 
 
 def execute_limit_buy_order():
@@ -372,3 +383,60 @@ def get_console_open_robinhood_positions():
 
     positions_dataframe = pd.DataFrame(display_positions)
     return positions_dataframe
+
+
+def execute_sell_emergency_fill(order_info='', quantity_to_sell=0, prepend_message=''):
+    log.append(f'emergency sell: trying to sell {quantity_to_sell} {order_info["symbol"]} {
+               order_info["call_put"]} {order_info["strike"]} {order_info["expiration_date"]}')
+    option_market_data = r.options.get_option_market_data_by_id(
+        order_info['rh_option_uuid'])[0]
+
+    bid_price = round(float(option_market_data['bid_price']), 2)
+    log.append(f'emergency sell: bid price {bid_price}')
+
+    # 50% discount
+    sell_price = round(bid_price / 2, 2)
+    log.append(f'emergency sell: 50% discount sell price {sell_price}')
+
+    # find nearest tick (just using .05 cents here)
+    sell_price = round(round(sell_price * 10) / 10, 2)
+    if sell_price == 0:  # in case the option has bottomed out
+        sell_price = 0.01
+
+    log.append(f'emergency sell: revised sell price {sell_price}')
+
+    order_result = r.orders.order_sell_option_limit(
+        'close', 'credit', sell_price, order_info['symbol'], quantity_to_sell,
+        order_info['expiration_date'], order_info['strike'],
+        optionType=order_info['call_put'], timeInForce='gtc')
+
+    log.append(f'emergency sell: sell order result: {
+               json.dumps(order_result)}')
+
+    time.sleep(5)
+
+    res = r.orders.cancel_option_order(order_result['id'])
+    log.append(f'Emergency order made. Cancelling after 5 seconds. Result of cancellation: {
+               json.dumps(res)}')
+
+    time.sleep(3)
+
+    open_option_positions = r.options.get_open_option_positions()
+    after_emergency_position_quantity = 0
+    for open_pos in open_option_positions:
+        if open_pos['option_id'] == order_info['rh_option_uuid']:
+            after_emergency_position_quantity = int(
+                float(open_pos['quantity']))
+
+    log.append(f'emergency sell: quantity after {
+               after_emergency_position_quantity}')
+
+    message = f'E.S.. new qty: {after_emergency_position_quantity}.'
+
+    log.append(f'{prepend_message} {message}')
+    notify.send_plaintext_email(f'{prepend_message} {message}')
+    log.append('Email/text notification sent. Emergency fill executed.')
+
+
+def execute_buy_emergency_fill(order_info='', quantity_to_buy=0):
+    pass
