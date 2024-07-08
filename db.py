@@ -13,40 +13,35 @@ def connection():
 
 
 def create_orders_table():
-    try:
-        conn = connection()
-        cur = conn.cursor()
-        cur.execute("CREATE TABLE IF NOT EXISTS orders (order_id INTEGER PRIMARY KEY ASC, active INTEGER, created_at TEXT, executed INTEGER DEFAULT 0, execute_only_after_id INTEGER, execution_deactivates_order_id INTEGER, buy_sell TEXT, symbol TEXT, strike REAL, call_put TEXT, expiration_date TEXT, rh_option_uuid TEXT, market_limit TEXT, limit_price REAL, quantity INTEGER, message_on_success TEXT, message_on_failure TEXT, below_tick REAL, above_tick REAL, cutoff_price REAL, max_order_attempts INTEGER);")
-        conn.commit()
-    except Exception as e:
-        tb = traceback.format_exception(e)
-        tb = ''.join(tb)
-        print(tb)
-        log.append(tb)
-    finally:
-        cur.close()
-        conn.close()
-
-
-def drop_orders_table():
     conn = connection()
     cur = conn.cursor()
 
-    cur.execute("DROP TABLE orders;")
+    cur.execute('CREATE TABLE IF NOT EXISTS orders (order_id INTEGER PRIMARY KEY ASC, active INTEGER, created_at TEXT, executed INTEGER DEFAULT 0, execute_only_after_id INTEGER, execution_deactivates_order_id INTEGER, buy_sell TEXT, symbol TEXT, strike REAL, call_put TEXT, expiration_date TEXT, rh_option_uuid TEXT, market_limit TEXT, limit_price REAL, quantity INTEGER, message_on_success TEXT, message_on_failure TEXT, below_tick REAL, above_tick REAL, cutoff_price REAL, max_order_attempts INTEGER, emergency_order_fill_on_failure INTEGER);')
 
     conn.commit()
     cur.close()
     conn.close()
 
 
-def create_order(rh_option_uuid, buy_sell, symbol, expiration_date, strike, call_put, quantity, market_limit, below_tick, above_tick, cutoff_price, limit_price, message_on_success, message_on_failure, execute_only_after_id, execution_deactivates_order_id, max_order_attempts, active):
+def drop_orders_table():
+    conn = connection()
+    cur = conn.cursor()
+
+    cur.execute('DROP TABLE orders;')
+
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+def create_order(rh_option_uuid, buy_sell, symbol, expiration_date, strike, call_put, quantity, market_limit, below_tick, above_tick, cutoff_price, limit_price, message_on_success, message_on_failure, execute_only_after_id, execution_deactivates_order_id, max_order_attempts, active, emergency_order_fill_on_failure):
     conn = connection()
     cur = conn.cursor()
 
     created_at = datetime.datetime.now()
 
-    cur.execute("INSERT INTO orders(created_at, rh_option_uuid, execute_only_after_id, buy_sell, symbol, expiration_date, strike, call_put, quantity, market_limit, below_tick, above_tick, cutoff_price, limit_price, message_on_success, message_on_failure, max_order_attempts, execution_deactivates_order_id, active) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);",
-                (created_at, rh_option_uuid, execute_only_after_id, buy_sell, symbol, expiration_date, strike, call_put, quantity, market_limit, below_tick, above_tick, cutoff_price, limit_price, message_on_success, message_on_failure, max_order_attempts, execution_deactivates_order_id, active))
+    cur.execute('INSERT INTO orders(created_at, rh_option_uuid, execute_only_after_id, buy_sell, symbol, expiration_date, strike, call_put, quantity, market_limit, below_tick, above_tick, cutoff_price, limit_price, message_on_success, message_on_failure, max_order_attempts, execution_deactivates_order_id, active, emergency_order_fill_on_failure) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);',
+                (created_at, rh_option_uuid, execute_only_after_id, buy_sell, symbol, expiration_date, strike, call_put, quantity, market_limit, below_tick, above_tick, cutoff_price, limit_price, message_on_success, message_on_failure, max_order_attempts, execution_deactivates_order_id, active, emergency_order_fill_on_failure))
 
     conn.commit()
     cur.close()
@@ -160,8 +155,13 @@ def has_executed(order_id):
 def fetch_console_order_dataframe():
     conn = connection()
     order_dataframe = pd.read_sql(
-        'SELECT order_id, active, executed, execute_only_after_id, execution_deactivates_order_id,  buy_sell, symbol, strike, call_put, expiration_date, quantity FROM orders;', conn)
+        'SELECT order_id, active, executed, execute_only_after_id, execution_deactivates_order_id,  buy_sell, symbol, strike, call_put, expiration_date, quantity, emergency_order_fill_on_failure FROM orders;', conn)
     conn.close()
+
+    # minimize column name length for display
+    order_dataframe.rename(columns={'order_id': 'id', 'execute_only_after_id': 'ex_after_id', 'execution_deactivates_order_id': 'ex_stops_id',
+                                    'call_put': 'type', 'expiration_date': 'exp', 'quantity': 'qty', 'emergency_order_fill_on_failure': 'emergncy_fill'}, inplace=True)
+
     return order_dataframe
 
 

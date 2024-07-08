@@ -4,10 +4,17 @@ import pyinputplus as pyip
 
 import db
 import tradeapi
+import config
 
 menu_options = ['create order (c)', 'delete order (d)', 'delete all orders (da)',
                 'cancel all robinhood orders direct (car)', 'login (li)',
-                'logout (lo)', 'execute order # (e)', 'print https link for order (l)']
+                'logout (lo)', 'execute order # (e)', 'print https link for order (l)',
+                'recreate orders table (r)']
+
+
+def recreate_orders_table():
+    db.drop_orders_table()
+    db.create_orders_table()
 
 
 def create_order():
@@ -23,13 +30,10 @@ def create_order():
     market_limit = pyip.inputStr(
         'market/limit> ',
         blockRegexes=[r'.*'], allowRegexes=['market', 'limit'])
-
     limit_price = 0.0
     if market_limit == 'limit':
         limit_price = pyip.inputFloat('limit price> ')
-
     active = pyip.inputBool('order active? (True/False)> ')
-
     execute_only_after_id = pyip.inputInt(
         'execute only after order #> ', blank=True)
     execution_deactivates_order_id = pyip.inputInt(
@@ -37,9 +41,11 @@ def create_order():
     message_on_success = pyip.inputStr('success msg> ', blank=True)
     message_on_failure = pyip.inputStr('failure msg> ', blank=True)
     max_order_attempts = pyip.inputInt('max order attempts (recommend 10)> ')
+    emergency_order_fill_on_failure = pyip.inputBool(
+        'emergency fill on failure? (True/False)> ')
 
     tradeapi.create_order(buy_sell, symbol, expiration_date, strike, call_put,
-                          quantity, market_limit, limit_price=limit_price,
+                          quantity, market_limit, emergency_order_fill_on_failure, limit_price=limit_price,
                           message_on_success=message_on_success,
                           message_on_failure=message_on_failure,
                           execute_only_after_id=execute_only_after_id,
@@ -72,7 +78,7 @@ def print_open_positions():
 
 def print_http_link():
     order_id = pyip.inputInt('order #> ')
-    print(f'https://noahtradebox.duckdns.org/orders/execute/{order_id}')
+    print(f'{config.TRADEBOX_APP_ADDRESS}/orders/execute/{order_id}')
 
 
 def execute_order():
@@ -124,6 +130,8 @@ if __name__ == '__main__':
             execute_order()
         elif menu_choice == 'l':
             print_http_link()
+        elif menu_choice == 'r':
+            recreate_orders_table()
         elif menu_choice == 'quit' or menu_choice == 'q':
             quit()
         elif menu_choice == 'exit':

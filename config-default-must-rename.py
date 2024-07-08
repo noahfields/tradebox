@@ -14,3 +14,6 @@ SMTP_PASSWORD = ''
 SMTP_SERVER = ''
 SMTP_PORT = 465  # port for Gmail SSL if using Gmail's SMTP servers
 NOTIFICATION_ADDRESS = ''
+
+# SERVER INFO
+TRADEBOX_APP_ADDRESS = 'http://127.0.0.1/'  # must end with '/'

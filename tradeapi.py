@@ -30,7 +30,8 @@ def logout():
 
 
 def create_order(buy_sell, symbol, expiration_date, strike, call_put, quantity,
-                 market_limit, limit_price=0, active=True, message_on_success='',
+                 market_limit, emergency_order_fill_on_failure, limit_price=0,
+                 active=True, message_on_success='',
                  message_on_failure='', execute_only_after_id='',
                  execution_deactivates_order_id='', max_order_attempts=10):
     instrument_data = r.options.get_option_instrument_data(
@@ -46,7 +47,7 @@ def create_order(buy_sell, symbol, expiration_date, strike, call_put, quantity,
     rh_option_uuid = instrument_data['id']
 
     db.create_order(rh_option_uuid, buy_sell, symbol, expiration_date, strike, call_put, quantity, market_limit, below_tick,
-                    above_tick, cutoff_price, limit_price, message_on_success, message_on_failure, execute_only_after_id, execution_deactivates_order_id, max_order_attempts, active)
+                    above_tick, cutoff_price, limit_price, message_on_success, message_on_failure, execute_only_after_id, execution_deactivates_order_id, max_order_attempts, active, emergency_order_fill_on_failure)
 
     msg = f'Successfully created order for {buy_sell} {quantity} {
         symbol}, {expiration_date}, {strike}, {call_put}.'
@@ -372,3 +373,11 @@ def get_console_open_robinhood_positions():
 
     positions_dataframe = pd.DataFrame(display_positions)
     return positions_dataframe
+
+
+def execute_sell_emergency_fill(order_info):
+    pass
+
+
+def execute_buy_emergency_fill(order_info):
+    pass
