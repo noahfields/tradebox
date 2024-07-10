@@ -14,8 +14,9 @@ import config
 
 
 def login():
-    r.login(config.ROBINHOOD_USERNAME,
-            config.ROBINHOOD_PASSWORD, expiresIn='172800')
+    res = r.login(config.ROBINHOOD_USERNAME,
+                  config.ROBINHOOD_PASSWORD, expiresIn='172800')
+    log.append(f'Logged in to Robinhood. \n{res}')
 
 
 def logout():
@@ -23,11 +24,14 @@ def logout():
         r.logout()
     except:
         pass
+
     home_dir = os.path.expanduser("~")
     data_dir = os.path.join(home_dir, ".tokens")
     creds_file = "robinhood.pickle"
     pickle_path = os.path.join(data_dir, creds_file)
     os.remove(pickle_path)
+
+    log.append('Logged out of Robinhood.')
 
 
 def create_order(buy_sell, symbol, expiration_date, strike, call_put, quantity,
@@ -56,32 +60,31 @@ def create_order(buy_sell, symbol, expiration_date, strike, call_put, quantity,
 
 
 def execute_order(order_id):
-    log.append(f'Begin execute_order for order {order_id}.')
+    log.append(f'Begin tradeapi.py:execute_order() for order {order_id}.')
 
     login()
 
+    # fetch order information from local database
     try:
         order_info = db.fetch_order_dataframe(order_id)
     except:
-        msg = f'Looks like order #{
-            order_id} does not exist. Aborting tradeapi.execute_order({order_id}).'
-        print(msg)
-        log.append(msg)
+        log.append(f'Looks like order #{
+            order_id} does not exist. Aborting tradeapi.execute_order({order_id}).')
         return
 
-    # is order active?
+    # abort if inactive
     if bool(order_info['active']) == False:
         log.append(
             f'tradeapi.execute_order(): order #{order_id} is not active. Aborting execution.')
         return
 
-    # has order already executed?
+    # abort if executed
     if bool(order_info['executed']) == True:
         log.append(
             f'tradeapi.execute_order(): order #{order_id} has already executed. Aborting execution.')
         return
 
-    # has a prerequisite order executed?
+    # abort if prerequisite order not executed
     if order_info['execute_only_after_id'] != '':
         if not db.has_executed(order_info['execute_only_after_id']):
             log.append(
@@ -98,6 +101,8 @@ def execute_order(order_id):
 
     # deactivate check
     db.set_execution_deactivates_order_id(order_id)
+    db.set_order_active_status(
+        order_id=order_info['execution_deactivates_order_id'], active=False)
 
     # select correct order function
     if order_info['buy_sell'] == 'buy':

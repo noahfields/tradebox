@@ -7,9 +7,9 @@ import pandas as pd
 import log
 
 
-def connection():
-    conn = sqlite3.connect('db.sqlite3')
-    return conn
+def connection() -> sqlite3.Connection:
+    connection = sqlite3.connect('db.sqlite3')
+    return connection
 
 
 def create_orders_table():
