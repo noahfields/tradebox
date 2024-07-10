@@ -13,49 +13,62 @@ import log
 import config
 
 
-def login():
+def login() -> None:
     res = r.login(config.ROBINHOOD_USERNAME,
-                  config.ROBINHOOD_PASSWORD, expiresIn='172800')
+                  config.ROBINHOOD_PASSWORD, expiresIn=config.ROBINHOOD_SESSION_EXPIRES_IN)
     log.append(f'Logged in to Robinhood. \n{res}')
 
 
-def logout():
+def logout() -> None:
     try:
         r.logout()
-    except:
-        pass
+    except Exception as e:
+        log.append(f'Exception raised in tradeapi.logout(): {e}')
 
-    home_dir = os.path.expanduser("~")
-    data_dir = os.path.join(home_dir, ".tokens")
-    creds_file = "robinhood.pickle"
-    pickle_path = os.path.join(data_dir, creds_file)
-    os.remove(pickle_path)
+    try:
+        home_dir = os.path.expanduser("~")
+        data_dir = os.path.join(home_dir, ".tokens")
+        creds_file = "robinhood.pickle"
+        pickle_path = os.path.join(data_dir, creds_file)
+        os.remove(pickle_path)
+    except FileNotFoundError as e:
+        log.append(f'Exception raised in tradeapi.logout(): {e}')
 
     log.append('Logged out of Robinhood.')
 
 
-def create_order(buy_sell, symbol, expiration_date, strike, call_put, quantity,
-                 market_limit, emergency_order_fill_on_failure, limit_price=0,
-                 active=True, message_on_success='',
-                 message_on_failure='', execute_only_after_id='',
-                 execution_deactivates_order_id='', max_order_attempts=10):
+def create_order(buy_sell: str, symbol: str, expiration_date: str,
+                 strike: float, call_put: str, quantity: int,
+                 market_limit: str, emergency_order_fill_on_failure: bool,
+                 active: bool, message_on_success: str,
+                 message_on_failure: str, execute_only_after_id: int,
+                 execution_deactivates_order_id: int,
+                 max_order_attempts: int, limit_price: float = 0.0) -> None:
+
     instrument_data = r.options.get_option_instrument_data(
         symbol, expiration_date, strike, call_put)
-    if instrument_data == None:
-        log.append(
-            f'tradeapi.create_order(): r.options.get_option_instrument_data({symbol}, {expiration_date}, {strike}, {call_put}) returned None')
+    if instrument_data is None:
+        msg = 'tradeapi.create_order(): r.options.get_option_instrument_data(' \
+            + f'{symbol}, {expiration_date}, {strike}, {call_put}) ' \
+            + 'returned None. Option likely does not exist. ' \
+            + 'Check strike and expiration date.'
+        log.append(msg)
         return
 
+    rh_option_uuid = instrument_data['id']
     below_tick = instrument_data['min_ticks']['below_tick']
     above_tick = instrument_data['min_ticks']['above_tick']
     cutoff_price = instrument_data['min_ticks']['cutoff_price']
-    rh_option_uuid = instrument_data['id']
 
-    db.create_order(rh_option_uuid, buy_sell, symbol, expiration_date, strike, call_put, quantity, market_limit, below_tick,
-                    above_tick, cutoff_price, limit_price, message_on_success, message_on_failure, execute_only_after_id, execution_deactivates_order_id, max_order_attempts, active, emergency_order_fill_on_failure)
+    db.insert_order(buy_sell, symbol, expiration_date, strike, call_put,
+                    quantity, market_limit, emergency_order_fill_on_failure,
+                    active, message_on_success, message_on_failure,
+                    execute_only_after_id, execution_deactivates_order_id,
+                    max_order_attempts, limit_price, rh_option_uuid,
+                    below_tick, above_tick, cutoff_price)
 
-    msg = f'Successfully created order for {buy_sell} {quantity} {
-        symbol}, {expiration_date}, {strike}, {call_put}.'
+    msg = f'Successfully created order for {buy_sell} {quantity} ' \
+        + f'{symbol}, {expiration_date}, {strike}, {call_put}.'
     log.append(msg)
 
 
@@ -68,8 +81,8 @@ def execute_order(order_id):
     try:
         order_info = db.fetch_order_dataframe(order_id)
     except:
-        log.append(f'Looks like order #{
-            order_id} does not exist. Aborting tradeapi.execute_order({order_id}).')
+        log.append(f'Looks like order #{order_id} does not exist.'
+                   + f'Aborting tradeapi.execute_order({order_id}).')
         return
 
     # abort if inactive

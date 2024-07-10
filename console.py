@@ -66,9 +66,9 @@ def cancel_all_robinhood_orders():
     tradeapi.cancel_all_robinhood_orders()
 
 
-def print_orders():
-    orders = db.fetch_console_order_dataframe()
-    print(orders.to_string())
+def print_orders() -> None:
+    orders_dataframe = db.get_console_formatted_orders_dataframe()
+    print(orders_dataframe.to_string())
 
 
 def print_open_positions():
