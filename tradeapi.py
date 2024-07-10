@@ -1,15 +1,15 @@
+import datetime
 import json
 import os
 import time
-import datetime
 
 import pandas as pd
 import robin_stocks.robinhood as r
 
-import db
-import notify
-import log
 import config
+import db
+import log
+import notify
 
 
 def login() -> None:
