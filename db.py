@@ -26,9 +26,10 @@ def drop_orders_table() -> None:
     conn = connection()
     try:
         conn.execute('DROP TABLE orders;')
-    except sqlite3.OperationalError as e:
-        log.append(
-            'db.drop_orders_table(): Could not drop orders table. Probably does not exist.')
+    except sqlite3.OperationalError:
+        msg = 'db.drop_orders_table(): Could not drop orders table. ' \
+            + 'Probably does not exist.'
+        log.append(msg)
     conn.commit()
     conn.close()
 
@@ -90,12 +91,12 @@ def order_exists(order_id: int) -> bool:
     cur.execute(f'SELECT * FROM orders WHERE order_id={order_id};')
     orders = cur.fetchall()
     if len(orders) >= 1:
-        order_exists = True
+        exists = True
     else:
-        order_exists = False
+        exists = False
     cur.close()
     conn.close()
-    return order_exists
+    return exists
 
 
 def get_order_series(order_id: int) -> pd.Series:

@@ -218,34 +218,36 @@ def execute_market_buy_order(order_info: pd.Series) -> None:
     open_option_positions = r.options.get_open_option_positions()
     for open_pos in open_option_positions:
         if open_pos['option_id'] == order_info['rh_option_uuid']:
-            actual_closing_position_size = int(float(open_pos['quantity']))
+            current_position_size = int(float(open_pos['quantity']))
+            actual_closing_position_size = current_position_size
     log.append(f'Opening position size: {opening_position_size}')
     log.append(f'Goal final position size: {goal_final_position_size}')
     log.append(f'Actual closing position size: {actual_closing_position_size}')
     log.append(f'Final number of trades placed: {number_of_trades_placed}')
 
-    quantity_bought = None
+    # dev: probably good until here
+
     if actual_closing_position_size is not None and isinstance(actual_closing_position_size, int):
         quantity_bought = actual_closing_position_size - opening_position_size
     else:
         quantity_bought = 0
 
-    message = f'Tradebox executed order #{order_info["order_id"]}. Bought {quantity_bought} {order_info["symbol"]} {
-        order_info["call_put"]} {order_info["expiration_date"]} {order_info["strike"]}. Current position size: {actual_closing_position_size}.'
-    log.append(message)
+    prepend_msg = f'Ex\'d #{order_info["order_id"]}. Bought {quantity_bought} {order_info["symbol"]} {
+        order_info["call_put"]} {order_info["expiration_date"]} {order_info["strike"]}. Cur pos: {actual_closing_position_size}.'
+    log.append(prepend_msg)
 
     if current_position_size < goal_final_position_size:
-        log.append('tradeapi.execute_market_buy_order did not fill completely')
+        log.append('tradeapi.execute_market_buy_order did not fill completely.')
 
-        if bool(int(order_info['emergency_order_fill_on_failure'])) is True:
+        if bool(order_info['emergency_order_fill_on_failure']) is True:
             log.append('emergency buy fill is activated')
             quantity_to_buy = goal_final_position_size - current_position_size
             execute_buy_emergency_fill(
-                order_info=order_info, quantity_to_buy=quantity_to_buy, prepend_message=message)
+                order_info, quantity_to_buy, prepend_msg)
         else:
-            msg = 'No emergency fill ordered.'
-            log.append(msg)
-            notify.send_plaintext_email(message)
+            log.append('No emergency fill ordered.')
+            log.append(prepend_msg)
+            notify.send_plaintext_email(prepend_msg)
 
     # re-cancel all orders at conclusion
     log.append(f'Cancelling {len(order_cancel_ids)} orders for safety.')
@@ -257,8 +259,7 @@ def execute_market_buy_order(order_info: pd.Series) -> None:
             pass
         time.sleep(4)
     log.append('Cancelled all order IDs from execute_market_buy_order.')
-
-    log.append('DONE')
+    log.append('Completed execute_market_buy_order.')
 
 
 def execute_market_sell_order(order_info: pd.Series) -> None:
@@ -485,14 +486,12 @@ def execute_buy_emergency_fill(order_info: pd.Series, quantity_to_buy: int, prep
     ask_price = round(float(option_market_data['ask_price']), 2)
     log.append(f'emergency buy: bid price {ask_price}')
 
-    # 50% discount
-    buy_price = round(ask_price / 2, 2)
-    log.append(f'emergency buy: 50% discount buy price {buy_price}')
+    # 50% higher limit price than ask price
+    buy_price = round((ask_price * 1.5) + 0.05, 2)
+    log.append(f'emergency buy: 50% higher buy price plus 5 cents {buy_price}')
 
     # find nearest tick (just using .05 cents here)
     buy_price = round(round(buy_price * 10) / 10, 2)
-    if buy_price < .05:  # in case the option has bottomed out
-        buy_price = 0.01
 
     log.append(f'emergency buy: revised buy price {buy_price}')
 
@@ -504,20 +503,21 @@ def execute_buy_emergency_fill(order_info: pd.Series, quantity_to_buy: int, prep
     log.append(f'emergency buy: buy order result: {
                json.dumps(order_result)}')
 
-    time.sleep(20)
+    time.sleep(10)
 
     res = None
     try:
         res = r.orders.cancel_option_order(order_result['id'])
     except:
         res = 'none'
-        log.append(f'Emergency buy order made. Cancelling after 20 seconds. Result of cancellation: {
+    finally:
+        log.append(f'Emergency buy order made. Cancelling after 10 seconds. Result of cancellation: {
             json.dumps(res)}')
 
     time.sleep(5)
 
     open_option_positions = r.options.get_open_option_positions()
-    after_emergency_position_quantity = 0
+    after_emergency_position_quantity = None
     for open_pos in open_option_positions:
         if open_pos['option_id'] == order_info['rh_option_uuid']:
             after_emergency_position_quantity = int(
