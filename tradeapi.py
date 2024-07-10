@@ -201,12 +201,9 @@ def execute_market_buy_order(order_info: pd.Series) -> None:
 
         time.sleep(2)
 
-        try:
-            log.append(f'Cancelling order ID {order_result["id"]}.')
-            order_cancel_ids.append(order_result['id'])
-            r.orders.cancel_option_order(order_result['id'])
-        except:
-            pass
+        log.append(f'Cancelling order ID {order_result["id"]}.')
+        order_cancel_ids.append(order_result['id'])
+        r.orders.cancel_option_order(order_result['id'])
 
         time.sleep(4)
 
@@ -259,11 +256,8 @@ def execute_market_buy_order(order_info: pd.Series) -> None:
     # re-cancel all orders at conclusion
     log.append(f'Cancelling {len(order_cancel_ids)} orders for safety.')
     for cancel_id in order_cancel_ids:
-        try:
-            log.append(f'Cancelling order ID {cancel_id}.')
-            r.orders.cancel_option_order(order_result['id'])
-        except:
-            pass
+        log.append(f'Cancelling order ID {cancel_id}.')
+        r.orders.cancel_option_order(order_result['id'])
         time.sleep(4)
     log.append('Cancelled all order IDs from execute_market_buy_order.')
     log.append('Completed execute_market_buy_order.')
@@ -391,11 +385,8 @@ def execute_market_sell_order(order_info: pd.Series) -> None:
     # re-cancel all orders at conclusion
     log.append(f'Cancelling {len(order_cancel_ids)} orders for safety.')
     for cancel_id in order_cancel_ids:
-        try:
-            log.append(f'Cancelling order ID {cancel_id}.')
-            r.orders.cancel_option_order(order_result['id'])
-        except:
-            pass
+        log.append(f'Cancelling order ID {cancel_id}.')
+        r.orders.cancel_option_order(order_result['id'])
         time.sleep(4)
     log.append('Cancelled all order IDs from execute_market_sell_order.')
     log.append('Completed execute_market_sell_order.')
@@ -528,15 +519,10 @@ def execute_buy_emergency_fill(order_info: pd.Series, quantity_to_buy: int,
 
     time.sleep(10)
 
-    res = None
-    try:
-        res = r.orders.cancel_option_order(order_result['id'])
-    except:
-        res = 'none'
-    finally:
-        msg = 'Emergency buy order made. Cancelling after 10 seconds. ' \
-            + f'Result of cancellation: {json.dumps(res)}'
-        log.append(msg)
+    res = r.orders.cancel_option_order(order_result['id'])
+    msg = 'Emergency buy order made. Cancelling after 10 seconds. ' \
+        + f'Result of cancellation: {json.dumps(res)}'
+    log.append(msg)
 
     time.sleep(5)
 
