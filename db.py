@@ -84,7 +84,21 @@ def fetch_order_sql(order_id: int) -> tuple:
     return order
 
 
-def fetch_order_dataframe(order_id: int) -> pd.Series:
+def order_exists(order_id: int) -> bool:
+    conn = connection()
+    cur = conn.cursor()
+    cur.execute(f'SELECT * FROM orders WHERE order_id={order_id};')
+    orders = cur.fetchall()
+    if len(orders) >= 1:
+        order_exists = True
+    else:
+        order_exists = False
+    cur.close()
+    conn.close()
+    return order_exists
+
+
+def get_order_series(order_id: int) -> pd.Series:
     conn = connection()
     order_dataframe = pd.read_sql(
         f'SELECT * FROM orders WHERE order_id={order_id};', conn)
@@ -110,10 +124,11 @@ def fetch_all_orders_dataframe() -> pd.DataFrame:
     return orders_dataframe
 
 
-def mark_order_executed(order_id: int) -> None:
+def set_order_executed_status(order_id: int, executed: bool) -> None:
     conn = connection()
     cur = conn.cursor()
-    cur.execute('UPDATE orders SET executed=1 WHERE order_id=?', (order_id,))
+    cur.execute('UPDATE orders SET executed=? WHERE order_id=?',
+                (executed, order_id,))
     conn.commit()
     cur.close()
     conn.close()
@@ -123,13 +138,13 @@ def set_order_active_status(order_id: int, active: bool) -> None:
     conn = connection()
     cur = conn.cursor()
     cur.execute('UPDATE orders SET active=? WHERE order_id=?',
-                (bool(active), order_id,))
+                (active, order_id,))
     conn.commit()
     cur.close()
     conn.close()
 
 
-def has_order_executed(order_id: int) -> bool:
+def get_order_executed_status(order_id: int) -> bool:
     conn = connection()
     cur = conn.cursor()
     cur.execute('SELECT executed FROM orders WHERE order_id=?', (order_id,))

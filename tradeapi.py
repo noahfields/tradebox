@@ -72,40 +72,43 @@ def create_order(buy_sell: str, symbol: str, expiration_date: str,
     log.append(msg)
 
 
-def execute_order(order_id):
+def execute_order(order_id: int) -> None:
     log.append(f'Begin tradeapi.py:execute_order() for order {order_id}.')
 
-    login()
-
-    # fetch order information from local database
+    # get order information from local database
     try:
-        order_info = db.fetch_order_dataframe(order_id)
-    except:
-        log.append(f'Looks like order #{order_id} does not exist.'
-                   + f'Aborting tradeapi.execute_order({order_id}).')
+        order_info = db.get_order_series(order_id)
+    except KeyError:
+        msg = f'Looks like order #{order_id} does not exist.' \
+            + f'Aborting tradeapi.execute_order({order_id}).'
+        log.append(msg)
         return
 
     # abort if inactive
-    if bool(order_info['active']) == False:
-        log.append(
-            f'tradeapi.execute_order(): order #{order_id} is not active. Aborting execution.')
+    if bool(order_info['active']) is False:
+        msg = f'tradeapi.execute_order(): order #{order_id} ' \
+            + 'is not active. Aborting execution.'
+        log.append(msg)
         return
 
     # abort if executed
-    if bool(order_info['executed']) == True:
-        log.append(
-            f'tradeapi.execute_order(): order #{order_id} has already executed. Aborting execution.')
+    if bool(order_info['executed']) is True:
+        msg = f'tradeapi.execute_order(): order #{order_id} ' \
+            + 'has already executed. Aborting execution.'
+        log.append(msg)
         return
 
-    # abort if prerequisite order not executed
-    if order_info['execute_only_after_id'] != '':
-        if not db.has_executed(order_info['execute_only_after_id']):
-            log.append(
-                f'rhapi.execute_order(): prerequisite {order_info["execute_only_after_id"]} not executed. Cancelling execution of order #{order_id}')
-            return
+    # abort if prerequisite order does not exist or is not executed
+    if db.order_exists(order_info['execute_only_after_id']) and not db.get_order_executed_status(order_info['execute_only_after_id']):
+        msg = 'rhapi.execute_order(): prerequisite ' \
+            + f'{order_info["execute_only_after_id"]} ' \
+            + 'not executed or does not exist.' \
+            + f'Cancelling execution of order #{order_id}.'
+        log.append(msg)
+        return
 
     # mark trade as executed
-    db.mark_order_executed(order_id)
+    db.set_order_executed_status(order_id, True)
     log.append(f'Marked order number {order_id} as executed.')
 
     # set order as inactive
@@ -113,27 +116,31 @@ def execute_order(order_id):
     log.append(f'Marked order number {order_id} as inactive.')
 
     # deactivate check
-    db.set_execution_deactivates_order_id(order_id)
     db.set_order_active_status(
-        order_id=order_info['execution_deactivates_order_id'], active=False)
+        order_info['execution_deactivates_order_id'], False)
 
     # select correct order function
+    # CHANGE THIS TO throw an exception and catch it if order type is invalid
+    # or fix conditionals
     if order_info['buy_sell'] == 'buy':
         if order_info['market_limit'] == 'market':
             execute_market_buy_order(order_info)
-        if order_info['market_limit'] == 'limit':
+        elif order_info['market_limit'] == 'limit':
             execute_limit_buy_order(order_info)
-
-    if order_info['buy_sell'] == 'sell':
+    elif order_info['buy_sell'] == 'sell':
         if order_info['market_limit'] == 'market':
             execute_market_sell_order(order_info)
-        if order_info['market_limit'] == 'limit':
+        elif order_info['market_limit'] == 'limit':
             execute_limit_sell_order(order_info)
+    else:
+        msg = 'No valid order type selected.' \
+            + f'buy/sell: {order_info["buy_sell"]} ' \
+            + f'market/limit: {order_info["market_limit"]}'
+        log.append(msg)
 
 
-def get_option_instrument_data(symbol, call_put, strike, expiration_date):
-    login()
-
+def get_option_instrument_data(symbol: str, call_put: str, strike: float,
+                               expiration_date: str) -> tuple[float, float, float, str]:
     data = r.options.get_option_instrument_data(
         symbol, expiration_date, strike, call_put)
 
@@ -145,7 +152,7 @@ def get_option_instrument_data(symbol, call_put, strike, expiration_date):
     return below_tick, above_tick, cutoff_price, option_uuid
 
 
-def execute_market_buy_order(order_info):
+def execute_market_buy_order(order_info: pd.Series) -> None:
     log.append(
         f'Begin execute_market_buy_order for order #{order_info["order_id"]}.')
     log.append(f'Tradebox order info: \n{order_info.to_string()}')
@@ -258,7 +265,7 @@ def execute_market_buy_order(order_info):
     log.append('DONE')
 
 
-def execute_market_sell_order(order_info):
+def execute_market_sell_order(order_info: pd.Series) -> None:
     log.append(
         f'Begin execute_market_sell_order for order #{order_info["order_id"]}.')
     log.append("tradebox order info: \n" + order_info.to_string())
@@ -382,20 +389,11 @@ def execute_market_sell_order(order_info):
     log.append('Cancelled all order IDs from execute_market_sell_order.')
 
 
-def execute_limit_buy_order():
-    pass
-
-
-def execute_limit_sell_order():
-    pass
-
-
-def cancel_all_robinhood_orders():
-    login()
+def cancel_all_robinhood_orders() -> None:
     r.orders.cancel_all_option_orders()
 
 
-def get_console_open_robinhood_positions():
+def get_console_open_robinhood_positions() -> pd.DataFrame:
     open_positions = r.options.get_open_option_positions()
 
     display_positions = []
@@ -427,7 +425,7 @@ def get_console_open_robinhood_positions():
     return positions_dataframe
 
 
-def execute_sell_emergency_fill(order_info='', quantity_to_sell=0, prepend_message=''):
+def execute_sell_emergency_fill(order_info: pd.Series, quantity_to_sell: int, prepend_message: str = '') -> None:
     log.append(f'emergency sell: trying to sell {quantity_to_sell} {order_info["symbol"]} {
                order_info["call_put"]} {order_info["strike"]} {order_info["expiration_date"]}')
     option_market_data = r.options.get_option_market_data_by_id(
@@ -481,7 +479,7 @@ def execute_sell_emergency_fill(order_info='', quantity_to_sell=0, prepend_messa
     log.append('Email/text notification sent. Emergency fill executed.')
 
 
-def execute_buy_emergency_fill(order_info='', quantity_to_buy=0, prepend_message=''):
+def execute_buy_emergency_fill(order_info: pd.Series, quantity_to_buy: int, prepend_message: str = '') -> None:
     log.append(f'emergency buy: trying to buy {quantity_to_buy} {order_info["symbol"]} {
                order_info["call_put"]} {order_info["strike"]} {order_info["expiration_date"]}')
 
