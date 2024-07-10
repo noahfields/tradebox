@@ -22,3 +22,6 @@ TRADEBOX_APP_ADDRESS = 'http://127.0.0.1/'  # must end with '/'
 # change only if needed (for example, to save database when re-cloning tradebox application)
 DATABASE_DIR = '.'
 DATABASE_NAME = 'db.sqlite3'  # change only if needed
+
+# LOGS
+LOG_DIR = '.'
