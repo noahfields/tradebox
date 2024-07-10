@@ -88,7 +88,7 @@ def fetch_order_sql(order_id: int) -> tuple:
 def order_exists(order_id: int) -> bool:
     conn = connection()
     cur = conn.cursor()
-    cur.execute(f'SELECT * FROM orders WHERE order_id={order_id};')
+    cur.execute('SELECT * FROM orders WHERE order_id=?;', (order_id,))
     orders = cur.fetchall()
     if len(orders) >= 1:
         exists = True

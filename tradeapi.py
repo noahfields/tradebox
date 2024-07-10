@@ -384,6 +384,7 @@ def execute_market_sell_order(order_info: pd.Series) -> None:
             pass
         time.sleep(4)
     log.append('Cancelled all order IDs from execute_market_sell_order.')
+    log.append('Completed execute_market_sell_order.')
 
 
 def cancel_all_robinhood_orders() -> None:
@@ -453,7 +454,7 @@ def execute_sell_emergency_fill(order_info: pd.Series, quantity_to_sell: int, pr
     time.sleep(20)
 
     res = r.orders.cancel_option_order(order_result['id'])
-    log.append(f'Emergency order made. Cancelling after 20 seconds. Result of cancellation: {
+    log.append(f'Emergency order made. Cancelled order after 20 seconds. Result of cancellation: {
                json.dumps(res)}')
 
     time.sleep(5)
