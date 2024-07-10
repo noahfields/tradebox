@@ -98,7 +98,8 @@ def execute_order(order_id: int) -> None:
         return
 
     # abort if prerequisite order does not exist or is not executed
-    if db.order_exists(order_info['execute_only_after_id']) and not db.get_order_executed_status(order_info['execute_only_after_id']):
+    if (db.order_exists(order_info['execute_only_after_id']) and
+            not db.get_order_executed_status(order_info['execute_only_after_id'])):
         msg = 'rhapi.execute_order(): prerequisite ' \
             + f'{order_info["execute_only_after_id"]} ' \
             + 'not executed or does not exist.' \
