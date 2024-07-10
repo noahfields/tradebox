@@ -1,6 +1,5 @@
 import json
 import os
-import traceback
 import time
 import datetime
 
@@ -125,13 +124,9 @@ def execute_order(order_id: int) -> None:
     if order_info['buy_sell'] == 'buy':
         if order_info['market_limit'] == 'market':
             execute_market_buy_order(order_info)
-        elif order_info['market_limit'] == 'limit':
-            execute_limit_buy_order(order_info)
     elif order_info['buy_sell'] == 'sell':
         if order_info['market_limit'] == 'market':
             execute_market_sell_order(order_info)
-        elif order_info['market_limit'] == 'limit':
-            execute_limit_sell_order(order_info)
     else:
         msg = 'No valid order type selected.' \
             + f'buy/sell: {order_info["buy_sell"]} ' \
