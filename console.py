@@ -78,7 +78,7 @@ def print_open_positions():
 
 def print_http_link():
     order_id = pyip.inputInt('order #> ')
-    print(f'{config.TRADEBOX_APP_ADDRESS}/orders/execute/{order_id}')
+    print(f'{config.TRADEBOX_APP_ADDRESS}orders/execute/{order_id}')
 
 
 def execute_order():
