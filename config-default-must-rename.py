@@ -24,4 +24,5 @@ DATABASE_DIR = '.'
 DATABASE_NAME = 'db.sqlite3'  # change only if needed
 
 # LOGS
-LOG_DIR = '.'
+LOG_PARENT_DIR = '.'
+LOG_DIR_NAME = 'logs'
