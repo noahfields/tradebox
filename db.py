@@ -148,11 +148,19 @@ def get_order_executed_status(order_id: int) -> bool:
     conn = connection()
     cur = conn.cursor()
     cur.execute('SELECT executed FROM orders WHERE order_id=?', (order_id,))
-    res = cur.fetchall()[0][0]
+
+    try:
+        res = cur.fetchall()[0][0]
+        executed_status = bool(int(res))
+    except IndexError:
+        msg = f'db.get_order_executed_status(): {order_id} does not exist.'
+        log.append(msg)
+        executed_status = False
+
     cur.close()
     conn.close()
-    res = bool(int(res))
-    return res
+
+    return executed_status
 
 
 def get_console_formatted_orders_dataframe() -> pd.DataFrame:
