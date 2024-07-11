@@ -23,11 +23,6 @@ def execute_order(order_id: int) -> str:
     return str(order_id)
 
 
-@app.route('/console')
-def console() -> str:
-    return 'console'
-
-
 @app.route('/pythonversion')
 def python_version() -> str:
     now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
