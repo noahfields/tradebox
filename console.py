@@ -1,5 +1,5 @@
 """Terminal-based script to interact with Tradebox.
-To run, run 'python console.py' from your local tradebox directory.
+Run 'python console.py' from your local or server tradebox directory.
 """
 import pyinputplus as pyip
 
