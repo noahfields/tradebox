@@ -37,12 +37,24 @@ def python_version() -> str:
 
 if __name__ == '__main__':
     if config.ENVIRONMENT == 'production':
+        # Nginx/gunicorn (or other WSGI server) can use a socket file
+        # (e.g. tradebox/tradebox.socket)
+        # for WSGI interface.
+        # See the Github README.me for a link to setup instructions.
+        # You may need to define a port (port=int) in app.run()
+        # if not using a socket file.
         app.run(host='0.0.0.0')
     elif config.ENVIRONMENT == 'development':
-        app.run(host='0.0.0.0', port=5555, debug=True)
+        # Port 5555 to avoid conflict with MacOS port 5000.
+        # Flask default is 5000.
+        app.run(host='127.0.0.1', port=5555, debug=True)
     else:
         msg = 'config.ENVIRONMENT is not set or has an invalid value.\n' \
-            + 'Please define ENVIRONMENT=\'production\' or ENVIRONMENT=\'development\' ' \
-            + ' in config.py. \n Defaulting to production mode.'
+            + 'Please define ENVIRONMENT=\'production\' or ' \
+            + 'ENVIRONMENT=\'development\' ' \
+            + ' in config.py. \n Defaulting to development mode.'
         log.append(msg)
-        app.run(host='0.0.0.0')
+        # Port 5555 to avoid conflict with MacOS port 5000.
+        # Flask default is 5000.
+        app.run(host='127.0.0.1', port=5555, debug=True)
+        app.run()
