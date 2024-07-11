@@ -1,3 +1,6 @@
+"""Provides interface functions to Robinhood API 
+and helper functions to actions on the local database.
+"""
 import datetime
 import json
 import os

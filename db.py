@@ -1,3 +1,4 @@
+"""Provides functions to interact with local server database."""
 import datetime
 import os
 import sqlite3

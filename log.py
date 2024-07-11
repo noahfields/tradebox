@@ -1,3 +1,4 @@
+"""Provides server-side logging for Tradebox."""
 import datetime
 import os
 

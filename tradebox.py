@@ -1,3 +1,4 @@
+"""Flask server for Tradebox."""
 import sys
 import datetime
 

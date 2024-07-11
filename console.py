@@ -1,5 +1,6 @@
-# terminal entry system for tradebox
-import pandas
+"""Terminal-based script to interact with Tradebox.
+To run, run 'python console.py' from your local tradebox directory.
+"""
 import pyinputplus as pyip
 
 import db

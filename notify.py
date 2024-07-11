@@ -1,3 +1,4 @@
+"""Provides the ability to send plaintext email message reporting."""
 import smtplib
 import ssl
 
