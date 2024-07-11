@@ -1,4 +1,4 @@
-"""Provides interface functions to Robinhood API 
+"""Provides interface functions to Robinhood API
 and helper functions to actions on the local database.
 """
 import datetime
@@ -17,8 +17,9 @@ import notify
 
 def login() -> None:
     res = r.login(config.ROBINHOOD_USERNAME,
-                  config.ROBINHOOD_PASSWORD, expiresIn=config.ROBINHOOD_SESSION_EXPIRES_IN)
-    log.append(f'Logged in to Robinhood. \n{res}')
+                  config.ROBINHOOD_PASSWORD,
+                  expiresIn=config.ROBINHOOD_SESSION_EXPIRES_IN)
+    log.append(f'Logged in to Robinhood.\n{res}')
 
 
 def logout() -> None:
@@ -503,14 +504,13 @@ def execute_buy_emergency_fill(order_info: pd.Series, quantity_to_buy: int,
     ask_price = round(float(option_market_data['ask_price']), 2)
     log.append(f'emergency buy: bid price {ask_price}')
 
-    # 50% higher limit price than ask price
+    # 50% higher buy price than ask price, add on 5 cents for rounding
     buy_price = round((ask_price * 1.5) + 0.05, 2)
     log.append(f'emergency buy: 50% higher buy price plus 5 cents {buy_price}')
 
     # find nearest tick (just using .05 cents here)
     buy_price = round(round(buy_price * 10) / 10, 2)
-
-    log.append(f'emergency buy: revised buy price {buy_price}')
+    log.append(f'emergency buy: rounded buy price {buy_price}')
 
     order_result = r.orders.order_buy_option_limit(
         'close', 'credit', buy_price, order_info['symbol'], quantity_to_buy,
@@ -523,7 +523,7 @@ def execute_buy_emergency_fill(order_info: pd.Series, quantity_to_buy: int,
     time.sleep(10)
 
     res = r.orders.cancel_option_order(order_result['id'])
-    msg = 'Emergency buy order made. Cancelling after 10 seconds. ' \
+    msg = 'Emergency buy order made. Canceled order after 10 seconds. ' \
         + f'Result of cancellation: {json.dumps(res)}'
     log.append(msg)
 
