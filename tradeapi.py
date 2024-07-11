@@ -124,14 +124,10 @@ def execute_order(order_id: int) -> None:
         order_info['execution_deactivates_order_id'], False)
 
     # select correct order function
-    # CHANGE THIS TO throw an exception and catch it if order type is invalid
-    # or fix conditionals
-    if order_info['buy_sell'] == 'buy':
-        if order_info['market_limit'] == 'market':
-            execute_market_buy_order(order_info)
-    elif order_info['buy_sell'] == 'sell':
-        if order_info['market_limit'] == 'market':
-            execute_market_sell_order(order_info)
+    if order_info['buy_sell'] == 'buy' and order_info['market_limit'] == 'market':
+        execute_market_buy_order(order_info)
+    elif order_info['buy_sell'] == 'sell' and order_info['market_limit'] == 'market':
+        execute_market_sell_order(order_info)
     else:
         msg = 'No valid order type selected.' \
             + f'buy/sell: {order_info["buy_sell"]} ' \
