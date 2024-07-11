@@ -1,5 +1,0 @@
-- add emergency sell functionality with a flag in the database to trigger this function if the sell order comes up short
-    - create new function in tradeapi to do this
-    - call function from execute_market_sell if flag is True
-
-- same thing for buy function
