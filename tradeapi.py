@@ -237,7 +237,10 @@ def execute_market_buy_order(order_info: pd.Series) -> None:
     prepend_msg = f'Ex\'d #{order_info["order_id"]}. Bought {quantity_bought} ' \
         + f'{order_info["symbol"]} {order_info["call_put"]} ' \
         + f' {order_info["expiration_date"]} {order_info["strike"]}. ' \
-        + f'Cur pos: {actual_closing_position_size}.'
+        + f'Cur pos: {actual_closing_position_size}. ' \
+        + f'Beg pos: {opening_position_size} ' \
+        + f'Goal pos: {goal_final_position_size} '
+
     log.append(prepend_msg)
 
     if current_position_size < goal_final_position_size:
