@@ -515,7 +515,7 @@ def execute_buy_emergency_fill(order_info: pd.Series, quantity_to_buy: int,
     log.append(f'emergency buy: rounded buy price {buy_price}')
 
     order_result = r.orders.order_buy_option_limit(
-        'close', 'credit', buy_price, order_info['symbol'], quantity_to_buy,
+        'close', 'debit', buy_price, order_info['symbol'], quantity_to_buy,
         order_info['expiration_date'], order_info['strike'],
         optionType=order_info['call_put'], timeInForce='gtc')
 
