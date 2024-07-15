@@ -88,10 +88,10 @@ def execute_order(order_id: int) -> None:
         return
 
     log.append('HELLLOOOO')
-    log.append(str(bool(order_info['active'])))
+    log.append(str(bool(int(order_info['active']))))
 
     # abort if inactive
-    if bool(order_info['active']) is False:
+    if bool(int(order_info['active'])) is False:
         msg = f'tradeapi.execute_order(): order #{order_id} ' \
             + 'is not active. Aborting execution.'
         log.append(msg)
