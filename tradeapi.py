@@ -368,7 +368,10 @@ def execute_market_sell_order(order_info: pd.Series) -> None:
     msg = f'Ex\'d ord{order_info["order_id"]}. Sold {quantity_sold} ' \
         + f'{order_info["symbol"]} {order_info["call_put"]} ' \
         + f'{order_info["expiration_date"]} {order_info["strike"]}. ' \
-        + f'Cur pos: {actual_closing_position_size}.'
+        + f'Cur pos: {actual_closing_position_size}. ' \
+        + f'Open pos: {opening_position_size} ' \
+        + f'Goal pos: {goal_final_position_size} ' \
+        + f'Init cls pos: {actual_closing_position_size}'
 
     log.append(msg)
 
@@ -479,7 +482,7 @@ def execute_sell_emergency_fill(order_info: pd.Series, quantity_to_sell: int,
         + f'{after_emergency_position_quantity}'
     log.append(msg)
 
-    msg = f'ES new qty: {after_emergency_position_quantity} ' \
+    msg = f'ES fnl qty: {after_emergency_position_quantity} ' \
         + f'{datetime.datetime.now().strftime("%d %H:%M:%S")}'
 
     log.append(f'{prepend_message} {msg}')
