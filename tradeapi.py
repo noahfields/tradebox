@@ -87,8 +87,8 @@ def execute_order(order_id: int) -> None:
         log.append(msg)
         return
 
-    print('HELLLOOOO')
-    print(bool(order_info['active']))
+    log.append('HELLLOOOO')
+    log.append(bool(order_info['active']))
 
     # abort if inactive
     if bool(order_info['active']) is False:
