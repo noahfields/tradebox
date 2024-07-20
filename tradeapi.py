@@ -152,8 +152,8 @@ def get_option_instrument_data(symbol: str, call_put: str, strike: float,
 
 
 def execute_market_buy_order(order_info: pd.Series) -> None:
-    msg = f'Begin execute_market_buy_order for order #{
-        order_info["order_id"]}.'
+    msg = 'Begin execute_market_buy_order for order #' \
+        + f'{order_info["order_id"]}.'
     log.append(msg)
     log.append(f'Tradebox order info: \n{order_info.to_string()}')
 
