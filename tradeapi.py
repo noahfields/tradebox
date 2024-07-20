@@ -178,8 +178,8 @@ def execute_market_buy_order(order_info: pd.Series) -> None:
 
     goal_final_position_size = current_position_size + \
         int(order_info['quantity'])
-    log.append(f'Calculated goal final position size: {
-               goal_final_position_size}')
+    log.append('Calculated goal final position size: '
+               + f'{goal_final_position_size}')
 
     order_cancel_ids = []
 
