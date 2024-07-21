@@ -565,7 +565,7 @@ def execute_sell_emergency_fill(
 
     msg = (
         f"ES fnl qty: {after_emergency_position_quantity} "
-        + f'{datetime.datetime.now().strftime("%d %H:%M:%S")}'
+        + f"{datetime.datetime.now().strftime('%H:%M:%S')}"
     )
     log.append(f"{prepend_message} {msg}")
 
@@ -644,7 +644,7 @@ def execute_buy_emergency_fill(
 
     msg = (
         f"EB new qty: {after_emergency_position_quantity} "
-        + f'{datetime.datetime.now().strftime("%d %H:%M:%S")}'
+        + f'{datetime.datetime.now().strftime("%H:%M:%S")}'
     )
 
     log.append(f"{prepend_message} {msg}")

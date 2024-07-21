@@ -178,7 +178,10 @@ def set_order_executed_status(order_id: int, executed: bool) -> None:
 
 
 def set_order_active_status(order_id: int, active: bool) -> None:
-    order_id = int(order_id)
+    try:
+        order_id = int(order_id)
+    except:
+        return
 
     conn = connection()
     cur = conn.cursor()
