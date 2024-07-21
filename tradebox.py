@@ -14,7 +14,14 @@ app = Flask(__name__)
 
 @app.route('/')
 def index() -> str:
-    return 'tradebox'
+    current_datetime_string = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
+    python_version = sys.version
+
+    html = 'Welcome to Tradebox. <br />' \
+         + f'Current date and time: {current_datetime_string} <br/>' \
+         + f'Python version: {python_version}'
+    
+    return html
 
 
 @app.route('/orders/execute/<order_id>', methods=['POST', 'GET'])
@@ -24,13 +31,6 @@ def execute_order(order_id: int) -> str:
 
     tradeapi.execute_order(order_id)
     return str(order_id)
-
-
-@app.route('/pythonversion')
-def python_version() -> str:
-    now = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')
-    python_version = sys.version
-    return f'{now} <br/><br/> {python_version}'
 
 
 if __name__ == '__main__':
