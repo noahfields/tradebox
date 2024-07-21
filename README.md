@@ -1,3 +1,6 @@
+NOT PRODUCTION READY - JULY 24, 2024
+PLEASE DO NOT USE
+
 Trade API and console for requests to the Robinhood Trade API.
 
 For help setting up a server on Debian or Ubuntu:
