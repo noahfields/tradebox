@@ -1,4 +1,5 @@
 """Provides the ability to send plaintext email message reporting."""
+
 import smtplib
 import ssl
 
@@ -13,6 +14,9 @@ RECIPIENT = config.NOTIFICATION_ADDRESS
 
 def send_plaintext_email(message):
     context = ssl.create_default_context()
+
+    # try to exclude extra server footers for cleanliness
+    message = message + "\n\n\n\n\n\n\n\n"
 
     with smtplib.SMTP_SSL(SERVER, PORT, context=context) as server:
         server.login(USEREMAIL, PASSWORD)
