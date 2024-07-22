@@ -33,6 +33,13 @@ def index() -> str:
 @app.route('/orders/execute/<order_id>', methods=['POST', 'GET'])
 def execute_order(order_id: int) -> str:
     try:
+        order_id = int(order_id)
+    except ValueError:
+        msg = f'tradebox.execute_order({order_id}). order_id: "{order_id}" is not a valid integer.'
+        log.append(msg)
+        return 'Error.'
+
+    try:
         msg = f'tradebox.py: execute_order(): executing order_id {order_id}. \n' \
             + f'Entering tradeapi.execute_order({order_id}).'
         log.append(msg)
