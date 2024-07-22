@@ -23,7 +23,7 @@ def login() -> None:
         expiresIn=config.ROBINHOOD_SESSION_EXPIRES_IN,
     )
 
-    msg = f'Logged in to Robinhood: \n{res}'
+    msg = f'tradeapi.login(): Logged in to Robinhood: \n{res}'
     log.append(msg)
 
 
@@ -125,6 +125,7 @@ def execute_order(order_id: int) -> None:
     msg = f'Begin tradeapi.py:execute_order() for order {order_id}.'
     log.append(msg)
 
+    login()
 
     # get order information from local database
     try:
@@ -383,7 +384,6 @@ def execute_market_buy_order(order_info: pd.Series) -> None:
     # Emergency fill if goal quantity not met
     if trade_progress_info['current_position_size'] < trade_progress_info['goal_final_position_size']:
         log.append('tradeapi.execute_market_buy_order did not fill completely.')
-
         if bool(order_info['emergency_order_fill_on_failure']) is True:
             log.append('emergency buy fill is activated')
             quantity_to_buy =  trade_progress_info['goal_final_position_size'] - trade_progress_info['current_position_size']
@@ -393,6 +393,8 @@ def execute_market_buy_order(order_info: pd.Series) -> None:
             log.append(email_message_part_one)
             notify.send_plaintext_email(email_message_part_one)
             log.append('Email/text notification sent.')
+    else:
+        log.append('No emergency fill required based on position quantity.')
 
 
     # Re-cancel all orders at conclusion
@@ -592,9 +594,13 @@ def execute_market_sell_order(order_info: pd.Series) -> None:
 
     # Emergency fill if goal quantity not met
     if bool(int(order_info['emergency_order_fill_on_failure'])) is True:
+        log.append('Emergency fill enabled.')
         if isinstance(trade_progress_info['actual_closing_position_size'], int) and (trade_progress_info['actual_closing_position_size'] > trade_progress_info['goal_final_position_size']):
+            log.append('Emergency fill executing.')
             quantity_to_sell = trade_progress_info['actual_closing_position_size'] - trade_progress_info['goal_final_position_size']
             execute_sell_emergency_fill(order_info, quantity_to_sell, email_message_part_one)
+        else:
+            log.append('Emergency fill not required based on current position size.')
     else:
         log.append('No emergency fill ordered.')
         log.append(email_message_part_one)

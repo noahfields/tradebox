@@ -5,6 +5,7 @@ import sys
 
 from flask import Flask
 
+
 import config
 import log
 import tradeapi
