@@ -40,28 +40,30 @@ def drop_orders_table() -> None:
 
 
 def insert_order(
-    buy_sell: str,
-    symbol: str,
-    expiration_date: str,
-    strike: float,
-    call_put: str,
-    quantity: int,
-    market_limit: str,
-    emergency_order_fill_on_failure: bool,
-    active: bool,
-    message_on_success: str,
-    message_on_failure: str,
-    execute_only_after_id: int,
-    execution_deactivates_order_id: int,
-    max_order_attempts: int,
-    limit_price: float,
-    rh_option_uuid: str,
-    below_tick: float,
-    above_tick: float,
-    cutoff_price: float,
-) -> None:
+        buy_sell: str,
+        symbol: str,
+        expiration_date: str,
+        strike: float,
+        call_put: str,
+        quantity: int,
+        market_limit: str,
+        emergency_order_fill_on_failure: bool,
+        active: bool,
+        message_on_success: str,
+        message_on_failure: str,
+        execute_only_after_id: int,
+        execution_deactivates_order_id: int,
+        max_order_attempts: int,
+        limit_price: float,
+        rh_option_uuid: str,
+        below_tick: float,
+        above_tick: float,
+        cutoff_price: float,
+        ) -> None:
     conn = connection()
+
     created_at = datetime.datetime.now()
+
     conn.execute(
         "INSERT INTO orders(created_at, rh_option_uuid, execute_only_after_id, "
         "buy_sell, symbol, expiration_date, strike, call_put, quantity, "
@@ -97,6 +99,13 @@ def insert_order(
 
 
 def delete_order(order_id: int) -> None:
+    try:
+        order_id = int(order_id)
+    except ValueError:
+        msg = f'db.delete_order({order_id}): ValueError.'
+        log.append(msg)
+        return False
+
     conn = connection()
     conn.execute("DELETE FROM orders WHERE order_id = ?;", (order_id,))
     conn.commit()
@@ -111,6 +120,13 @@ def delete_all_orders() -> None:
 
 
 def fetch_order_sql(order_id: int) -> tuple:
+    try:
+        order_id = int(order_id)
+    except ValueError:
+        msg = f'db.fetch_order_sql({order_id}): ValueError.'
+        log.append(msg)
+        return None
+
     conn = connection()
     cur = conn.cursor()
     res = cur.execute("SELECT * FROM orders WHERE order_id=?;", (order_id,))
@@ -122,6 +138,13 @@ def fetch_order_sql(order_id: int) -> tuple:
 
 
 def order_exists(order_id: int) -> bool:
+    try:
+        order_id = int(order_id)
+    except ValueError:
+        msg = f'db.order_exists({order_id}): order # is not an int. ValueError exception. Returning False.'
+        log.append(msg)
+        return False
+
     conn = connection()
     cur = conn.cursor()
     cur.execute("SELECT * FROM orders WHERE order_id=?;", (order_id,))
@@ -136,10 +159,15 @@ def order_exists(order_id: int) -> bool:
 
 
 def get_order_series(order_id: int) -> pd.Series:
+    try:
+        order_id = int(order_id)
+    except ValueError:
+        msg = f'db.get_order_series({order_id}): ValueError exception. Returning None.'
+        log.append(msg)
+        return None
+
     conn = connection()
-    order_dataframe = pd.read_sql(
-        f"SELECT * FROM orders WHERE order_id={order_id};", conn
-    )
+    order_dataframe = pd.read_sql(f"SELECT * FROM orders WHERE order_id={order_id};", conn)
     order_series = order_dataframe.loc[0]
     conn.close()
     return order_series
@@ -163,15 +191,17 @@ def fetch_all_orders_dataframe() -> pd.DataFrame:
 
 
 def set_order_executed_status(order_id: int, executed: bool) -> None:
+    try:
+        order_id = int(order_id)
+        executed = bool(int(executed))
+    except ValueError:
+        msg = f'db.set_order_executed_status({order_id, executed}): ValueError exception. Returning False.'
+        log.append(msg)
+        return False
+    
     conn = connection()
     cur = conn.cursor()
-    cur.execute(
-        "UPDATE orders SET executed=? WHERE order_id=?",
-        (
-            executed,
-            order_id,
-        ),
-    )
+    cur.execute("UPDATE orders SET executed=? WHERE order_id=?", (executed, order_id))
     conn.commit()
     cur.close()
     conn.close()
@@ -180,30 +210,44 @@ def set_order_executed_status(order_id: int, executed: bool) -> None:
 def set_order_active_status(order_id: int, active: bool) -> None:
     try:
         order_id = int(order_id)
-    except:
+    except ValueError:
+        msg = f'db.set_order_active_status({order_id}, {active}): order_id {order_id} is not an integer.\n' \
+            + 'Exiting db.set_order_active_status(). No active statuses changed.'
+        log.append(msg)
+        return
+    
+    try:
+        active = bool(int(active))
+    except ValueError:
+        msg = f'db.set_order_active_status({order_id}, {active}):active {active} is not a bool.\n' \
+            + 'Exiting db.set_order_active_status(). No active statuses changed.'
+        log.append(msg)
         return
 
     conn = connection()
     cur = conn.cursor()
-    cur.execute(
-        "UPDATE orders SET active=? WHERE order_id=?",
-        (
-            active,
-            order_id,
-        ),
-    )
+    cur.execute("UPDATE orders SET active=? WHERE order_id=?", (active, order_id))
     conn.commit()
     cur.close()
     conn.close()
 
 
 def get_order_executed_status(order_id: int) -> bool:
+    # Force python int
+    try:
+        order_id = int(order_id)
+    except ValueError:
+        msg = 'db.get_order_executed_status(): ValueError\nProbably checked an empty string.\nReturning execution status as False.'
+        log.append(msg)
+        return False
+
     conn = connection()
     cur = conn.cursor()
     cur.execute("SELECT executed FROM orders WHERE order_id=?", (order_id,))
 
     try:
         res = cur.fetchall()[0][0]
+        print(f'RES: {res}')
         executed_status = bool(int(res))
     except IndexError:
         msg = f"db.get_order_executed_status(): {order_id} does not exist."
@@ -239,25 +283,25 @@ def get_console_formatted_orders_dataframe() -> pd.DataFrame:
     return order_dataframe
 
 
-def set_execution_deactivates_order_id(order_id: int) -> None:
-    """pending deletion if not needed. probably can just use set_order_active_status"""
-    conn = connection()
-    cur = conn.cursor()
-    cur.execute(
-        "SELECT execution_deactivates_order_id FROM orders WHERE order_id = ?",
-        (order_id,),
-    )
-    order_id_to_deactivate = str(cur.fetchall()[0][0])
+# def set_execution_deactivates_order_id(order_id: int) -> None:
+#     """pending deletion if not needed. probably can just use set_order_active_status"""
+#     conn = connection()
+#     cur = conn.cursor()
+#     cur.execute(
+#         "SELECT execution_deactivates_order_id FROM orders WHERE order_id = ?",
+#         (order_id,),
+#     )
+#     order_id_to_deactivate = str(cur.fetchall()[0][0])
 
-    if order_id_to_deactivate == "":
-        log.append(f"Order #{order_id} has no order to deactivate. Moving on.")
-        return
+#     if order_id_to_deactivate == "":
+#         log.append(f"Order #{order_id} has no order to deactivate. Moving on.")
+#         return
 
-    cur.execute(
-        "UPDATE orders SET active=? WHERE order_id=?", (0, order_id_to_deactivate)
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
+#     cur.execute(
+#         "UPDATE orders SET active=? WHERE order_id=?", (0, order_id_to_deactivate)
+#     )
+#     conn.commit()
+#     cur.close()
+#     conn.close()
 
-    log.append(f"Deactivated order #{order_id_to_deactivate}.")
+#     log.append(f"Deactivated order #{order_id_to_deactivate}.")

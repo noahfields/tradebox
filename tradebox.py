@@ -18,19 +18,21 @@ def index() -> str:
     python_version = sys.version
 
     html = 'Welcome to Tradebox. <br />' \
-         + f'Current date and time: {current_datetime_string} <br/>' \
+         + f'Current date and time: {current_datetime_string} <br />' \
          + f'Python version: {python_version}'
-    
     return html
 
 
 @app.route('/orders/execute/<order_id>', methods=['POST', 'GET'])
 def execute_order(order_id: int) -> str:
-    msg = f'tradebox.py: execute_order(): executing order_id {order_id}'
+    msg = f'tradebox.py: execute_order(): executing order_id {order_id}. \n' \
+        + f'Entering tradeapi.execute_order({order_id}).'
     log.append(msg)
 
     tradeapi.execute_order(order_id)
-    return str(order_id)
+
+    html = f'Attempted to execute {order_id}.'
+    return html
 
 
 if __name__ == '__main__':
