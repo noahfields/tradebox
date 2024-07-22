@@ -19,31 +19,23 @@ def recreate_orders_table():
 
 
 def create_order():
-    buy_sell = pyip.inputStr(
-        'buy/sell> ', blockRegexes=[r'.*'], allowRegexes=['buy', 'sell'])
+    buy_sell = pyip.inputStr('buy/sell> ', blockRegexes=[r'.*'], allowRegexes=['buy', 'sell'])
     quantity = pyip.inputInt('quantity> ')
-    call_put = pyip.inputStr(
-        'call/put> ', blockRegexes=[r'.*'], allowRegexes=['call', 'put'])
+    call_put = pyip.inputStr('call/put> ', blockRegexes=[r'.*'], allowRegexes=['call', 'put'])
     symbol = pyip.inputStr('symbol> ').upper()
-    expiration_date = pyip.inputDate(
-        'expiration_date> ', formats=['%Y-%m-%d']).strftime('%Y-%m-%d')
+    expiration_date = pyip.inputDate('expiration_date> ', formats=['%Y-%m-%d']).strftime('%Y-%m-%d')
     strike = pyip.inputFloat('strike> ')
-    market_limit = pyip.inputStr(
-        'market/limit> ',
-        blockRegexes=[r'.*'], allowRegexes=['market', 'limit'])
+    market_limit = pyip.inputStr('market/limit> ', blockRegexes=[r'.*'], allowRegexes=['market', 'limit'])
     limit_price = 0.0
     if market_limit == 'limit':
         limit_price = pyip.inputFloat('limit price> ')
     active = pyip.inputBool('order active? (True/False)> ')
-    execute_only_after_id = pyip.inputInt(
-        'execute only after order #> ', blank=True)
-    execution_deactivates_order_id = pyip.inputInt(
-        'execution deactivates order #> ', blank=True)
+    execute_only_after_id = pyip.inputInt('execute only after order #> ', blank=True)
+    execution_deactivates_order_id = pyip.inputInt('execution deactivates order #> ', blank=True)
     message_on_success = pyip.inputStr('success msg> ', blank=True)
     message_on_failure = pyip.inputStr('failure msg> ', blank=True)
     max_order_attempts = pyip.inputInt('max order attempts (recommend 10)> ')
-    emergency_order_fill_on_failure = pyip.inputBool(
-        'emergency fill on failure? (True/False)> ')
+    emergency_order_fill_on_failure = pyip.inputBool('emergency fill on failure? (True/False)> ')
 
     tradeapi.create_order(buy_sell, symbol, expiration_date, strike, call_put,
                           quantity, market_limit, emergency_order_fill_on_failure, limit_price=limit_price,
