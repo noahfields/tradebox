@@ -2,15 +2,21 @@
 
 import datetime
 import sys
+import traceback
 
 from flask import Flask
-
 
 import config
 import log
 import tradeapi
 
 app = Flask(__name__)
+
+
+def log_traceback(ex):
+    tb_lines = traceback.format_exception(ex.__class__, ex, ex.__traceback__)
+    tb_text = ''.join(tb_lines)
+    log.append(tb_text)
 
 
 @app.route('/')
@@ -26,14 +32,19 @@ def index() -> str:
 
 @app.route('/orders/execute/<order_id>', methods=['POST', 'GET'])
 def execute_order(order_id: int) -> str:
-    msg = f'tradebox.py: execute_order(): executing order_id {order_id}. \n' \
-        + f'Entering tradeapi.execute_order({order_id}).'
-    log.append(msg)
+    try:
+        msg = f'tradebox.py: execute_order(): executing order_id {order_id}. \n' \
+            + f'Entering tradeapi.execute_order({order_id}).'
+        log.append(msg)
 
-    tradeapi.execute_order(order_id)
+        tradeapi.execute_order(order_id)
 
-    html = f'Attempted to execute {order_id}.'
-    return html
+        html = f'Executed order #{order_id}.'
+        return html
+    except Exception as ex:
+        log_traceback(ex)
+        html = f'There was an issue executing order #{order_id}. Writing traceback to log file.'
+        return html
 
 
 if __name__ == '__main__':
