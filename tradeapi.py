@@ -152,14 +152,16 @@ def execute_order(order_id: int) -> None:
     # continue execution 
     # if prequisitve order
     # exists and has executed
+    msg = f'Checking to see if prerequisite order #"{order_info['execute_only_after_id']}" exists.'
+    log.append(msg)
     if db.order_exists(order_info['execute_only_after_id']) is True:
         if db.get_order_executed_status(order_info['execute_only_after_id']) is True:
-            msg = f'Prerequisite order #{order_info["execute_only_after_id"]} has executed. ' \
+            msg = f'Prerequisite order exists and has executed.\n' \
             + f'Continuing execution of order #{order_id}.'  
             log.append(msg)
         else:
-            msg = f'Prerequisite order #{order_info["execute_only_after_id"]} has not executed. ' \
-            + f'Cancelling execution of order #{order_id}.'  
+            msg = f'Prerequisite order exists but has not executed.\n' \
+            + f'Cancelling execution of order #{order_id}.'
             log.append(msg)
             return
     else:
@@ -171,15 +173,16 @@ def execute_order(order_id: int) -> None:
 
     # mark trade as executed
     db.set_order_executed_status(order_id, True)
-    log.append(f'Marked order number {order_id} as executed.')
+    log.append(f'Updated order number {order_id} as executed.')
 
     # set order as inactive
     db.set_order_active_status(order_id, False)
-    log.append(f'Marked order number {order_id} as inactive.')
+    log.append(f'Updated order number {order_id} as inactive.')
 
     # deactivate check
+    msg = f'Attempting to deactivate order #{order_info["execution_deactivates_order_id"]}. (execution deactivates order id#)'
+    log.append(msg)
     db.set_order_active_status(order_info['execution_deactivates_order_id'], False)
-    log.append(f'Deactivating order #{order_info["execution_deactivates_order_id"]}')
 
 
     # select correct order function
@@ -290,6 +293,13 @@ def execute_market_buy_order(order_info: pd.Series) -> None:
         option_market_data = r.options.get_option_market_data_by_id(order_info['rh_option_uuid'])[0]
         log.append(f'Current raw market data: {json.dumps(option_market_data)}')
 
+        # log qty and ask price
+        msg = (
+            'Attempting to buy\n'
+            + f'{trade_progress_info["remaining_quantity_to_execute"]} options at {str(float(option_market_data["ask_price"]))}'
+        )
+        log.append(msg)
+
         # place order
         order_result = r.orders.order_buy_option_limit(
             'open',
@@ -385,16 +395,17 @@ def execute_market_buy_order(order_info: pd.Series) -> None:
     if trade_progress_info['current_position_size'] < trade_progress_info['goal_final_position_size']:
         log.append('tradeapi.execute_market_buy_order did not fill completely.')
         if bool(order_info['emergency_order_fill_on_failure']) is True:
-            log.append('emergency buy fill is activated')
+            log.append('Emergency buy fill is activated. Executing emergency fill.')
             quantity_to_buy =  trade_progress_info['goal_final_position_size'] - trade_progress_info['current_position_size']
             execute_buy_emergency_fill(order_info, quantity_to_buy, email_message_part_one)
         else:
-            log.append('No emergency fill ordered.')
-            log.append(email_message_part_one)
+            log.append('No emergency fill is ordered. Goal quantity met was not met, but emegency fill was not set to execute.')
             notify.send_plaintext_email(email_message_part_one)
             log.append('Email/text notification sent.')
     else:
         log.append('No emergency fill required based on position quantity.')
+        notify.send_plaintext_email(email_message_part_one)
+        log.append('Email/text notification sent.')
 
 
     # Re-cancel all orders at conclusion
@@ -505,6 +516,13 @@ def execute_market_sell_order(order_info: pd.Series) -> None:
         option_market_data = r.options.get_option_market_data_by_id(order_info['rh_option_uuid'])[0]
         log.append(f'Current raw market data: {json.dumps(option_market_data)}')
 
+        # log qty and bid price
+        msg = (
+            'Attempting to sell\n'
+            + f'{trade_progress_info["remaining_quantity_to_execute"]} options at {str(float(option_market_data["bid_price"]))}'
+        )
+        log.append(msg)
+        
         # Place order
         order_result = r.orders.order_sell_option_limit(
             'close',
@@ -601,6 +619,9 @@ def execute_market_sell_order(order_info: pd.Series) -> None:
             execute_sell_emergency_fill(order_info, quantity_to_sell, email_message_part_one)
         else:
             log.append('Emergency fill not required based on current position size.')
+            log.append(email_message_part_one)
+            notify.send_plaintext_email(email_message_part_one)
+            log.append('Email/text notification sent.')
     else:
         log.append('No emergency fill ordered.')
         log.append(email_message_part_one)

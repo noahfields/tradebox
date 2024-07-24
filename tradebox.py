@@ -37,7 +37,9 @@ def execute_order(order_id: int) -> str:
     except ValueError:
         msg = f'tradebox.execute_order({order_id}). order_id: "{order_id}" is not a valid integer.'
         log.append(msg)
-        return 'Error.'
+
+        html = 'error'
+        return html
 
     try:
         msg = f'tradebox.py: execute_order(): executing order_id {order_id}. \n' \
