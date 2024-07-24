@@ -380,12 +380,12 @@ def execute_market_buy_order(order_info: pd.Series) -> None:
     # if emergency order fill is not activated
     # otherwise it will be prepended to the emergency order email/text
     email_message_part_one = (
-        f'{start_timestamp} Exd #{order_info["order_id"]}. Bought {quantity_bought} '
-        + f'{order_info["symbol"]} {order_info["call_put"]} '
-        + f' {order_info["expiration_date"]} {order_info["strike"]}. '
-        + f'Cur pos: {trade_progress_info["actual_closing_position_size"]}. '
-        + f'Strt pos: {trade_progress_info["opening_position_size"]} '
-        + f'Goal pos: {trade_progress_info["goal_final_position_size"]} '
+        f'Exd#{order_info["order_id"]}'
+        + f'{order_info["symbol"]}{order_info["call_put"]}'
+        + f'{order_info["expiration_date"]}{order_info["strike"]}'
+        + f'Cur{trade_progress_info["actual_closing_position_size"]}'
+        + f'St{trade_progress_info["opening_position_size"]}'
+        + f'Gl{trade_progress_info["goal_final_position_size"]}'
     )
 
     log.append(email_message_part_one)
@@ -590,6 +590,7 @@ def execute_market_sell_order(order_info: pd.Series) -> None:
     open_option_positions = r.options.get_open_option_positions()
     for open_pos in open_option_positions:
         if open_pos['option_id'] == order_info['rh_option_uuid']:
+            trade_progress_info['current_position_size'] = int(float(open_pos['quantity']))
             trade_progress_info['actual_closing_position_size'] = int(float(open_pos['quantity']))
     log.append(f'Opening position size: {trade_progress_info["opening_position_size"]}')
     log.append(f'Current position size: {trade_progress_info["current_position_size"]}')
@@ -599,13 +600,12 @@ def execute_market_sell_order(order_info: pd.Series) -> None:
 
     # build initial message report
     email_message_part_one = (
-        f'{start_timestamp} Exd ord{order_info["order_id"]}. '
-        + f'{order_info["symbol"]} {order_info["call_put"]} '
-        + f'{order_info["expiration_date"]} {order_info["strike"]}. '
-        + f'Cur pos: {trade_progress_info["current_position_size"]}. '
-        + f'Strt pos: {trade_progress_info["opening_position_size"]} '
-        + f'Goal pos: {trade_progress_info["goal_final_position_size"]} '
-        + f'Act cls pos: {trade_progress_info["actual_closing_position_size"]}'
+        f'Exd#{order_info["order_id"]}'
+        + f'{order_info["symbol"]}{order_info["call_put"]}'
+        + f'{order_info["expiration_date"]}{order_info["strike"]}'
+        + f'Cur{trade_progress_info["current_position_size"]}'
+        + f'St{trade_progress_info["opening_position_size"]}'
+        + f'Gl{trade_progress_info["goal_final_position_size"]}'
     )
     log.append(email_message_part_one)
 
@@ -753,8 +753,7 @@ def execute_sell_emergency_fill(order_info: pd.Series, quantity_to_sell: int, pr
     log.append(msg)
 
     msg = (
-        f'ES fnl qty: {after_emergency_position_quantity} '
-        + f'{datetime.datetime.now().strftime("%H:%M:%S")}'
+        f'ESq{after_emergency_position_quantity}'
     )
     log.append(f'{prepend_message} {msg}')
 
@@ -827,8 +826,7 @@ def execute_buy_emergency_fill(order_info: pd.Series, quantity_to_buy: int, prep
     log.append(msg)
 
     msg = (
-        f'EB new qty: {after_emergency_position_quantity} '
-        + f'{datetime.datetime.now().strftime("%H:%M:%S")}'
+        f'Eq{after_emergency_position_quantity}'
     )
 
     log.append(f'{prepend_message} {msg}')
