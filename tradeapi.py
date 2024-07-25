@@ -515,11 +515,14 @@ def execute_market_sell_order(order_info: pd.Series) -> None:
         # Get Robinhood option market data
         option_market_data = r.options.get_option_market_data_by_id(order_info['rh_option_uuid'])[0]
         log.append(f'Current raw market data: {json.dumps(option_market_data)}')
+        this_order_sell_price = float(option_market_data['bid_price'])
+        if this_order_sell_price == 0.0:
+            this_order_sell_price = 0.1
 
         # log qty and bid price
         msg = (
             'Attempting to sell\n'
-            + f'{trade_progress_info["remaining_quantity_to_execute"]} options at {str(float(option_market_data["bid_price"]))}'
+            + f'{trade_progress_info["remaining_quantity_to_execute"]} options at {str(this_order_sell_price)}'
         )
         log.append(msg)
         
@@ -527,7 +530,7 @@ def execute_market_sell_order(order_info: pd.Series) -> None:
         order_result = r.orders.order_sell_option_limit(
             'close',
             'credit',
-            option_market_data['bid_price'],
+            this_order_sell_price,
             order_info['symbol'],
             trade_progress_info['remaining_quantity_to_execute'],
             order_info['expiration_date'],
