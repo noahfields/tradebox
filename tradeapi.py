@@ -744,7 +744,7 @@ def execute_sell_emergency_fill(order_info: pd.Series, quantity_to_sell: int, pr
     time.sleep(2)
 
     open_option_positions = r.options.get_open_option_positions()
-    after_emergency_position_quantity = 'err or 0'
+    after_emergency_position_quantity = 'none'
     for open_pos in open_option_positions:
         if open_pos['option_id'] == order_info['rh_option_uuid']:
             after_emergency_position_quantity = int(float(open_pos['quantity']))
@@ -756,7 +756,7 @@ def execute_sell_emergency_fill(order_info: pd.Series, quantity_to_sell: int, pr
     log.append(msg)
 
     msg = (
-        f'ESq{after_emergency_position_quantity}'
+        f'ESf{after_emergency_position_quantity}'
     )
     log.append(f'{prepend_message} {msg}')
 
@@ -829,7 +829,7 @@ def execute_buy_emergency_fill(order_info: pd.Series, quantity_to_buy: int, prep
     log.append(msg)
 
     msg = (
-        f'Eq{after_emergency_position_quantity}'
+        f'EBf{after_emergency_position_quantity}'
     )
 
     log.append(f'{prepend_message} {msg}')
