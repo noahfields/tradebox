@@ -81,7 +81,14 @@ def execute_order():
 
 if __name__ == '__main__':
     # make sure tradebox is logged in
-    tradeapi.login()
+
+    #try stored local session
+    try:
+        tradeapi.login()
+    #if stored login session is not available or expired
+    except KeyError as ke:
+        mfa_code = input("MFA Code: ")
+        tradeapi.login(mfa_code=mfa_code)
 
     db.create_orders_table()
 

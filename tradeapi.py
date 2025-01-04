@@ -16,11 +16,12 @@ import log
 import notify
 
 
-def login() -> None:
+def login(mfa_code=None) -> None:
     res = r.login(
         config.ROBINHOOD_USERNAME,
         config.ROBINHOOD_PASSWORD,
         expiresIn=config.ROBINHOOD_SESSION_EXPIRES_IN,
+        mfa_code=mfa_code
     )
 
     msg = f'tradeapi.login(): Logged in to Robinhood: \n{res}'
