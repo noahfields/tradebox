@@ -381,7 +381,7 @@ def execute_market_buy_order(order_info: pd.Series) -> None:
     # if emergency order fill is not activated
     # otherwise it will be prepended to the emergency order email/text
     email_message_part_one = (
-        f'Exd#{order_info["order_id"]}'
+        f'BUYExd#{order_info["order_id"]}'
         + f'{order_info["symbol"]}{order_info["call_put"]}'
         + f'{order_info["expiration_date"]}{order_info["strike"]}'
         + f'Cur{trade_progress_info["actual_closing_position_size"]}'
@@ -604,7 +604,7 @@ def execute_market_sell_order(order_info: pd.Series) -> None:
 
     # build initial message report
     email_message_part_one = (
-        f'Exd#{order_info["order_id"]}'
+        f'SELLExd#{order_info["order_id"]}'
         + f'{order_info["symbol"]}{order_info["call_put"]}'
         + f'{order_info["expiration_date"]}{order_info["strike"]}'
         + f'Cur{trade_progress_info["current_position_size"]}'
