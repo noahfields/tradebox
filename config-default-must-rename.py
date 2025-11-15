@@ -16,9 +16,10 @@ ROBINHOOD_SESSION_EXPIRES_IN = '172800'  # string (seconds)
 
 # PUSHOVER NOTIFICATION SETTINGS # Requires a Pushover account for long term use (pushover.net)
 # Available on desktop, Android, iPhone
-# This allows you to receive real-time notifications of trade status
-PUSHOVER_USER_TOKEN = ''
-PUSHOVER_API_TOKEN = ''
+# This allows you to receive real-time notifications of trade statuses
+# To receive notifications, you will need to install the Pushover App on a phone or computer
+PUSHOVER_USER_TOKEN = '' # Pushover User Key (available on main page of pushover.net when logged in)
+PUSHOVER_API_TOKEN = '' # Pushover API Token/Key (under "Your Applications", you need to set up an application for this key)
 
 # DEBUG ENVIRONMENT SETTINGS
 DEV_IP='127.0.0.1'
