@@ -1,5 +1,7 @@
 import http.client, urllib
 
+import config
+
 def send_notification(msg):
     conn = http.client.HTTPSConnection("api.pushover.net:443")
     conn.request("POST", "/1/messages.json",
