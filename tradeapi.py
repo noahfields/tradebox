@@ -13,7 +13,7 @@ import robin_stocks.robinhood as r
 import config
 import db
 import log
-import notify
+import pushover
 
 
 def login(mfa_code=None) -> None:
@@ -401,11 +401,11 @@ def execute_market_buy_order(order_info: pd.Series) -> None:
             execute_buy_emergency_fill(order_info, quantity_to_buy, email_message_part_one)
         else:
             log.append('No emergency fill is ordered. Goal quantity met was not met, but emegency fill was not set to execute.')
-            notify.send_plaintext_email(email_message_part_one)
+            pushover.send_notification(email_message_part_one)
             log.append('Email/text notification sent.')
     else:
         log.append('No emergency fill required based on position quantity.')
-        notify.send_plaintext_email(email_message_part_one)
+        pushover.send_notification(email_message_part_one)
         log.append('Email/text notification sent.')
 
 
@@ -624,12 +624,12 @@ def execute_market_sell_order(order_info: pd.Series) -> None:
         else:
             log.append('Emergency fill not required based on current position size.')
             log.append(email_message_part_one)
-            notify.send_plaintext_email(email_message_part_one)
+            pushover.send_notification(email_message_part_one)
             log.append('Email/text notification sent.')
     else:
         log.append('No emergency fill ordered.')
         log.append(email_message_part_one)
-        notify.send_plaintext_email(email_message_part_one)
+        pushover.send_notification(email_message_part_one)
         log.append('Email/text notification sent.')
 
 
@@ -761,7 +761,7 @@ def execute_sell_emergency_fill(order_info: pd.Series, quantity_to_sell: int, pr
     )
     log.append(f'{prepend_message} {msg}')
 
-    notify.send_plaintext_email(f'{prepend_message} {msg}')
+    pushover.send_notification(f'{prepend_message} {msg}')
     log.append('Email/text notification sent. Emergency fill executed.')
 
 
@@ -834,5 +834,5 @@ def execute_buy_emergency_fill(order_info: pd.Series, quantity_to_buy: int, prep
     )
 
     log.append(f'{prepend_message} {msg}')
-    notify.send_plaintext_email(f'{prepend_message} {msg}')
+    pushover.send_notification(f'{prepend_message} {msg}')
     log.append('Email/text notification sent. Emergency buy fill executed.')
