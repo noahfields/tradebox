@@ -27,7 +27,7 @@ def index() -> str:
     html = 'Welcome to Tradebox. <br />' \
          + f'Current date and time: {current_datetime_string} <br />' \
          + f'Python version: {python_version}'
-    return html
+    return(html)
 
 
 @app.route('/orders/execute/<order_id>', methods=['POST', 'GET'])
