@@ -12,6 +12,8 @@ def update_open_option_positions():
     database.set_table_field("open_option_positions", "still_alive", 0)
 
     for position in open_option_positions:
+        last_update_epoch_time = time.time()
+        position["last_update_epoch_time"] = last_update_epoch_time
         database.update_open_option_position(position["id"], position)
 
     database.delete_rows_from_table_by_value("open_option_positions", "still_alive", 0)
