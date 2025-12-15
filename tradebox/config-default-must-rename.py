@@ -12,7 +12,6 @@ TRADEBOX_APP_ADDRESS = 'http://127.0.0.1/'  # must end with '/'
 # ENTER ROBINHOOD USERNAME AND PASSWORD
 ROBINHOOD_USERNAME = ''
 ROBINHOOD_PASSWORD = ''
-ROBINHOOD_SESSION_EXPIRES_IN = '172800'  # string (seconds)
 
 # PUSHOVER NOTIFICATION SETTINGS # Requires a Pushover account for long term use (pushover.net)
 # Available on desktop, Android, iPhone
@@ -29,10 +28,10 @@ DEV_DEBUG=True
 # change only if needed (for example, to save database when re-cloning tradebox application)
 # recommended to place these one level below your git cloned directory to preserve database integrity
 # across git clones for future updates
-DATABASE_DIR = '.'
+DATABASE_DIR = '../..'
 DATABASE_NAME = 'db.sqlite3'  # change only if needed
 
 # LOGS
 # same advice as database directories
-LOG_PARENT_DIR = '.'
-LOG_DIR_NAME = 'logs'
+LOG_PARENT_DIR = '../..'
+LOG_DIR_NAME = 'tradebox_logs'

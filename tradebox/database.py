@@ -3,7 +3,7 @@ import json
 import os
 import sqlite3
 
-import config
+import config as config
 
 DB_FILEPATH = os.path.join(config.DATABASE_DIR, config.DATABASE_NAME)
 
@@ -15,15 +15,25 @@ DB_FILEPATH = os.path.join(config.DATABASE_DIR, config.DATABASE_NAME)
 # options_trigger_orders
 # options_trigger_orders_market_data
 DATABASE_TABLES = {
+    "runners": {
+        "runner_name": "TEXT PRIMARY KEY",
+        "interval": "INTEGER",
+        "last_update_successful": "INTEGER",
+        "last_update_epoch_time": "REAL",
+        "currently_succesful": "INTEGER",
+        "valid_slop_time_seconds": "INTEGER",
+    },
     "open_option_positions": {
         "id": "TEXT PRIMARY KEY",
-        "still_alive": "INTEGER",
         "json_data": "JSONB",
+        "still_alive": "INTEGER",
+        "last_update_epoch_time": "REAL",
     },
     "open_option_positions_market_data": {
         "id": "TEXT PRIMARY KEY",
-        "still_alive": "INTEGER",
         "json_data": "JSONB",
+        "still_alive": "INTEGER",
+        "last_update_epoch_time": "REAL",
     },
 }
 
@@ -39,6 +49,39 @@ def execute_database_query(sql_query):
     cur.close()
     conn.close()
 
+def drop_runners_table():
+    sql_query = "DROP TABLE IF EXISTS runners;"
+    execute_database_query(sql_query)
+
+def populate_runners_table(runners):
+    for runner_name, interval in runners.items():
+        sql_query = f"INSERT INTO runners (runner_name, interval, valid_slop_time_seconds) VALUES ('{runner_name}', {interval}, {interval + 2});"
+        execute_database_query(sql_query)
+
+def get_runner_info(runner_name):
+    conn = get_database_connection()
+    cur = conn.cursor()
+
+    sql_query = f"SELECT * FROM runners WHERE runner_name='{runner_name}';"
+    cur.execute(sql_query)
+    result = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    if result:
+        runner_info = {
+            "runner_name": result[0],
+            "interval": result[1],
+            "last_update_successful": result[2],
+            "last_update_epoch_time": result[3],
+            "currently_succesful": result[4],
+            "valid_slop_time_seconds": result[5],
+        }
+        return runner_info
+    else:
+        return None
+
 def create_database_tables():
     for table_name, fields in DATABASE_TABLES.items():
             sql_query = f"CREATE TABLE IF NOT EXISTS {table_name} ("
@@ -51,10 +94,12 @@ def create_database_tables():
 def delete_database():
     os.drop(DB_FILEPATH)
 
-def update_open_option_position(id, json_data):
+def update_open_option_position(id, json_data, still_alive=1):
     json_data = json.dumps(json_data)
-    still_alive = 1
-    sql_query = f"INSERT INTO open_option_positions (id, still_alive, json_data) VALUES ('{id}', {still_alive}, '{json_data}') ON CONFLICT(id) DO UPDATE SET still_alive=excluded.still_alive, json_data=excluded.json_data;"
+    still_alive = still_alive
+
+    sql_query = f"INSERT INTO open_option_positions (id, json_data, still_alive) VALUES ('{id}', '{json_data}', {still_alive}) ON CONFLICT(id) DO UPDATE SET json_data=excluded.json_data, still_alive=excluded.still_alive;"
+   
     execute_database_query(sql_query)
 
 def update_open_option_positions_market_data(id, json_data):

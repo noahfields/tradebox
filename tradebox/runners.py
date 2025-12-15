@@ -1,15 +1,26 @@
+from concurrent.futures import ThreadPoolExecutor
+import logging
+import os
 import sys
 import time
 
+import config
 import database
 import robinhood_api
-import log
+
+runners = { "runner_update_open_option_positions": 7,
+            "runner_update_open_option_positions_market_data": 7,
+            "runner_update_broker_option_orders": 15,
+            "runner_update_broker_option_orders_market_data": 7,
+            "runner_update_trigger_option_orders_market_data": 7,
+        }
 
 def runner_update_open_option_positions():
-    success = robinhood_api.update_open_option_positions()
-    return success
+    print('updating open option positions')
+    robinhood_api.update_open_option_positions()
 
 def runner_update_open_option_positions_market_data():
+    return True
     robinhood_api.update_open_option_positions_market_data()
 
 def runner_update_broker_option_orders():
@@ -18,42 +29,39 @@ def runner_update_broker_option_orders():
 def runner_update_broker_option_orders_market_data():
     return True
 
-def runner_update_trigger_options_orders_market_data():
+def runner_update_trigger_option_orders_market_data():
     return True
 
-def is_runner_name(runner_name):
-    runner_names = [
-        "runner_update_open_option_positions", 
-        "runner_update_option_positions_market_data", 
-        "runner_update_broker_option_orders"
+def get_runner_functions():
+    return [
+        name for name, obj in globals().items()
+        if name.startswith("runner_") and callable(obj)
     ]
-    if runner_name in runner_names:
-        return True
-    else:
-        return False
+
+def is_runner_name(runner_name):
+    runner_funcs = get_runner_functions()
+    return runner_name in runner_funcs
 
 def is_runner_active(runner_name):
     return True
 
+def run_runner(runner_function_name):
+    while True:
+        runner_info = database.get_runner_info(runner_function_name)
+        eval(runner_function_name + "()")
+        time.sleep(runner_info["interval"])
+
 # arguments: runner_function_name(argv[1]), refresh interval in seconds (argv[2])
 if __name__ == "__main__":
+    robinhood_api.login()
+    database.drop_runners_table()
     database.create_database_tables()
+    database.populate_runners_table(runners)
 
-    runner_name = sys.argv[1]
-    if is_runner_name(runner_name):
-        log.log(f"runners.py: Valid runner name: {runner_name}")
-    else:
-        log.log(f"runners.py: Invalid runner name: {runner_name}")
-        sys.exit()
-        
-    refresh_interval_in_seconds = int(sys.argv[2])
-    if not isinstance(refresh_interval_in_seconds, int):
-        log.log(f"runners.py: Invalid refresh_interval_in_seconds: {refresh_interval_in_seconds}")
-        sys.exit()
-    
-    while is_runner_active(runner_name):
-        eval(f"{runner_name}()")
-        time.sleep(refresh_interval_in_seconds)
+    max_workers = min(len(get_runner_functions()) * 2)
+    with ThreadPoolExecutor(max_workers=max_workers) as runner_threads:
+        for runner_function_name in get_runner_functions():
+            runner_threads.submit(run_runner, runner_function_name)
 
 
         

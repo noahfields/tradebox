@@ -6,11 +6,8 @@ import database
 def login():
     r.login(config.ROBINHOOD_USERNAME, config.ROBINHOOD_PASSWORD)
 
-login()
-
 def update_open_option_positions():
     open_option_positions = r.get_open_option_positions()
-    print(open_option_positions)
 
     database.set_table_field("open_option_positions", "still_alive", 0)
 
