@@ -1,26 +1,30 @@
-"""Provides server-side logging for Tradebox."""
-
 import datetime
+import logging
 import os
+import sys
 
 import config
 
-LOG_DIR = os.path.join(config.LOG_PARENT_DIR, config.LOG_DIR_NAME)
-try:
-    os.makedirs(LOG_DIR)
-except FileExistsError:
-    pass
+def get_logger(log_title):
+    date_prefix = datetime.datetime.now().strftime(("%Y.%m.%d"))
+    log_file = f"{date_prefix} {log_title}.log"
 
-def log(message):
-    log_filename = f"log-{datetime.datetime.now().strftime('%Y-%m-%d')}.txt"
-    log_file_path = os.path.join(LOG_DIR, log_filename)
+    # Logging
+    logger = logging.getLogger(__name__)
+    logger.setLevel(logging.DEBUG)
 
-    log_entry = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S.%f")
-    log_entry += "\n"
-    log_entry += message
-    log_entry += "\n\n"
+    # Format
+    formatter = logging.Formatter('%(asctime)s - p%(process)s - {%(pathname)s:%(lineno)d} - %(levelname)s \n %(message)s\n\n')
 
-    with open(log_file_path, mode="a", encoding="utf-8") as log_file:
-        log_file.write(log_entry)
+    # Log to file
+    LOG_FILEPATH = os.path.join(config.LOG_DIR, log_file)
+    file_handler = logging.FileHandler(LOG_FILEPATH)
+    file_handler.setFormatter(formatter)
+    logger.addHandler(file_handler)
 
-    print(log_entry)
+    # Log to stdout
+    stream_handler = logging.StreamHandler(stream=sys.stdout)
+    stream_handler.setFormatter(formatter)
+    logger.addHandler(stream_handler)
+
+    return logger
