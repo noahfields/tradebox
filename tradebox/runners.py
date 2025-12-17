@@ -1,5 +1,6 @@
 from concurrent.futures import ThreadPoolExecutor
 import time
+import sys
 
 import config
 import database
@@ -13,10 +14,10 @@ logger = log.get_logger(log_title="runners")
 
 # Runner table
 runners = {
-    "runner_update_open_option_positions": config.OPEN_POSITIONS_REFRESH_INTERVAL,
-    # "runner_update_open_option_positions_market_data": config.MARKET_DATA_REFRESH_INTERVAL,
-    # "runner_update_open_broker_option_orders": config.BROKER_ORDERS_REFRESH_INTERVAL,
-    # "runner_update_broker_option_orders_market_data": config.MARKET_DATA_REFRESH_INTERVAL,
+    # runner_update_open_option_positions": config.OPEN_POSITIONS_REFRESH_INTERVAL,
+    # runner_update_open_option_positions_market_data": config.MARKET_DATA_REFRESH_INTERVAL,
+    "runner_update_open_broker_option_orders": config.BROKER_ORDERS_REFRESH_INTERVAL,
+    "runner_update_open_broker_option_orders_market_data": config.MARKET_DATA_REFRESH_INTERVAL,
     # "runner_update_trigger_option_orders_market_data": config.MARKET_DATA_REFRESH_INTERVAL,
 }
 
@@ -30,11 +31,12 @@ def runner_update_open_option_positions_market_data():
     return success
 
 def runner_update_open_broker_option_orders():
-    success = robinhood_api.update_open_broker_option_broker_orders()
+    success = robinhood_api.update_open_broker_option_orders()
     return success
 
-def runner_update_broker_option_orders_market_data():
-    return True
+def runner_update_open_broker_option_orders_market_data():
+    success = robinhood_api.update_open_broker_option_orders_market_data()
+    return success
 
 def runner_update_trigger_option_orders_market_data():
     return True
@@ -89,8 +91,8 @@ def loop_runner(runner_function_name):
             time.sleep(updated_runner_info["adjusted_interval"])
             logger.info(f"Runner paused for {updated_runner_info["adjusted_interval"]}")
         else:
-            updated_runner_info["adjusted_interval"] = runner_info["adjusted_interval"] + 1
             logger.info(f"Changing adjusted_intveral from {updated_runner_info['adjusted_interval']} to {runner_info['adjusted_interval'] + 1}")
+            updated_runner_info["adjusted_interval"] = runner_info["adjusted_interval"] + 1
 
             # Disallow runners from pausing for more than 60 seconds
             if updated_runner_info["adjusted_interval"] >= config.MAXIMUM_INTERVAL:
@@ -103,24 +105,24 @@ def loop_runner(runner_function_name):
 
             # Update runner
             database.update_runner(updated_runner_info)
-            logger.info(f"Successfully updated {runner_function_name} with failure.")
+            logger.info(f"Successfully updated {runner_function_name} as failure.")
 
             # Pause for 2x interval to avoid API timeout
             time.sleep(updated_runner_info["adjusted_interval"] * 2)
             logger.info(f"Paused 2x adjusted_interval for: {updated_runner_info['adjusted_interval'] * 2}")
 
-# arguments: runner_function_name(argv[1]), refresh interval in seconds (argv[2])
 if __name__ == "__main__":
     r.login(config.ROBINHOOD_USERNAME, config.ROBINHOOD_PASSWORD)
     database.delete_database()
     database.create_database_tables()
-    database.populate_runners_table(runners)
+    database.populate_runners_table(runners, active=1)
 
     max_workers = len(runners) * 2
     with ThreadPoolExecutor(max_workers=max_workers) as runner_threads:
         logger.info("Starting runners")
         for runner_function_name in runners.keys():
-            logger.info(f"Starting runner: {runner_function_name}")
+            print(runner_function_name)
+            logger.error(f"Starting runner: {runner_function_name}")
             runner_threads.submit(loop_runner, runner_function_name)
 
 

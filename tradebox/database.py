@@ -49,7 +49,7 @@ DATABASE_TABLES = {
         "json_data": "JSONB",
         "still_alive": "INTEGER",
         "last_update_epoch_time": "REAL",
-    }
+    },
 }
 
 def get_database_connection() -> sqlite3.Connection:
@@ -75,7 +75,7 @@ def drop_runners_table() -> bool:
     success = execute_set_database_query(sql_query)
     return success
 
-def populate_runners_table(runners):
+def populate_runners_table(runners, active=1):
     for runner_function_name, interval in runners.items():
         sql_query = f"""
             INSERT INTO runners (
@@ -88,7 +88,7 @@ def populate_runners_table(runners):
             last_successful_update_epoch_time) 
             VALUES (
             '{runner_function_name}', 
-            1, 
+            {active}, 
             {interval}, 
             {interval}, 
             1, 
@@ -172,11 +172,19 @@ def update_open_option_position(id, json_data_string, still_alive, last_update_e
    
     execute_set_database_query(sql_query)
 
-def update_open_option_positions_market_data(id, json_data):
+def update_open_option_positions_market_data(id, still_alive, json_data, last_update_epoch_time):
     json_data = json.dumps(json_data)
-    still_alive = 1
-    sql_query = f"INSERT INTO open_option_positions_market_data (id, still_alive, json_data) VALUES ('{id}', {still_alive}, '{json_data}') ON CONFLICT(id) DO UPDATE SET still_alive=excluded.still_alive, json_data=excluded.json_data;"
+    sql_query = f"INSERT INTO open_option_positions_market_data (id, still_alive, json_data, last_update_epoch_time) VALUES ('{id}', {still_alive}, '{json_data}', {last_update_epoch_time}) ON CONFLICT(id) DO UPDATE SET still_alive=excluded.still_alive, json_data=excluded.json_data, last_update_epoch_time=excluded.last_update_epoch_time;"
     execute_set_database_query(sql_query)
+
+def update_open_broker_option_order(id, json_data_string, still_alive, last_update_epoch_time):
+    try:
+        sql_query = f"INSERT INTO open_broker_option_orders (id, json_data, still_alive, last_update_epoch_time) VALUES ('{id}', '{json_data_string}', {still_alive}, {last_update_epoch_time}) ON CONFLICT(id) DO UPDATE SET json_data=excluded.json_data, still_alive=excluded.still_alive, last_update_epoch_time=excluded.last_update_epoch_time;"
+        execute_set_database_query(sql_query)
+        return True
+    except Exception as e:
+        logger.critical(f"Exception: {e}")
+        return False
 
 def delete_rows_from_table_by_value(table, field, value):
     sql_query = f"DELETE FROM {table} WHERE {field}={value}";
@@ -194,9 +202,6 @@ def get_json_field_from_table_as_list(table, field, key_name):
     cur.execute(sql_query)
     results = cur.fetchall()
 
-    print('results')
-    print(results)
-
     basic_list_result = []
     for item in results:
         basic_list_result.append(item[0])
@@ -205,3 +210,16 @@ def get_json_field_from_table_as_list(table, field, key_name):
     conn.close()
 
     return basic_list_result
+
+def get_json_field_from_table(table, field, key_name):
+    conn = get_database_connection()
+    cur = conn.cursor()
+
+    sql_query = f"SELECT json_extract({field}, '$.{key_name}') as value FROM {table};"
+    cur.execute(sql_query)
+    results = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    return results
