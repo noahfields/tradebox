@@ -47,7 +47,7 @@ DATABASE_TABLES = {
         "last_update_epoch_time": "REAL",
     },
     "trigger_option_orders": {
-        "order_id": "INTEGER PRIMARY KEY ASC", 
+        "trigger_order_id": "INTEGER PRIMARY KEY ASC", 
         "active": "INTEGER", 
         "created_at": "TEXT", 
         "executed": "INTEGER DEFAULT 0", 
