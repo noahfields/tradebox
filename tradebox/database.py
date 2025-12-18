@@ -12,13 +12,6 @@ logger = log.get_logger(log_title="database")
 
 DB_FILE = os.path.join(config.DATABASE_DIR, config.DATABASE_NAME)
 
-# TABLES
-# open_options_positions
-# open_options_positions_market_data
-# options_broker_orders
-# options_broker_orders_market_data
-# options_trigger_orders
-# options_trigger_orders_market_data
 DATABASE_TABLES = {
     "runners": {
         "runner_function_name": "TEXT PRIMARY KEY",
@@ -28,9 +21,6 @@ DATABASE_TABLES = {
         "current_update_successful": "INTEGER",
         "currently_successful": "INTEGER",
         "last_successful_update_epoch_time": "REAL",
-    },
-    "account": {
-        "id": "TEXT",
     },
     "open_option_positions": {
         "id": "TEXT PRIMARY KEY",
@@ -45,6 +35,42 @@ DATABASE_TABLES = {
         "last_update_epoch_time": "REAL",
     },
     "open_broker_option_orders": {
+        "id": "TEXT PRIMARY KEY",
+        "json_data": "JSONB",
+        "still_alive": "INTEGER",
+        "last_update_epoch_time": "REAL",
+    },
+    "open_broker_option_orders_market_data": {
+        "id": "TEXT PRIMARY KEY",
+        "json_data": "JSONB",
+        "still_alive": "INTEGER",
+        "last_update_epoch_time": "REAL",
+    },
+    "trigger_option_orders": {
+        "order_id": "INTEGER PRIMARY KEY ASC", 
+        "active": "INTEGER", 
+        "created_at": "TEXT", 
+        "executed": "INTEGER DEFAULT 0", 
+        "execute_only_after_id": "INTEGER", 
+        "execution_deactivates_order_id": "INTEGER", 
+        "buy_sell": "TEXT", 
+        "symbol": "TEXT", 
+        "strike": "REAL", 
+        "call_put": "TEXT", 
+        "expiration_date": "TEXT", 
+        "rh_option_uuid": "TEXT", 
+        "market_limit": "TEXT", 
+        "limit_price": "REAL", 
+        "quantity": "INTEGER", 
+        "message_on_success": "TEXT", 
+        "message_on_failure": "TEXT", 
+        "below_tick": "REAL", 
+        "above_tick": "REAL", 
+        "cutoff_price": "REAL", 
+        "max_order_attempts": "INTEGER", 
+        "emergency_order_fill_on_failure": "INTEGER",
+    },
+    "trigger_option_orders_market_data": {
         "id": "TEXT PRIMARY KEY",
         "json_data": "JSONB",
         "still_alive": "INTEGER",
@@ -177,14 +203,29 @@ def update_open_option_positions_market_data(id, still_alive, json_data, last_up
     sql_query = f"INSERT INTO open_option_positions_market_data (id, still_alive, json_data, last_update_epoch_time) VALUES ('{id}', {still_alive}, '{json_data}', {last_update_epoch_time}) ON CONFLICT(id) DO UPDATE SET still_alive=excluded.still_alive, json_data=excluded.json_data, last_update_epoch_time=excluded.last_update_epoch_time;"
     execute_set_database_query(sql_query)
 
-def update_open_broker_option_order(id, json_data_string, still_alive, last_update_epoch_time):
+def update_open_broker_option_order(
+        order_id: str, 
+        json_data: str,
+        last_update_epoch_time: float,
+        still_alive=1):
     try:
-        sql_query = f"INSERT INTO open_broker_option_orders (id, json_data, still_alive, last_update_epoch_time) VALUES ('{id}', '{json_data_string}', {still_alive}, {last_update_epoch_time}) ON CONFLICT(id) DO UPDATE SET json_data=excluded.json_data, still_alive=excluded.still_alive, last_update_epoch_time=excluded.last_update_epoch_time;"
+        sql_query = f"INSERT INTO open_broker_option_orders (id, json_data, still_alive, last_update_epoch_time) VALUES ('{order_id}', '{json_data}', {still_alive}, {last_update_epoch_time}) ON CONFLICT(id) DO UPDATE SET json_data=excluded.json_data, still_alive=excluded.still_alive, last_update_epoch_time=excluded.last_update_epoch_time;"
         execute_set_database_query(sql_query)
         return True
     except Exception as e:
         logger.critical(f"Exception: {e}")
         return False
+    
+def update_open_broker_option_orders_market_data(
+        option_id: str, 
+        json_data: str, 
+        last_update_epoch_time: float,
+        still_alive=1):
+    logger.info(f"Beginning update of open_broker_option_orders_market_data for option_id: {option_id}, json_data: {json_data}, last_update_epoch_time: {last_update_epoch_time}, still_alive: {still_alive}")
+
+    sql_query = f"INSERT INTO open_broker_option_orders_market_data (id, json_data, last_update_epoch_time, still_alive) VALUES ('{option_id}', '{json_data}', {last_update_epoch_time}, {still_alive}) ON CONFLICT(id) DO UPDATE SET still_alive=excluded.still_alive, json_data=excluded.json_data, last_update_epoch_time=excluded.last_update_epoch_time;"
+
+    execute_set_database_query(sql_query)
 
 def delete_rows_from_table_by_value(table, field, value):
     sql_query = f"DELETE FROM {table} WHERE {field}={value}";

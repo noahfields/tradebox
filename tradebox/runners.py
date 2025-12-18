@@ -14,8 +14,8 @@ logger = log.get_logger(log_title="runners")
 
 # Runner table
 runners = {
-    # runner_update_open_option_positions": config.OPEN_POSITIONS_REFRESH_INTERVAL,
-    # runner_update_open_option_positions_market_data": config.MARKET_DATA_REFRESH_INTERVAL,
+    "runner_update_open_option_positions": config.OPEN_POSITIONS_REFRESH_INTERVAL,
+    "runner_update_open_option_positions_market_data": config.MARKET_DATA_REFRESH_INTERVAL,
     "runner_update_open_broker_option_orders": config.BROKER_ORDERS_REFRESH_INTERVAL,
     "runner_update_open_broker_option_orders_market_data": config.MARKET_DATA_REFRESH_INTERVAL,
     # "runner_update_trigger_option_orders_market_data": config.MARKET_DATA_REFRESH_INTERVAL,
