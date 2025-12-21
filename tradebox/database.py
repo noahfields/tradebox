@@ -152,13 +152,6 @@ def get_runner_info(runner_function_name: str) -> dict | None:
         return None
     
 def update_runner(runner_info):
-        # "runner_function_name": "TEXT PRIMARY KEY",
-        # "active": "INTEGER",
-        # "adjusted_interval": "INTEGER",
-        # "default_interval": "INTEGER",
-        # "current_update_successful": "INTEGER",
-        # "currently_successful": "INTEGER",
-        # "last_successful_update_epoch_time": "REAL",
         try:
             runner_function_name = runner_info["runner_function_name"]
             active = runner_info["active"]
@@ -168,7 +161,7 @@ def update_runner(runner_info):
             currently_successful = runner_info["currently_successful"]
             last_successful_update_epoch_time = runner_info["last_successful_update_epoch_time"]
 
-            sql_query = f"UPDATE runners SET active={active}, adjusted_interval={adjusted_interval}, default_interval={default_interval}, current_update_successful={current_update_successful}, currently_successful={currently_successful}, last_successful_update_epoch_time='{last_successful_update_epoch_time}' WHERE runner_function_name='{runner_function_name}'";
+            sql_query = f"UPDATE runners SET active={active}, adjusted_interval={adjusted_interval}, default_interval={default_interval}, current_update_successful={current_update_successful}, currently_successful={currently_successful}, last_successful_update_epoch_time='{last_successful_update_epoch_time}' WHERE runner_function_name='{runner_function_name}';"
 
             execute_set_database_query(sql_query)
 
