@@ -1,18 +1,32 @@
 from concurrent.futures import ThreadPoolExecutor
+import logging
 import time
 
 import config
 import database
-import log
 import robinhood_api
 
 import robin_stocks.robinhood as r
 
-# Logging
-logger = log.get_logger(log_title="runners")
+logger = 
 
-# Runner table
-runners = {
+logging_config = {
+	"version": 1,
+	"disable_existing_loggers": False,
+	"formatters": {
+		"simple": "{%(levelname)s: %(message)s",
+	},
+	"handlers": {
+		"stdout": {
+			"class": "logging.StreamHandler",
+			"formatter": "simple",
+			"stream": "ext://sys.stdout",
+		},
+	},
+	"loggers": {},
+}
+
+RUNNERS = {
 	"runner_update_open_option_positions": config.OPEN_POSITIONS_REFRESH_INTERVAL,
 	"runner_update_open_option_positions_market_data": config.MARKET_DATA_REFRESH_INTERVAL,
 	"runner_update_open_broker_option_orders": config.BROKER_ORDERS_REFRESH_INTERVAL,
@@ -21,7 +35,6 @@ runners = {
 }
 
 
-# Runner functions
 def runner_update_open_option_positions():
 	success = robinhood_api.update_open_option_positions()
 	return success
@@ -149,16 +162,23 @@ def loop_runner(runner_function_name):
 			)
 
 
-if __name__ == "__main__":
+def main():
 	r.login(config.ROBINHOOD_USERNAME, config.ROBINHOOD_PASSWORD)
+
 	database.delete_database()
 	database.create_database_tables()
-	database.populate_runners_table(runners, active=1)
+	database.populate_runners_table(RUNNERS, active=1)
 
-	max_workers = len(runners) * 2
-	with ThreadPoolExecutor(max_workers=max_workers) as runner_threads:
-		logger.info("Starting runners")
-		for runner_function_name in runners.keys():
-			print(runner_function_name)
-			logger.error(f"Starting runner: {runner_function_name}")
-			runner_threads.submit(loop_runner, runner_function_name)
+	print(LOGGER.handlers)
+
+	# max_workers = len(runners)
+	# with ThreadPoolExecutor(max_workers=max_workers) as runner_threads:
+	# 	LOGGER.info("Starting runners")
+	# 	for runner_function_name in runners.keys():
+	# 		print(runner_function_name)
+	# 		LOGGER.error(f"Starting runner: {runner_function_name}")
+	# 		runner_threads.submit(loop_runner, runner_function_name)
+
+
+if __name__ == "__main__":
+	main()
