@@ -1,0 +1,52 @@
+DataTable {
+    height: 1fr;
+    margin: 1;
+}
+
+#runner_active_position {
+    background: red;
+}
+
+#runner_active_position_mkt_data {
+    background: red;
+}
+
+#runner_active_broker_order {
+    background: red;
+}
+
+#runner_active_broker_order_mkt_data {
+    background: red;
+}
+
+#runner_active_trigger_mkt_data {
+    background: red;
+}
+
+#runner_active_other {
+    background: red;
+}
+
+#runner_status_position {
+    background: red;
+}
+
+#runner_status_position_mkt_data {
+    background: red;
+}
+
+#runner_status_broker_order {
+    background: red;
+}
+
+#runner_status_broker_order_mkt_data {
+    background: red;
+}
+
+#runner_status_trigger_mkt_data {
+    background: red;
+}
+
+#runner_status_other {
+    background: red;
+}

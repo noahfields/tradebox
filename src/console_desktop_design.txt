@@ -1,0 +1,38 @@
+MAIN TAB
+pos [ ][ ]    posmkt [ ][ ]      ord [ ][ ]     ordmkt [ ][ ]    trgmkt [ ][ ]    con [ ][ ]
+
+account info
+table
+
+positions
+table w/ mkt data
+b: sell limit.   b: sell market.   b: sell trailing limit.  b: buy mkt, b: buy limit
+
+orders
+table w/ mkt data
+b: cancel order.   b: cancel all orders
+
+trigger orders
+table w/ mkt data
+b: new trg order.    b: edit trg order.   b: cancel trg order.
+
+trailing orders
+table w/ mkt data
+b: new trg order.    b: edit trg order.   b: cancel trg order.
+
+bracket orders
+table w/ mkt data
+
+
+SECOND TAB
+system management
+b: RH login, RH logout
+b's: start, stop, activate, deactivate runners
+b's: start, stop, activate, deactivate flask server
+b: delete database
+b: delete logs
+b: restart host server
+
+
+
+

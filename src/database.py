@@ -1,11 +1,12 @@
+from contextlib import contextmanager
+import logging
 import os
 import sqlite3
 import time
 
 import config
-import log
 
-LOGGER = log.get_logger(log_title="main")
+logger = logging.getLogger(__name__)
 
 DB_FILE = os.path.join(config.DATABASE_DIR, config.DATABASE_NAME)
 
@@ -83,8 +84,13 @@ DATABASE_TABLE_SCHEMA = {
 
 
 def get_database_connection() -> sqlite3.Connection:
-    conn = sqlite3.connect(DB_FILE)
-    return conn
+    try:
+        conn = sqlite3.connect(DB_FILE)
+        return conn
+    except Exception as e:
+        logger.critical(
+            f"Error in database.get_database_connection(): {e}"
+        )
 
 
 def execute_set_database_query(sql_query: str) -> bool:
@@ -97,9 +103,8 @@ def execute_set_database_query(sql_query: str) -> bool:
         conn.close()
         return True
     except Exception as e:
-        LOGGER.warning(
+        logger.exception(
             f"Unexpected exception. Issue executing sql_query: {sql_query}.\n"
-            f"Exception info: {e}"
         )
         return False
 
@@ -138,12 +143,12 @@ def populate_runners_table(runners: dict, active: int = 1) -> bool:
     return success
 
 
-def get_runner_info(runner_function_name: str) -> dict | None:
+def get_runner_info(runner_name: str) -> dict | None:
     conn = get_database_connection()
     cur = conn.cursor()
 
     sql_query = (
-        f"SELECT * FROM runners WHERE runner_function_name='{runner_function_name}';"
+        f"SELECT * FROM runners WHERE runner_name='{runner_name}';"
     )
     cur.execute(sql_query)
     result = cur.fetchone()
@@ -153,7 +158,7 @@ def get_runner_info(runner_function_name: str) -> dict | None:
 
     if result:
         runner_info = {
-            "runner_function_name": result[0],
+            "runner_name": result[0],
             "active": result[1],
             "adjusted_interval": result[2],
             "default_interval": result[3],
@@ -161,18 +166,18 @@ def get_runner_info(runner_function_name: str) -> dict | None:
             "currently_successful": result[5],
             "last_successful_update_epoch_time": result[6],
         }
-        logger.info(
-            f"{runner_function_name} results: {runner_info}. Returning runner_info."
+        logger.debug(
+            f"{runner_name} results: {runner_info}. Returning runner_info."
         )
         return runner_info
     else:
-        logger.warning(f"No runner info for {runner_function_name}. Returning None.")
+        logger.error(f"No runner info for {runner_name}. Returning None.")
         return None
 
 
 def update_runner(runner_info) -> None:
     try:
-        runner_function_name = runner_info["runner_function_name"]
+        runner_name = runner_info["runner_name"]
         active = runner_info["active"]
         adjusted_interval = runner_info["adjusted_interval"]
         default_interval = runner_info["default_interval"]
@@ -182,13 +187,13 @@ def update_runner(runner_info) -> None:
             "last_successful_update_epoch_time"
         ]
 
-        sql_query = f"UPDATE runners SET active={active}, adjusted_interval={adjusted_interval}, default_interval={default_interval}, current_update_successful={current_update_successful}, currently_successful={currently_successful}, last_successful_update_epoch_time='{last_successful_update_epoch_time}' WHERE runner_function_name='{runner_function_name}';"
+        sql_query = f"UPDATE runners SET active={active}, adjusted_interval={adjusted_interval}, default_interval={default_interval}, current_update_successful={current_update_successful}, currently_successful={currently_successful}, last_successful_update_epoch_time='{last_successful_update_epoch_time}' WHERE runner_name='{runner_name}';"
 
         execute_set_database_query(sql_query)
 
-        logger.info(f"Succcessfully updated runner: {runner_function_name}")
+        logger.debug(f"Succcessfully updated runner: {runner_name}")
     except Exception as e:
-        logger.warning(f"Issue updating runner: {runner_function_name}")
+        logger.warning(f"Issue updating runner: {runner_name}")
         logger.warning(f"Exception info {e}")
 
 
@@ -211,8 +216,8 @@ def delete_database():
     try:
         os.remove(DB_FILE)
     except FileNotFoundError as e:
-        LOGGER.warning(f"Issue deleting database file: {DB_FILE}")
-        LOGGER.warning(f"{e}")
+        logger.info(f"Issue deleting database file: {DB_FILE}")
+        logger.info(f"{e}")
 
 
 def update_open_option_position(
@@ -266,21 +271,26 @@ def update_open_broker_option_orders_market_data(
     json_data: str, 
     last_update_epoch_time: float, 
     still_alive: int = 1
-    ):
-    sql_query = f"INSERT INTO open_broker_option_orders_market_data (id, json_data, last_update_epoch_time, still_alive) VALUES ('{option_id}', '{json_data}', {last_update_epoch_time}, {still_alive}) ON CONFLICT(id) DO UPDATE SET json_data=excluded.json_data, last_update_epoch_time=excluded.last_update_epoch_time, still_alive=excluded.still_alive;"
-
-    execute_set_database_query(sql_query)
+    ) -> bool:
+    try:
+        sql_query = f"INSERT INTO open_broker_option_orders_market_data (id, json_data, last_update_epoch_time, still_alive) VALUES ('{option_id}', '{json_data}', {last_update_epoch_time}, {still_alive}) ON CONFLICT(id) DO UPDATE SET json_data=excluded.json_data, last_update_epoch_time=excluded.last_update_epoch_time, still_alive=excluded.still_alive;"
+        execute_set_database_query(sql_query)
+        return True
+    except Exception as e:
+        logger.critical(f"Exception: {e}")
+        return False
 
 
 def delete_rows_from_table_by_value(table, field, value):
     sql_query = f"DELETE FROM {table} WHERE {field}={value};"
-    execute_set_database_query(sql_query)
+    success = execute_set_database_query(sql_query)
+    return success
 
 
 def set_table_field(table: str, field: str, value) -> bool:
     sql_query = f"UPDATE {table} SET {field}={value};"
-    result = execute_set_database_query(sql_query)
-    return result
+    success = execute_set_database_query(sql_query)
+    return success
 
 
 def get_json_field_from_table_as_list(table, field, key_name) -> list:

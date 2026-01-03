@@ -1,14 +1,14 @@
 import json
+import logging
 import time
 
 import robin_stocks.robinhood as r
 
 import config
 import database
-import log
 
 # Logging
-LOGGER = log.get_logger(log_title="main")
+logger = None
 
 API_VERIFICATION_DEFAULT_KEYSETS = {
 	"get_open_option_positions": {'account': 'https://api.robinhood.com/accounts/5QU45833/', 'account_number': '5QU45833', 'average_price': '-16.0000', 'chain_id': '72362eb7-bc7c-4d10-9be4-48a53fffd101', 'chain_symbol': 'IWM', 'id': '876c8360-ce18-4c31-b31f-e760270b091d', 'option': 'https://api.robinhood.com/options/instruments/2b4dde4d-c7b7-4c6c-8290-a70f76cedaf9/', 'type': 'short', 'pending_buy_quantity': '0.0000', 'pending_expired_quantity': '0.0000', 'pending_expiration_quantity': '0.0000', 'pending_exercise_quantity': '0.0000', 'pending_assignment_quantity': '0.0000', 'pending_sell_quantity': '0.0000', 'quantity': '17.0000', 'intraday_quantity': '17.0000', 'intraday_average_open_price': '-16.0000', 'created_at': '2025-12-19T21:09:50.112600Z', 'expiration_date': '2025-12-22', 'trade_value_multiplier': '100.0000', 'updated_at': '2025-12-19T21:09:50.501378Z', 'url': 'https://api.robinhood.com/options/positions/876c8360-ce18-4c31-b31f-e760270b091d/', 'option_id': '2b4dde4d-c7b7-4c6c-8290-a70f76cedaf9', 'clearing_running_quantity': '17.0000', 'clearing_cost_basis': '272.0000', 'clearing_direction': 'credit', 'clearing_intraday_running_quantity': '17.0000', 'clearing_intraday_cost_basis': '272.0000', 'clearing_intraday_direction': 'credit', 'opened_at': '2025-12-19T21:09:50.116471Z'},
@@ -63,16 +63,17 @@ def get_unique_keys_in_first_dict(default_dict: dict, other_dict: dict) -> set[s
 def login() -> bool:
 	try:
 		res = r.login(config.ROBINHOOD_USERNAME, config.ROBINHOOD_PASSWORD)
-		logger.info(f"Logged into Robinhood successfully: {res}")
+		logger.debug(f"Logged into Robinhood successfully: {res}")
 		return True
 	except Exception as e:
-		logger.warning(f"Issue logging into Robinhood: {e}")
+		logger.critical(f"Issue logging into Robinhood: {e}")
 		return False
 
 
 def update_open_option_positions():
 	try:
 		open_option_positions = r.get_open_option_positions()
+		logger.info(f"Robinhood API get_open_option_positions() raw result: {open_option_positions}")
 
 		if len(open_option_positions) > 0:
 			verify_api_key_match(
@@ -93,9 +94,10 @@ def update_open_option_positions():
 		database.delete_rows_from_table_by_value(
 			"open_option_positions", "still_alive", 0
 		)
+		logger.debug("Successfully updated open_option_positions.")
 		return True
 	except Exception as e:
-		log.error(f"Error updating open_option_positions: {e}")
+		logger.critical(f"Error updating open_option_positions: {e}")
 		return False
 
 
@@ -134,7 +136,7 @@ def update_open_option_positions_market_data():
 		)
 		return True
 	except Exception as e:
-		log.error(f"Error updating open_option_positions_market_data: {e}")
+		logger.error(f"Error updating open_option_positions_market_data: {e}")
 		return False
 
 

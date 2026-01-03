@@ -2,6 +2,10 @@
 - systemd services:
     - runners.py
     - flask server
+- logs/loggers:
+    - runners
+    - flask server
+    - textual console
 - console.py:
     - mobile version:
         easy buttons to cancel orders and close positions
@@ -14,7 +18,7 @@
 - log calls should be one at a time to prevent multiple notifications back to back
 
 ##### Logger levels:
-- DEBUG: Use only for dev, only temporary
+- DEBUG: Expected milestones to track code if a problem occurs in development, or temporary problem fixing
 - INFO: API call info
 - WARNING: Should never occur but won't break app
 - ERROR: Should never occur, might break app, sent to notifications
@@ -34,3 +38,13 @@
 
 - [ ] Figure out how to add trigger conditions on an order if position hits a certain loss or gain % 
 
+
+
+
+
+order ability
+trailing orders to follow price up
+bracket order:
+    - sell when up x% (market order)
+    - sell when down x% (market order)
+alert orders from TV

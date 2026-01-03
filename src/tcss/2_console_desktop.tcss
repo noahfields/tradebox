@@ -1,0 +1,4 @@
+ModalScreenQuit {
+    background: blue;
+    border: heavy $accent;
+}
