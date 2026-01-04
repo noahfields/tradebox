@@ -2,3 +2,29 @@ ModalScreenQuit {
     background: blue;
     border: heavy $accent;
 }
+
+.runner-status-section {
+    background: $primary-background-darken-3;
+    height: 1;
+    width: auto;
+    margin-left: 1;
+    margin-right: 1;
+}
+
+.small-button {
+    width: auto;
+    height: auto;
+    margin-left:1 ;
+    margin-right: 1;
+}
+
+.active-label {
+    background: red;
+    margin-left: 1;
+    margin-right: 1;
+}
+
+.status-label {
+    margin-left: 1;
+    background: red;
+}

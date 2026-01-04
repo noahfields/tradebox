@@ -142,6 +142,31 @@ def populate_runners_table(runners: dict, active: int = 1) -> bool:
         success = execute_set_database_query(sql_query)
     return success
 
+def get_all_runners_status() -> list:
+    conn = get_database_connection()
+    cur = conn.cursor()
+
+    sql_query = "SELECT * FROM runners;"
+    cur.execute(sql_query)
+    results = cur.fetchall()
+
+    runner_status_list = []
+    for result in results:
+        runner_info = {
+            "runner_name": result[0],
+            "active": result[1],
+            "adjusted_interval": result[2],
+            "default_interval": result[3],
+            "current_update_successful": result[4],
+            "currently_successful": result[5],
+            "last_successful_update_epoch_time": result[6],
+        }
+        runner_status_list.append(runner_info)
+
+    cur.close()
+    conn.close()
+
+    return runner_status_list
 
 def get_runner_info(runner_name: str) -> dict | None:
     conn = get_database_connection()
