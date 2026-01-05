@@ -202,7 +202,6 @@ def get_runner_info(runner_name_pk: str) -> dict | None:
 		logger.error(f"No runner info for {runner_name_pk}. Returning None.")
 		return None
 
-
 def update_runner(runner_info) -> None:
     try:
         runner_name_pk = runner_info["runner_name_pk"]
