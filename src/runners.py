@@ -14,8 +14,8 @@ logger = log.setup_logger("runners")
 RUNNERS = {
 	"runner_update_open_option_positions": config.OPEN_POSITIONS_REFRESH_INTERVAL,
 	"runner_update_open_option_positions_market_data": config.MARKET_DATA_REFRESH_INTERVAL,
-	"runner_update_open_broker_option_orders": config.BROKER_ORDERS_REFRESH_INTERVAL,
-	"runner_update_open_broker_option_orders_market_data": config.MARKET_DATA_REFRESH_INTERVAL,
+	# "runner_update_open_broker_option_orders": config.BROKER_ORDERS_REFRESH_INTERVAL,
+	# "runner_update_open_broker_option_orders_market_data": config.MARKET_DATA_REFRESH_INTERVAL,
 	# "runner_update_trigger_option_orders_market_data": config.MARKET_DATA_REFRESH_INTERVAL,
 }
 
@@ -40,8 +40,8 @@ def runner_update_open_broker_option_orders_market_data():
 	return success
 
 
-def runner_update_trigger_option_orders_market_data():
-	return True
+# def runner_update_trigger_option_orders_market_data():
+# 	return True
 
 
 def loop_runner(runner_name):
@@ -56,11 +56,11 @@ def loop_runner(runner_name):
 		if not runner_info["active"]:
 			logger.debug(f"Runner {runner_name} is not active.")
 
-			updated_runner_info["current_update_successful"] = 0
-			updated_runner_info["currently_successful"] = 0
+			updated_runner_info["current_update_success"] = 0
+			updated_runner_info["last_update_success"] = 0
 			database.update_runner(updated_runner_info)
 			logger.debug(
-				f"Saved updated_runner_info for {runner_name}: {updated_runner_info}"
+				f"Inactive runner: {runner_name}. Saved updated_runner_info for {runner_name}: {updated_runner_info}"
 			)
 
 			time.sleep(updated_runner_info["adjusted_interval"])
@@ -143,16 +143,17 @@ def main():
 
 	r.login(config.ROBINHOOD_USERNAME, config.ROBINHOOD_PASSWORD)
 
-	database.delete_database()
-	database.create_database_tables()
+	database.delete_all_tables()
+	database.create_all_tables()
+
 	database.populate_runners_table(RUNNERS, active=1)
 
-	max_workers = len(RUNNERS) * 2
-	with ThreadPoolExecutor(max_workers=max_workers) as runner_threads:
-		logger.debug("Starting runners.")
-		for runner_name in RUNNERS.keys():
-			logger.debug(f"Starting runner: {runner_name}")
-			runner_threads.submit(loop_runner, runner_name)
+	# max_workers = len(RUNNERS)
+	# with ThreadPoolExecutor(max_workers=max_workers) as runner_threads:
+	# 	logger.debug("Starting runners.")
+	# 	for runner_name in RUNNERS.keys():
+	# 		logger.debug(f"Starting runner: {runner_name}")
+	# 		runner_threads.submit(loop_runner, runner_name)
 
 
 if __name__ == "__main__":

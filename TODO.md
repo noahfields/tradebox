@@ -48,3 +48,10 @@ bracket order:
     - sell when up x% (market order)
     - sell when down x% (market order)
 alert orders from TV
+
+      - "${DB_PORT:-5432}:5432"
+
+
+
+LEARN
+Docker
