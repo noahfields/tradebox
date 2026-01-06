@@ -71,7 +71,7 @@ if __name__ == '__main__':
     # via gunicorn or other wsgi server
     # this section is not run and config.py has 
     # no effect on server settings.
-    app.run(host=config.DEV_IP, 
-            port=config.DEV_PORT, 
-            debug=config.DEV_DEBUG
+    app.run(host=config.DEV_FLASK_IP, 
+            port=config.DEV_FLASK_PORT, 
+            debug=config.DEV_FLASK_DEBUG
         )

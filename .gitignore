@@ -5,12 +5,9 @@ db.sqlite3
 notebooks/
 *.ipynb
 
-# configuration file with user info
-config.py
-
 # draft, scrap, working documents
 garbage_pile.py
-sandbox.py
+sandbox.py/
 sandbox/
 
 # log files

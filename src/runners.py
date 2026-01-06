@@ -44,96 +44,91 @@ def runner_update_open_broker_option_orders_market_data():
 # 	return True
 
 
-def loop_runner(runner_name):
+def execute_runner(runner_name):
 	while True:
-		logger.debug(f"Starting refresh loop for {runner_name}.")
+		logger.info(f"Starting execution loop for {runner_name}.")
 
 		runner_info = database.get_runner_info(runner_name)
 		updated_runner_info = runner_info.copy()
 
-		logger.debug(f"Successfully received {runner_name} runner_info: {runner_info}")
+		logger.info(f"Successfully received {runner_name} runner_info: {runner_info}")
 
 		if not runner_info["active"]:
-			logger.debug(f"Runner {runner_name} is not active.")
+			logger.info(f"Runner {runner_name} is not active.")
 
 			updated_runner_info["current_update_success"] = 0
 			updated_runner_info["last_update_success"] = 0
-			database.update_runner(updated_runner_info)
-			logger.debug(
-				f"Inactive runner: {runner_name}. Saved updated_runner_info for {runner_name}: {updated_runner_info}"
+
+			logger.info(
+				f"Saving updated_runner_info for {runner_name}: "
+				f"{updated_runner_info}"
 			)
+			database.update_runner(updated_runner_info)
 
 			time.sleep(updated_runner_info["adjusted_interval"])
-			logger.debug(
-				f"Runner {runner_name} is not active. Concluded interval pause for {runner_name}."
+			logger.info(
+				f"Concluded interval pause of "
+				f"{updated_runner_info['adjusted_interval']} seconds "
+				f"for {runner_name}."
 			)
 			continue
 
-		updated_runner_info["current_update_successful"] = 0
-		database.update_runner(updated_runner_info)
-		logger.debug(
-			f"Marked {runner_name} for failure: current_update_successful set to 0"
+		updated_runner_info["current_update_success"] = 0
+		logger.info(
+			f"Marking {runner_name} for failure: "
+			f"setting current_update_success to "
+			f"{updated_runner_info['current_update_success']}"
 		)
+		database.update_runner(updated_runner_info)
 
 		success = eval(f"{runner_name}()")
 
 		if success:
-			if (
-				updated_runner_info["adjusted_interval"]
-				> updated_runner_info["default_interval"]
-			):
-				updated_runner_info["adjusted_interval"] = (
-					updated_runner_info["adjusted_interval"] - 1
-				)
+			if updated_runner_info["adjusted_interval"] > updated_runner_info["default_interval"]:
+				updated_runner_info["adjusted_interval"] = updated_runner_info["adjusted_interval"] - 1
 
-			updated_runner_info["current_update_successful"] = 1
-			updated_runner_info["currently_succesful"] = 1
-			updated_runner_info["last_successful_update_epoch_time"] = (
-				time.time()
+			updated_runner_info["current_update_success"] = 1
+			updated_runner_info["last_update_success"] = 1
+			updated_runner_info["last_successful_update_epoch_time"] = time.time()
+
+			logger.info(
+				f"Updating {runner_name} record. Record details for update:\n"
+				f"{updated_runner_info}"
 			)
-
 			database.update_runner(updated_runner_info)
-			logger.debug(
-				f"Runner ({runner_name}) successfully updated."
+
+			time.sleep(updated_runner_info["adjusted_interval"])
+			logger.info(
+				f"Runner {runner_name} paused for "
+				f"{updated_runner_info['adjusted_interval']} seconds."
 			)
+		else:
+			logger.info(
+				f"Changing adjusted_intveral from "
+				f"{updated_runner_info['adjusted_interval']} to "
+				f"{updated_runner_info['adjusted_interval'] + 1} seconds."
+			)
+			updated_runner_info["adjusted_interval"] = runner_info["adjusted_interval"] + 5
+
+			if updated_runner_info["adjusted_interval"] >= config.MAXIMUM_INTERVAL:
+				updated_runner_info["adjusted_interval"] = config.MAXIMUM_INTERVAL
+			logger.info(
+				f"Final decision on adjusted_interval: "
+				f"{updated_runner_info['adjusted_interval']} seconds"
+			)
+
+			updated_runner_info["current_update_success"] = 0
+			updated_runner_info["last_update_success"] = 0
+
+			logger.info(
+				f"Updating {runner_name} record. Record details for update:\n"
+				f"{updated_runner_info}"
+			)
+			database.update_runner(updated_runner_info)
 
 			time.sleep(updated_runner_info["adjusted_interval"])
 			logger.debug(
-				f"Runner paused for {updated_runner_info['adjusted_interval']}"
-			)
-		else:
-			logger.debug(
-				f"Changing adjusted_intveral from {updated_runner_info['adjusted_interval']} to {runner_info['adjusted_interval'] + 1}"
-			)
-			updated_runner_info["adjusted_interval"] = (
-				runner_info["adjusted_interval"] + 1
-			)
-
-			if (
-				updated_runner_info["adjusted_interval"]
-				>= config.MAXIMUM_INTERVAL
-			):
-				updated_runner_info["adjusted_interval"] = (
-					config.MAXIMUM_INTERVAL
-				)
-			logger.debug(
-				f"Final decision on adjusted_interval: {updated_runner_info['adjusted_interval']} seconds"
-			)
-
-			# Set success statuses to failure
-			updated_runner_info["current_update_successful"] = 0
-			updated_runner_info["currently_successful"] = 0
-
-			# Update runner
-			database.update_runner(updated_runner_info)
-			logger.debug(
-				f"Successfully updated {runner_name} as failure."
-			)
-
-			# Pause for 2x interval to avoid API timeout
-			time.sleep(updated_runner_info["adjusted_interval"] * 2)
-			logger.debug(
-				f"Paused 2x adjusted_interval for: {updated_runner_info['adjusted_interval'] * 2}"
+				f"Runner {runner_info} paused for {updated_runner_info['adjusted_interval']} seconds."
 			)
 
 
@@ -148,12 +143,12 @@ def main():
 
 	database.populate_runners_table(RUNNERS, active=1)
 
-	# max_workers = len(RUNNERS)
-	# with ThreadPoolExecutor(max_workers=max_workers) as runner_threads:
-	# 	logger.debug("Starting runners.")
-	# 	for runner_name in RUNNERS.keys():
-	# 		logger.debug(f"Starting runner: {runner_name}")
-	# 		runner_threads.submit(loop_runner, runner_name)
+	max_workers = len(RUNNERS)
+	with ThreadPoolExecutor(max_workers=max_workers) as runner_threads:
+		logger.info("Starting runners in runners.main().")
+		for runner_name in RUNNERS.keys():
+			logger.info(f"Submitting first run for execute_runner({runner_name})")
+			runner_threads.submit(execute_runner, runner_name)
 
 
 if __name__ == "__main__":

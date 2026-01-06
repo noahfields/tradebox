@@ -22,7 +22,7 @@ DATABASE_TABLE_SCHEMA = {
     },
 
     "open_option_positions": {
-        "id": "TEXT PRIMARY KEY",
+        "position_uuid_pk": "VARCHAR(255) PRIMARY KEY",
         "json_data": "JSONB",
         "still_alive": "INTEGER",
         "last_update_epoch_time": "REAL",
@@ -89,8 +89,9 @@ def get_database_connection() -> psycopg2.extensions.connection:
 		conn.autocommit = False
 		return conn
 	except Exception as e:
-		logger.critical(
-			f"Error in database.get_database_connection(): {e}"
+		logger.exception(
+			f"Error in database.get_database_connection(): {e}", 
+            stack_info=True
 		)
 
 
@@ -212,14 +213,17 @@ def update_runner(runner_info) -> None:
         last_update_success = runner_info["last_update_success"]
         last_successful_update_epoch_time = runner_info["last_successful_update_epoch_time"]
 
-        sql_query = f"UPDATE runners SET active={active}, adjusted_interval={adjusted_interval}, default_interval={default_interval}, current_update_success={current_update_success}, last_update_success={last_update_success}, last_successful_update_epoch_time='{last_successful_update_epoch_time}' WHERE runner_name_pk='{runner_name_pk}';"
+        sql_query = f"UPDATE runners SET active={active}, adjusted_interval={adjusted_interval}, default_interval={default_interval}, current_update_success={current_update_success}, last_update_success={last_update_success}, last_successful_update_epoch_time={last_successful_update_epoch_time} WHERE runner_name_pk='{runner_name_pk}';"
 
         execute_set_database_query(sql_query)
 
-        logger.debug(f"Succcessfully updated runner: {runner_name}")
+        logger.info(
+            f"Succcessfully updated runner ({runner_name_pk}) database entry."
+		    "Submitted record data:\n"
+            f"{runner_info}"
+        )
     except Exception as e:
-        logger.warning(f"Issue updating runner: {runner_name}")
-        logger.warning(f"Exception info {e}")
+        logger.exception(f"Issue updating runner: {runner_name_pk}. Exception info:\n {e}", stack_info=True)
 
 
 def create_all_tables():
@@ -258,18 +262,22 @@ def delete_all_tables():
 
 
 def update_open_option_position(
-    id: str, 
+    position_uuid_pk: str, 
     json_data: str, 
     last_update_epoch_time: float, 
-    still_alive: int = 1
+    still_alive: int
     ) -> bool:
     try:
-        sql_query = f"INSERT INTO open_option_positions (id, json_data, last_update_epoch_time, still_alive) VALUES ('{id}', '{json_data}', {last_update_epoch_time}, {still_alive}) ON CONFLICT(id) DO UPDATE SET json_data=excluded.json_data, last_update_epoch_time=excluded.last_update_epoch_time, still_alive=excluded.still_alive;"
+        sql_query = f"INSERT INTO open_option_positions (position_uuid_pk, json_data, last_update_epoch_time, still_alive) VALUES ('{position_uuid_pk}', '{json_data}', {last_update_epoch_time}, {still_alive}) ON CONFLICT(position_uuid_pk) DO UPDATE SET json_data=excluded.json_data, last_update_epoch_time=excluded.last_update_epoch_time, still_alive=excluded.still_alive;"
 
         execute_set_database_query(sql_query)
         return True
     except Exception as e:
-        logger.critical(f"Exception: {e}")
+        logger.exception(
+            f"Issue updating open_option_positions. "
+			f"Exception: {e}",
+            stack_info=True
+        )
         return False     
 
 
