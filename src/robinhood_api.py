@@ -72,7 +72,7 @@ def login() -> bool:
 		return False
 
 
-def update_open_option_positions():
+def OLD_update_open_option_positions():
 	try:
 		open_option_positions = r.get_open_option_positions()
 		logger.info(f"Robinhood API get_open_option_positions() raw result: {open_option_positions}")
@@ -102,6 +102,11 @@ def update_open_option_positions():
 			stack_info=True
 		)
 		return False
+	
+def get_open_option_positions():
+	open_option_positions = r.get_open_option_positions()
+	logger.info(f"Robinhood API get_open_option_positions() raw result: {open_option_positions}")
+	return open_option_positions
 
 
 def update_open_option_positions_market_data():

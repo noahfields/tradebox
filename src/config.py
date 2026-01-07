@@ -30,6 +30,8 @@ MARKET_DATA_REFRESH_INTERVAL=os.getenv("MARKET_DATA_REFRESH_INTERVAL")
 OPEN_POSITIONS_REFRESH_INTERVAL=os.getenv("OPEN_POSITIONS_REFRESH_INTERVAL")
 BROKER_ORDERS_REFRESH_INTERVAL=os.getenv("BROKER_ORDERS_REFRESH_INTERVAL")
 MAXIMUM_REFRESH_INTERVAL=os.getenv("MAXIMUM_REFRESH_INTERVAL")
+RUNNER_FAILURE_ADJUSTMENT=os.getenv("RUNNER_FAILURE_ADJUSTMENT", 5)
+RUNNER_SUCCESS_ADJUSTMENT=os.getenv("RUNNER_SUCCESS_ADJUSTMENT", 1)
 
 # change only if needed (for example, to save database when re-cloning tradebox application)
 # recommended to place these one level below your git cloned directory to preserve database integrity
@@ -39,9 +41,15 @@ DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_NAME = os.getenv("DB_NAME")
 DB_PORT = os.getenv("DB_PORT")
-DATABASE_URL = f"postgresql://{DB_USER}:{DB_PASSWORD}@localhost"
+DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@localhost:{DB_PORT}/{DB_NAME}"
 
 # LOGS
 # same advice as database directories
+FILE_LOGGING = os.getenv("FILE_LOGGING")
+STDOUT_LOGGING = os.getenv("STDOUT_LOGGING")
+LOG_LEVEL = os.getenv("LOG_LEVEL")
+
+
+#NOT SURE IF NEEDED?
 LOG_PARENT_DIR = '.'
 LOG_DIR_NAME = 'logs'

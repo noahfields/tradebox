@@ -1,6 +1,7 @@
 from contextlib import contextmanager
 import logging
 import os
+import json
 import psycopg2
 import psycopg2.extras
 import time
@@ -18,7 +19,7 @@ DATABASE_TABLE_SCHEMA = {
         "default_interval": "INTEGER",
         "current_update_success": "BOOLEAN",
         "previous_update_success": "BOOLEAN",
-        "last_successful_update_epoch_time": "REAL",
+        "epoch_time_previous_success": "REAL",
     },
 
     "open_option_positions": {
@@ -85,7 +86,7 @@ DATABASE_TABLE_SCHEMA = {
 
 def get_database_connection() -> psycopg2.extensions.connection:
 	try:
-		conn = psycopg2.connect(config.DATABASE_URL)
+		conn = psycopg2.connect(config.DATABASE_URI)
 		conn.autocommit = False
 		return conn
 	except Exception as e:
@@ -117,113 +118,111 @@ def drop_table(table: str) -> bool:
     return success
 
 
-def populate_runners_table(runners: dict, active: int = 1) -> bool:
-    for runner_name_pk, default_interval in runners.items():
-        adjusted_interval = default_interval
-        current_update_success = 1
-        previous_update_success = 1
-        last_successful_update_epoch_time = 0
-        sql_query = (
-            "INSERT INTO runners ("
-            "runner_name_pk, "
-            "active, "
-            "adjusted_interval, "
-            "default_interval, "
-            "current_update_success, "
-            "previous_update_success, "
-            "last_successful_update_epoch_time) "
-            "VALUES ("
-            f"'{runner_name_pk}', "
-            f"{active}, "
-            f"{adjusted_interval}, "
-            f"{default_interval}, "
-            f"{current_update_success}, "
-            f"{previous_update_success}, "
-            f"{last_successful_update_epoch_time}"
-            ");"
-        )
-        success = execute_set_database_query(sql_query)
-        logger.info(f"Populated runners table with {runner_name_pk}")
-    return success
+# def populate_runners_table(runners: dict) -> bool:
+#     for runner_name_pk, default_interval in runners.items():
+#         adjusted_interval = default_interval
+#         current_update_success = 0
+#         previous_update_success = 0
+#         last_successful_update_epoch_time = 0
+#         sql_query = (
+#             "INSERT INTO runners ("
+#             "runner_name_pk, "
+#             "active, "
+#             "adjusted_interval, "
+#             "default_interval, "
+#             "current_update_success, "
+#             "previous_update_success, "
+#             "last_successful_update_epoch_time) "
+#             "VALUES ("
+#             f"'{runner_name_pk}', "
+#             f"{active}, "
+#             f"{adjusted_interval}, "
+#             f"{default_interval}, "
+#             f"{current_update_success}, "
+#             f"{previous_update_success}, "
+#             f"{last_successful_update_epoch_time}"
+#             ");"
+#         )
+#         success = execute_set_database_query(sql_query)
+#         logger.info(f"Populated runners table with {runner_name_pk}")
+#     return success
 
-def get_all_runners_status() -> list:
-	conn = get_database_connection()
-	cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+# def get_all_runners_status() -> list:
+# 	conn = get_database_connection()
+# 	cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-	sql_query = "SELECT * FROM runners;"
-	cur.execute(sql_query)
-	results = cur.fetchall()
+# 	sql_query = "SELECT * FROM runners;"
+# 	cur.execute(sql_query)
+# 	results = cur.fetchall()
 
-	runner_status_list = []
-	for result in results:
-		runner_info = {
-			"runner_name": result["runner_name"],
-			"active": result["active"],
-			"adjusted_interval": result["adjusted_interval"],
-			"default_interval": result["default_interval"],
-			"current_update_successful": result["current_update_successful"],
-			"currently_successful": result["currently_successful"],
-			"last_successful_update_epoch_time": result["last_successful_update_epoch_time"],
-		}
-		runner_status_list.append(runner_info)
+# 	runner_status_list = []
+# 	for result in results:
+# 		runner_info = {
+# 			"runner_name": result["runner_name"],
+# 			"active": result["active"],
+# 			"adjusted_interval": result["adjusted_interval"],
+# 			"default_interval": result["default_interval"],
+# 			"current_update_successful": result["current_update_successful"],
+# 			"currently_successful": result["currently_successful"],
+# 			"last_successful_update_epoch_time": result["last_successful_update_epoch_time"],
+# 		}
+# 		runner_status_list.append(runner_info)
 
-	cur.close()
-	conn.close()
+# 	cur.close()
+# 	conn.close()
 
-	return runner_status_list
+# 	return runner_status_list
 
-def get_runner_info(runner_name_pk: str) -> dict | None:
-	conn = get_database_connection()
-	cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+def get_current_runner_status(runner_name_pk: str) -> dict | None:
+    conn = get_database_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-	sql_query = (
-		f"SELECT * FROM runners WHERE runner_name_pk='{runner_name_pk}';"
-	)
-	cur.execute(sql_query)
-	result = cur.fetchone()
+    sql_query = (
+        f"SELECT * FROM runners WHERE runner_name_pk='{runner_name_pk}';"
+    )
+    cur.execute(sql_query)
+    result = cur.fetchone()
 
-	cur.close()
-	conn.close()
+    cur.close()
+    conn.close()
 
-	if result:
-		runner_info = {
+    if result:
+        runner_status = {
 			"runner_name_pk": result["runner_name_pk"],
 			"active": result["active"],
 			"adjusted_interval": result["adjusted_interval"],
 			"default_interval": result["default_interval"],
 			"current_update_success": result["current_update_success"],
-			"last_update_success": result["last_update_success"],
-			"last_successful_update_epoch_time": result["last_successful_update_epoch_time"],
+			"previous_update_success": result["previous_update_success"],
+			"epoch_time_previous_success": result["epoch_time_previous_success"],
 		}
-		logger.debug(
-			f"get_runner_info({runner_name_pk}) results:\n {runner_info}. Returning runner_info."
-		)
-		return runner_info
-	else:
-		logger.error(f"No runner info for {runner_name_pk}. Returning None.")
-		return None
+        logger.info(f"Got runner status for {runner_name_pk}:\n{runner_status}")
+        return runner_status
+    else:
+        logger.error(f"No runner status entry for {runner_name_pk}. Returning None.")
+        return None
 
-def update_runner(runner_info) -> None:
-    try:
-        runner_name_pk = runner_info["runner_name_pk"]
-        active = runner_info["active"]
-        adjusted_interval = runner_info["adjusted_interval"]
-        default_interval = runner_info["default_interval"]
-        current_update_success = runner_info["current_update_success"]
-        last_update_success = runner_info["last_update_success"]
-        last_successful_update_epoch_time = runner_info["last_successful_update_epoch_time"]
+# def update_runner_old(runner_info) -> None:
+#     try:
+#         runner_name_pk = runner_info["runner_name_pk"]
+#         active = runner_info["active"]
+#         adjusted_interval = runner_info["adjusted_interval"]
+#         default_interval = runner_info["default_interval"]
+#         current_update_success = runner_info["current_update_success"]
+#         last_update_success = runner_info["last_update_success"]
+#         last_successful_update_epoch_time = runner_info["last_successful_update_epoch_time"]
 
-        sql_query = f"UPDATE runners SET active={active}, adjusted_interval={adjusted_interval}, default_interval={default_interval}, current_update_success={current_update_success}, last_update_success={last_update_success}, last_successful_update_epoch_time={last_successful_update_epoch_time} WHERE runner_name_pk='{runner_name_pk}';"
+#         sql_query = f"UPDATE runners SET active={active}, adjusted_interval={adjusted_interval}, default_interval={default_interval}, current_update_success={current_update_success}, last_update_success={last_update_success}, last_successful_update_epoch_time={last_successful_update_epoch_time} WHERE runner_name_pk='{runner_name_pk}';"
 
-        execute_set_database_query(sql_query)
+#         execute_set_database_query(sql_query)
 
-        logger.info(
-            f"Succcessfully updated runner ({runner_name_pk}) database entry."
-		    "Submitted record data:\n"
-            f"{runner_info}"
-        )
-    except Exception as e:
-        logger.exception(f"Issue updating runner: {runner_name_pk}. Exception info:\n {e}", stack_info=True)
+#         logger.info(
+#             f"Succcessfully updated runner ({runner_name_pk}) database entry."
+# 		    "Submitted record data:\n"
+#             f"{runner_info}"
+#         )
+#     except Exception as e:
+#         logger.exception(f"Issue updating runner: {runner_name_pk}. Exception info:\n {e}", stack_info=True)
 
 
 def create_all_tables():
@@ -260,6 +259,37 @@ def delete_all_tables():
 	except Exception as e:
 		logger.error(f"Error deleting database tables: {e}")
 
+def write_runner_status(runner_status: dict) -> None:
+    try:
+        sql_query = (
+            "INSERT INTO runners ("
+            "runner_name_pk, "
+			"active, "
+			"adjusted_interval, "
+            "default_interval, "
+			"current_update_success, "
+            "previous_update_success, "
+            "epoch_time_previous_success) "
+			"VALUES ("
+            f"\'{runner_status['runner_name_pk']}\', "
+            f"{runner_status['active']}, "
+            f"{runner_status['adjusted_interval']}, "
+            f"{runner_status['default_interval']}, "
+            f"{runner_status['current_update_success']}, "
+            f"{runner_status['previous_update_success']}, "
+            f"{runner_status['epoch_time_previous_success']}) "
+            "ON CONFLICT(runner_name_pk) DO UPDATE SET "
+            "active=excluded.active, "
+            "adjusted_interval=excluded.adjusted_interval, "
+            "default_interval=excluded.default_interval, "
+            "current_update_success=excluded.current_update_success, "
+            "previous_update_success=excluded.previous_update_success, "
+            "epoch_time_previous_success=excluded.epoch_time_previous_success"
+            ";"
+        )
+        execute_set_database_query(sql_query)
+    except Exception as e:
+        logger.exception(stack_info=True)
 
 def update_open_option_position(
     position_uuid_pk: str, 
@@ -278,7 +308,20 @@ def update_open_option_position(
 			f"Exception: {e}",
             stack_info=True
         )
-        return False     
+        return False 
+
+def update_open_option_positions(open_option_positions) -> None:
+		set_table_field("open_option_positions", "still_alive", 0)
+
+		for position in open_option_positions:
+			json_data = json.dumps(position)
+			last_update_epoch_time = time.time()
+			still_alive = 1
+			database.update_open_option_position(
+				position["id"], json_data, last_update_epoch_time, still_alive
+			)
+
+		delete_rows_from_table_by_value("open_option_positions", "still_alive", 0)
 
 
 def update_open_option_positions_market_data(
