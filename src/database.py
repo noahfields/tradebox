@@ -30,21 +30,21 @@ DATABASE_TABLE_SCHEMA = {
     },
 
     "open_option_positions_market_data": {
-        "id": "TEXT PRIMARY KEY",
+        "option_uuid_pk": "TEXT PRIMARY KEY",
         "json_data": "JSONB",
         "still_alive": "INTEGER",
         "last_update_epoch_time": "REAL",
     },
 
     "open_broker_option_orders": {
-        "id": "TEXT PRIMARY KEY",
+        "order_uuid_pk": "TEXT PRIMARY KEY",
         "json_data": "JSONB",
         "still_alive": "INTEGER",
         "last_update_epoch_time": "REAL",
     },
 
     "open_broker_option_orders_market_data": {
-        "id": "TEXT PRIMARY KEY",
+        "option_uuid_pk": "TEXT PRIMARY KEY",
         "json_data": "JSONB",
         "still_alive": "INTEGER",
         "last_update_epoch_time": "REAL",
@@ -173,7 +173,7 @@ def drop_table(table: str) -> bool:
 
 # 	return runner_status_list
 
-def get_current_runner_status(runner_name_pk: str) -> dict | None:
+def get_runner_status(runner_name_pk: str) -> dict | None:
     conn = get_database_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
@@ -288,6 +288,10 @@ def write_runner_status(runner_status: dict) -> None:
             ";"
         )
         execute_set_database_query(sql_query)
+        logger.info(
+              f"Wrote runner status for {runner_status['runner_name_pk']}.\n"
+              f"Status details: {runner_status}"
+        )
     except Exception as e:
         logger.exception(stack_info=True)
 
@@ -301,73 +305,78 @@ def update_open_option_position(
         sql_query = f"INSERT INTO open_option_positions (position_uuid_pk, json_data, last_update_epoch_time, still_alive) VALUES ('{position_uuid_pk}', '{json_data}', {last_update_epoch_time}, {still_alive}) ON CONFLICT(position_uuid_pk) DO UPDATE SET json_data=excluded.json_data, last_update_epoch_time=excluded.last_update_epoch_time, still_alive=excluded.still_alive;"
 
         execute_set_database_query(sql_query)
-        return True
     except Exception as e:
         logger.exception(
             f"Issue updating open_option_positions. "
 			f"Exception: {e}",
             stack_info=True
         )
-        return False 
 
 def update_open_option_positions(open_option_positions) -> None:
-		set_table_field("open_option_positions", "still_alive", 0)
+    set_table_field("open_option_positions", "still_alive", 0)
 
-		for position in open_option_positions:
-			json_data = json.dumps(position)
-			last_update_epoch_time = time.time()
-			still_alive = 1
-			database.update_open_option_position(
-				position["id"], json_data, last_update_epoch_time, still_alive
-			)
+    for position in open_option_positions:
+        json_data = json.dumps(position)
+        last_update_epoch_time = time.time()
+        still_alive = 1
+        update_open_option_position(
+            position["id"], json_data, last_update_epoch_time, still_alive
+        )
 
-		delete_rows_from_table_by_value("open_option_positions", "still_alive", 0)
-
-
-def update_open_option_positions_market_data(
-    id: str, 
-    json_data: str, 
-    last_update_epoch_time: float, 
-    still_alive: int = 1
-    ) -> bool:
-    try:
-        sql_query = f"INSERT INTO open_option_positions_market_data (id, json_data, last_update_epoch_time, still_alive) VALUES ('{id}', '{json_data}', {last_update_epoch_time}, {still_alive}) ON CONFLICT(id) DO UPDATE SET json_data=excluded.json_data, last_update_epoch_time=excluded.last_update_epoch_time, still_alive=excluded.still_alive;"
-        execute_set_database_query(sql_query)
-        return True
-    except Exception as e:
-        logger.critical(f"Exception: {e}")
-        return False        
+    delete_rows_from_table_by_value("open_option_positions", "still_alive", 0)
 
 
-def update_open_broker_option_order(
-    order_id: str, 
-    json_data: str, 
-    last_update_epoch_time: float, 
-    still_alive:int = 1
-    ) -> bool:
-    try:
-        sql_query = f"INSERT INTO open_broker_option_orders (id, json_data, still_alive, last_update_epoch_time) VALUES ('{order_id}', '{json_data}', {still_alive}, {last_update_epoch_time}) ON CONFLICT(id) DO UPDATE SET json_data=excluded.json_data, still_alive=excluded.still_alive, last_update_epoch_time=excluded.last_update_epoch_time;"
-        execute_set_database_query(sql_query)
-        return True
-    except Exception as e:
-        logger.critical(f"Exception: {e}")
-        return False
+def update_open_option_positions_market_data(options_market_data: list) -> None:
+    set_table_field("open_option_positions_market_data", "still_alive", 0)
+
+    for option in options_market_data:
+        option_uuid_pk = option["instrument_id"]
+        json_data = json.dumps(option)
+        last_update_epoch_time = time.time()
+        still_alive = 1
+        try:
+            sql_query = f"INSERT INTO open_option_positions_market_data (option_uuid_pk, json_data, last_update_epoch_time, still_alive) VALUES ('{option_uuid_pk}', '{json_data}', {last_update_epoch_time}, {still_alive}) ON CONFLICT(option_uuid_pk) DO UPDATE SET json_data=excluded.json_data, last_update_epoch_time=excluded.last_update_epoch_time, still_alive=excluded.still_alive;"
+            execute_set_database_query(sql_query)
+        except Exception as e:
+            logger.exception(f"{e}", stack_info=True)     
+        
+    delete_rows_from_table_by_value("open_option_positions_market_data", "still_alive", 0)
 
 
-def update_open_broker_option_orders_market_data(
-    option_id: str, 
-    json_data: str, 
-    last_update_epoch_time: float, 
-    still_alive: int = 1
-    ) -> bool:
-    try:
-        sql_query = f"INSERT INTO open_broker_option_orders_market_data (id, json_data, last_update_epoch_time, still_alive) VALUES ('{option_id}', '{json_data}', {last_update_epoch_time}, {still_alive}) ON CONFLICT(id) DO UPDATE SET json_data=excluded.json_data, last_update_epoch_time=excluded.last_update_epoch_time, still_alive=excluded.still_alive;"
-        execute_set_database_query(sql_query)
-        return True
-    except Exception as e:
-        logger.critical(f"Exception: {e}")
-        return False
+def update_open_broker_option_orders(open_broker_orders: list) -> None:
+    set_table_field("open_broker_option_orders", "still_alive", 0)
 
+    for order in open_broker_orders:
+        try:
+            order_uuid_pk = order["id"]
+            json_data = json.dumps(order)
+            last_update_epoch_time = time.time()
+            still_alive = 1
+            sql_query = f"INSERT INTO open_broker_option_orders (order_uuid_pk, json_data, still_alive, last_update_epoch_time) VALUES ('{order_uuid_pk}', '{json_data}', {still_alive}, {last_update_epoch_time}) ON CONFLICT(order_uuid_pk) DO UPDATE SET json_data=excluded.json_data, still_alive=excluded.still_alive, last_update_epoch_time=excluded.last_update_epoch_time;"
+            execute_set_database_query(sql_query)
+        except Exception as e:
+            logger.exception(f"{e}", stack_info=True)
+
+    delete_rows_from_table_by_value("open_broker_option_orders", "still_alive", 0)
+
+
+def update_open_broker_option_orders_market_data(option_market_data: list) -> None:
+    set_table_field("open_broker_option_orders_market_data", "still_alive", 0)
+
+    for option in option_market_data:
+        option_uuid_pk = option["instrument_id"]
+        json_data = json.dumps(option)
+        last_update_epoch_time = time.time()
+        still_alive = 1
+        try:
+            sql_query = f"INSERT INTO open_broker_option_orders_market_data (option_uuid_pk, json_data, last_update_epoch_time, still_alive) VALUES ('{option_uuid_pk}', '{json_data}', {last_update_epoch_time}, {still_alive}) ON CONFLICT(option_uuid_pk) DO UPDATE SET json_data=excluded.json_data, last_update_epoch_time=excluded.last_update_epoch_time, still_alive=excluded.still_alive;"
+            execute_set_database_query(sql_query)
+            return True
+        except Exception as e:
+            logger.exception(f"{e}", stack_info=True)
+            return False
+
+    delete_rows_from_table_by_value("open_broker_option_orders_market_data", "still_alive", 0)
 
 def delete_rows_from_table_by_value(table, field, value):
     sql_query = f"DELETE FROM {table} WHERE {field}={value};"
