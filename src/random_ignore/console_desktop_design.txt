@@ -20,7 +20,7 @@ trailing orders
 table w/ mkt data
 b: new trg order.    b: edit trg order.   b: cancel trg order.
 
-bracket orders
+bracket orders (low stop and/or high stop)
 table w/ mkt data
 
 

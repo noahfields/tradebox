@@ -8,16 +8,10 @@ import robin_stocks.robinhood as r
 import config
 import database
 import log
-import robinhood_api
+import orders
 
 logger = log.setup_runners_logger("runners")
 
-# RUNNERS = {
-# 	"runner_update_open_option_positions": config.OPEN_POSITIONS_REFRESH_INTERVAL,
-# 	"runner_update_open_option_positions_market_data": config.MARKET_DATA_REFRESH_INTERVAL,
-# 	# "runner_update_open_broker_option_orders": config.BROKER_ORDERS_REFRESH_INTERVAL,
-# 	# "runner_update_open_broker_option_orders_market_data": config.MARKET_DATA_REFRESH_INTERVAL,
-# 	# "runner_update_trigger_option_orders_market_data": config.MARKET_DAT
 
 class Runner:
 	def __init__(self, runner_dict):
@@ -118,6 +112,7 @@ def get_data_open_option_positions():
 	api_data = r.get_open_option_positions()
 	return api_data
 
+
 def store_data_open_option_positions(api_data):
 	database.update_open_option_positions(api_data)
 
@@ -137,15 +132,19 @@ def get_data_open_option_positions_market_data():
 
 	return api_data
 
+
 def store_data_open_option_positions_market_data(api_data):
 	database.update_open_option_positions_market_data(api_data)
+
 
 def get_data_open_broker_option_orders():
 	api_data = r.get_all_open_option_orders()
 	return api_data
 
+
 def store_data_open_broker_option_orders(api_data):
 	database.update_open_broker_option_orders(api_data)
+
 
 def get_data_open_broker_option_orders_market_data():
 	open_broker_option_order_legs = database.get_json_field_from_table(
@@ -181,8 +180,27 @@ def get_data_open_broker_option_orders_market_data():
 	logger.debug(f"Option data: {api_data}")
 	return api_data
 
+
 def store_data_open_broker_option_orders_market_data(api_data):
 	database.update_open_broker_option_orders_market_data(api_data)
+
+
+def get_data_trigger_option_orders_market_data():
+	# Get option IDs from trigger_option_orders table
+	option_ids = database.select_column_from_table("trigger_option_orders", "rh_option_uuid")
+
+	api_data = []
+	for option_id in option_ids:
+		option_market_data = r.get_option_market_data_by_id(option_id)
+		option_market_data = option_market_data[0]
+		api_data.append(option_market_data)
+
+	return api_data
+
+
+def store_data_trigger_option_orders_market_data(api_data):
+	database.update_trigger_option_orders_market_data(api_data)
+
 
 def deprecated_loop_runner(runner_name):
 	while True:
@@ -271,6 +289,7 @@ def deprecated_loop_runner(runner_name):
 				f"Runner {runner_info} paused for {updated_runner_info['adjusted_interval']} seconds."
 			)
 
+
 def start_runner(runner_dict):
 	logger.info(f"Starting runner: {runner_dict['runner_name']}.", extra={"runner": runner_dict['runner_name']})
 
@@ -340,13 +359,14 @@ def start_runner(runner_dict):
 
 def main():
 	database.logger = logging.getLogger("runners")
-	robinhood_api.logger = logging.getLogger("runners")
 
 	r.login(config.ROBINHOOD_USERNAME, config.ROBINHOOD_PASSWORD)
 
 	# for dev only, refactor later
 	database.delete_all_tables()
 	database.create_all_tables()
+
+	orders.create_trigger_option_order(1, 0, 0, "buy", "debit", "IWM", 258, "call", "2026-03-20", "limit", 1.00, 1, "success msg", "failure msg", 3, 1)
 
 	max_workers = len(RUNNERS)
 	with ThreadPoolExecutor(max_workers=max_workers) as runner_threads:
@@ -396,14 +416,14 @@ RUNNERS = [
 		"store_data_function": store_data_open_broker_option_orders_market_data,
 		"default_interval": config.BROKER_ORDERS_REFRESH_INTERVAL,
 	},
-# 	{
-# 		"runner_name": "trigger_option_orders_market_data",
-# 		"active": True,
-# 		"get_data_function": get_data_trigger_option_orders_market_data,
-# 		"verify_data_keyset": "get_option_market_data_by_id",
-# 		"store_data_function": store_data_trigger_option_orders_market_data,
-# 		"default_interval": config. config.MARKET_DATA_REFRESH_INTERVAL,
-# 	}
+	{	
+		"runner_name": "trigger_option_orders_market_data",
+		"active": True,
+		"get_data_function": get_data_trigger_option_orders_market_data,
+		"verify_data_keyset": "get_option_market_data_by_id",
+		"store_data_function": store_data_trigger_option_orders_market_data,
+		"default_interval": config.MARKET_DATA_REFRESH_INTERVAL,
+	},
 ]
 
 if __name__ == "__main__":

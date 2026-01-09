@@ -51,7 +51,7 @@ DATABASE_TABLE_SCHEMA = {
     },
 
     "trigger_option_orders": {
-        "trigger_order_id": "SERIAL PRIMARY KEY",
+        "trigger_order_id_pk": "SMALLSERIAL PRIMARY KEY",
         "active": "INTEGER",
         "epoch_time_created_at": "REAL",
         "executed": "INTEGER DEFAULT 0",
@@ -314,6 +314,22 @@ def update_open_broker_option_orders_market_data(option_market_data: list) -> No
 
     delete_rows_from_table_by_value("open_broker_option_orders_market_data", "still_alive", 0)
 
+def update_trigger_option_orders_market_data(option_market_data: list) -> None:
+    set_table_field("trigger_option_orders_market_data", "still_alive", 0)
+
+    for option in option_market_data:
+        option_uuid_pk = option["instrument_id"]
+        json_data = json.dumps(option)
+        last_update_epoch_time = time.time()
+        still_alive = 1
+        try:
+            sql_query = f"INSERT INTO trigger_option_orders_market_data (option_uuid_pk, json_data, last_update_epoch_time, still_alive) VALUES ('{option_uuid_pk}', '{json_data}', {last_update_epoch_time}, {still_alive}) ON CONFLICT(option_uuid_pk) DO UPDATE SET json_data=excluded.json_data, last_update_epoch_time=excluded.last_update_epoch_time, still_alive=excluded.still_alive;"
+            execute_set_database_query(sql_query)
+        except Exception as e:
+            logger.exception(f"{e}", stack_info=True)
+
+    delete_rows_from_table_by_value("trigger_option_orders_market_data", "still_alive", 0)
+
 def delete_rows_from_table_by_value(table, field, value) -> None:
     sql_query = f"DELETE FROM {table} WHERE {field}={value};"
     execute_set_database_query(sql_query)
@@ -323,6 +339,22 @@ def set_table_field(table: str, field: str, value) -> None:
     sql_query = f"UPDATE {table} SET {field}={value};"
     execute_set_database_query(sql_query)
 
+def select_column_from_table(table: str, column: str) -> list:
+    conn = get_database_connection()
+    cur = conn.cursor()
+
+    sql_query = f"SELECT {column} FROM {table};"
+    cur.execute(sql_query)
+    results = cur.fetchall()
+
+    basic_list_result = []
+    for item in results:
+        basic_list_result.append(item[0])
+
+    cur.close()
+    conn.close()
+
+    return basic_list_result
 
 def get_json_field_from_table_as_list(table, field, key_name) -> list:
 	conn = get_database_connection()
@@ -357,14 +389,15 @@ def get_json_field_from_table(table: str, field: str, key_name: str) -> list:
 
 def insert_trigger_order(
 		active: int,
-		created_at: str,
+		epoch_time_created_at: str,
 		executed: int,
 		execute_only_after_id: int,
 		execution_deactivates_order_id: int,
 		buy_or_sell: str,
+        credit_or_debit: str,
 		symbol: str,
 		strike: float,
-		call_put: str,
+		call_or_put: str,
 		expiration_date: str,
 		rh_option_uuid: str,
 		market_or_limit: str,
@@ -377,53 +410,57 @@ def insert_trigger_order(
 		cutoff_price: float,
 		max_order_attempts: int,
 		emergency_order_fill_on_failure: int
-	):
+	) -> None:
 	
 	sql_query = (
 		"INSERT INTO trigger_option_orders("
-		"created_at, "
-		"rh_option_uuid, "
+        "active, "
+		"epoch_time_created_at, "
+        "executed, "
 		"execute_only_after_id, "
-		"buy_sell, "
+        "execution_deactivates_order_id, "
+		"buy_or_sell, "
+        "credit_or_debit, "
 		"symbol, "
-		"expiration_date, "
 		"strike, "
 		"call_or_put, "
-		"quantity, "
+        "expiration_date, "
+		"rh_option_uuid, "
 		"market_or_limit, "
-		"below_tick, "
-		"above_tick, "
-		"cutoff_price, "
 		"limit_price, "
+        "quantity, "
 		"message_on_success, "
 		"message_on_failure, "
+        "below_tick, "
+		"above_tick, "
+		"cutoff_price, "
 		"max_order_attempts, "
-		"execution_deactivates_order_id, "
-		"active, "
 		"emergency_order_fill_on_failure"
 		") "
 		"VALUES ("
-		f"{created_at}, "
-		f"{rh_option_uuid}, "
+		f"{active}, "
+		f"{epoch_time_created_at}, "
+		f"{executed}, "
 		f"{execute_only_after_id}, "
-		f"{buy_or_sell}, "
-		f"{symbol}, "
-		f"{expiration_date}, "
+		f"{execution_deactivates_order_id}, "
+		f"'{buy_or_sell}', "
+		f"'{credit_or_debit}', "
+		f"'{symbol}', "
 		f"{strike}, "
-		f"{call_put}, "
+		f"'{call_or_put}', "
+		f"'{expiration_date}', "
+		f"'{rh_option_uuid}', "
+		f"'{market_or_limit}', "
+		f"{limit_price}, "
 		f"{quantity}, "
-		f"{market_or_limit}, "
+		f"'{message_on_success}', "
+		f"'{message_on_failure}', "
 		f"{below_tick}, "
 		f"{above_tick}, "
 		f"{cutoff_price}, "
-		f"{limit_price}, "
-		f"{message_on_success}, "
-		f"{message_on_failure}, "
 		f"{max_order_attempts}, "
-		f"{execution_deactivates_order_id}, "
-		f"{active}, "
-		f"{emergency_order_fill_on_failure}, "
+        f"{emergency_order_fill_on_failure}"
+        ");"
 	)
 
-	result = execute_set_database_query(sql_query)
-	return result
+	execute_set_database_query(sql_query)
