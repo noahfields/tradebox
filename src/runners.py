@@ -10,7 +10,7 @@ import database
 import log
 import robinhood_api
 
-logger = log.setup_logger("runners")
+logger = log.setup_runners_logger("runners")
 
 # RUNNERS = {
 # 	"runner_update_open_option_positions": config.OPEN_POSITIONS_REFRESH_INTERVAL,
@@ -40,16 +40,17 @@ class Runner:
 			f"get_data_function: {self.get_data_function}\n"
 			f"verify_data_keyset: {self.verify_data_keyset}\n"
 			f"store_data_function: {self.store_data_function}\n"
-			f"Runner status:\n{self.status}"
+			f"Runner status:\n{self.status}",
+			extra={"runner": self.status["runner_name_pk"]}
 		)
 
 	def get_data(self):
 		api_data = self.get_data_function()
-		logger.info(f"Received api_data for {self.status['runner_name_pk']}: {api_data}")
+		logger.info(f"Received api_data for {self.status['runner_name_pk']}: {api_data}", extra={"runner": self.status['runner_name_pk']})
 		return api_data
 	
 	def verify_data(self, api_data_row: dict) -> bool:
-		match_bool = verify_api_key_match(self.verify_data_keyset, api_data_row)
+		match_bool = verify_api_key_match(self.verify_data_keyset, api_data_row, self.status["runner_name_pk"])
 		return match_bool
 	
 	def store_data(self, api_data) -> None:
@@ -57,14 +58,14 @@ class Runner:
 	
 	def get_runner_status(self):
 		status = database.get_runner_status(self.status["runner_name_pk"])
-		logger.info(f"Returning fetched runner status: {status}")
+		logger.info(f"Returning fetched runner status: {status}", extra={"runner": self.status["runner_name_pk"]})
 		return status
 
 	def write_runner_status(self):
 		database.write_runner_status(self.status)
 
 
-def verify_api_key_match(api_verification_key_name: str, live_data_dict: dict) -> bool:
+def verify_api_key_match(api_verification_key_name: str, live_data_dict: dict, runner_name: str = "unknown") -> bool:
 	default_data_dict = API_VERIFICATION_DEFAULT_KEYSETS[api_verification_key_name]
 
 	default_keys_match_live_keys = verify_dict_keys_match(default_data_dict, live_data_dict)
@@ -74,7 +75,8 @@ def verify_api_key_match(api_verification_key_name: str, live_data_dict: dict) -
 			"API KEY VERIFICATION FAILURE\n"
 			"Default keys do not match live keys.\n"
 			"Runner may fail due to an update to Robinhood API data.\n"
-			f"Check robinhood_api {api_verification_key_name} for rewrite."
+			f"Check {api_verification_key_name} for rewrite.",
+			extra={"runner": runner_name}
 		)
 		keys_only_in_default_data_dict = get_unique_keys_in_first_dict(
 			default_data_dict, 
@@ -86,16 +88,19 @@ def verify_api_key_match(api_verification_key_name: str, live_data_dict: dict) -
 		)
 		logger.critical(
 			f"Keys only in DEFAULT {api_verification_key_name} row:\n"
-			f"{keys_only_in_default_data_dict}"
+			f"{keys_only_in_default_data_dict}",
+			extra={"runner": runner_name}
 		)
 		logger.critical(
 			f"Keys only in LIVE {api_verification_key_name} row:\n"
-			f"{keys_only_in_live_data_dict}"
+			f"{keys_only_in_live_data_dict}",
+			extra={"runner": runner_name}
 		)
 		return False
 	else:
 		logger.info(
-			f"Robinhood API keys for {api_verification_key_name} match."
+			f"Robinhood API keys for {api_verification_key_name} match.",
+			extra={"runner": runner_name}
 		)
 		return True
 
@@ -110,7 +115,7 @@ def get_unique_keys_in_first_dict(default_dict: dict, other_dict: dict) -> set[s
 
 
 def get_data_open_option_positions():
-	api_data = robinhood_api.get_open_option_positions()
+	api_data = r.get_open_option_positions()
 	return api_data
 
 def store_data_open_option_positions(api_data):
@@ -129,7 +134,6 @@ def get_data_open_option_positions_market_data():
 	api_data = []
 	for option_id in cleaned_option_ids:
 		api_data.append(r.get_option_market_data_by_id(option_id)[0])
-	logger.info(f"market data: {api_data}")
 
 	return api_data
 
@@ -268,33 +272,33 @@ def deprecated_loop_runner(runner_name):
 			)
 
 def start_runner(runner_dict):
-	logger.info(f"Starting runner: {runner_dict['runner_name']}.")
+	logger.info(f"Starting runner: {runner_dict['runner_name']}.", extra={"runner": runner_dict['runner_name']})
 
 	runner = Runner(runner_dict)
 	runner.write_runner_status()
 
 	while True:
 		runner.status = runner.get_runner_status()
-		logger.info(f"Runner status: {runner.status}")
+		logger.info(f"Runner status: {runner.status}", extra={"runner": runner.status['runner_name_pk']})
 
 		if runner.status["active"] == False:
 			runner.status["current_update_success"] = False
 			runner.status["previous_update_success"] = False
 			runner.write_runner_status()
-			logger.info(f"Runner {runner.status['runner_name_pk']} is not active. Sleeping for default_interval.")
+			logger.info(f"Runner {runner.status['runner_name_pk']} is not active. Sleeping for default_interval.", extra={"runner": runner.status['runner_name_pk']})
 			time.sleep(runner.status["default_interval"])
 			continue
 		else:
-			logger.info(f"Runner {runner.status['runner_name_pk']} is active. Continuing API fetch.")
+			logger.info(f"Runner {runner.status['runner_name_pk']} is active. Continuing API fetch.", extra={"runner": runner.status['runner_name_pk']})
 
 		runner.status["current_update_success"] = False
 		runner.write_runner_status()
 
 		try:
 			api_data = runner.get_data()
-			logger.info(f"Runner {runner.status['runner_name_pk']} api_data: {api_data}")
+			logger.info(f"Runner {runner.status['runner_name_pk']} api_data: {api_data}", extra={"runner": runner.status['runner_name_pk']})
 		except Exception as e:
-			logger.exception(f"{e}", stack_info=True)
+			logger.exception(f"{e}", stack_info=True, extra={"runner": runner.status['runner_name_pk']})
 			runner.status["current_update_success"] = False
 			runner.status["previous_update_success"] = False
 			runner.status["adjusted_interval"] += config.RUNNER_FAILURE_ADJUSTMENT
@@ -306,15 +310,15 @@ def start_runner(runner_dict):
 
 		api_data_match = None
 		if len(api_data) > 0:
-			logger.info(f"Entering verification for {runner.status["runner_name_pk"]}")
+			logger.info(f"Entering verification for {runner.status["runner_name_pk"]}", extra={"runner": runner.status["runner_name_pk"]})
 			api_data_match = runner.verify_data(api_data[0])
 		else:
-			logger.info(f"No API data to verify.")
+			logger.info(f"No API data to verify.", extra={"runner": runner.status['runner_name_pk']})
 		
 		if api_data_match == True:
-			logger.info(f"API data for {runner.status['runner_name_pk']} matches default record.")
+			logger.info(f"API data for {runner.status['runner_name_pk']} matches default record.", extra={"runner": runner.status['runner_name_pk']})
 		elif api_data_match == False:
-			logger.critical(f"API data for {runner.status['runner_name_pk']} does not match default records. There was an API change from Robinhood.")
+			logger.critical(f"API data for {runner.status['runner_name_pk']} does not match default records. There was an API change from Robinhood.", extra={"runner": runner.status['runner_name_pk']})
 		
 		try:
 			runner.store_data(api_data)
@@ -329,7 +333,7 @@ def start_runner(runner_dict):
 			runner.write_runner_status()
 			continue
 		except Exception as e:
-			logger.exception(f"{e}", stack_info=True)
+			logger.exception(f"{e}", stack_info=True, extra={"runner": runner.status['runner_name_pk']})
 			time.sleep(runner.status["adjusted_interval"])
 			continue
 

@@ -36,7 +36,6 @@ RUNNER_SUCCESS_ADJUSTMENT=os.getenv("RUNNER_SUCCESS_ADJUSTMENT", 1)
 # change only if needed (for example, to save database when re-cloning tradebox application)
 # recommended to place these one level below your git cloned directory to preserve database integrity
 # across git clones for future updates
-
 DB_USER = os.getenv("DB_USER")
 DB_PASSWORD = os.getenv("DB_PASSWORD")
 DB_NAME = os.getenv("DB_NAME")
@@ -47,8 +46,8 @@ DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@localhost:{DB_PORT}/{DB_NA
 # same advice as database directories
 FILE_LOGGING = os.getenv("FILE_LOGGING")
 STDOUT_LOGGING = os.getenv("STDOUT_LOGGING")
+JSONL_LOGGING = os.getenv("JSONL_LOGGING")
 LOG_LEVEL = os.getenv("LOG_LEVEL")
-
 
 #NOT SURE IF NEEDED?
 LOG_PARENT_DIR = '.'

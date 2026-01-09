@@ -30,21 +30,21 @@ DATABASE_TABLE_SCHEMA = {
     },
 
     "open_option_positions_market_data": {
-        "option_uuid_pk": "TEXT PRIMARY KEY",
+        "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
         "json_data": "JSONB",
         "still_alive": "INTEGER",
         "last_update_epoch_time": "REAL",
     },
 
     "open_broker_option_orders": {
-        "order_uuid_pk": "TEXT PRIMARY KEY",
+        "order_uuid_pk": "VARCHAR(255) PRIMARY KEY",
         "json_data": "JSONB",
         "still_alive": "INTEGER",
         "last_update_epoch_time": "REAL",
     },
 
     "open_broker_option_orders_market_data": {
-        "option_uuid_pk": "TEXT PRIMARY KEY",
+        "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
         "json_data": "JSONB",
         "still_alive": "INTEGER",
         "last_update_epoch_time": "REAL",
@@ -53,17 +53,18 @@ DATABASE_TABLE_SCHEMA = {
     "trigger_option_orders": {
         "trigger_order_id": "SERIAL PRIMARY KEY",
         "active": "INTEGER",
-        "created_at": "TEXT",
+        "epoch_time_created_at": "REAL",
         "executed": "INTEGER DEFAULT 0",
         "execute_only_after_id": "INTEGER",
         "execution_deactivates_order_id": "INTEGER",
-        "buy_sell": "TEXT",
+        "buy_or_sell": "TEXT",
+        "credit_or_debit": "TEXT",
         "symbol": "TEXT",
         "strike": "REAL",
-        "call_put": "TEXT",
+        "call_or_put": "TEXT",
         "expiration_date": "TEXT",
         "rh_option_uuid": "TEXT",
-        "market_limit": "TEXT",
+        "market_or_limit": "TEXT",
         "limit_price": "REAL",
         "quantity": "INTEGER",
         "message_on_success": "TEXT",
@@ -76,7 +77,7 @@ DATABASE_TABLE_SCHEMA = {
     },
 
     "trigger_option_orders_market_data": {
-        "id": "TEXT PRIMARY KEY",
+        "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
         "json_data": "JSONB",
         "still_alive": "INTEGER",
         "last_update_epoch_time": "REAL",
@@ -96,56 +97,30 @@ def get_database_connection() -> psycopg2.extensions.connection:
 		)
 
 
-def execute_set_database_query(sql_query: str) -> bool:
-	try:
-		conn = get_database_connection()
-		cur = conn.cursor()
-		cur.execute(sql_query)
-		conn.commit()
-		cur.close()
-		conn.close()
-		return True
-	except Exception as e:
-		logger.exception(
-			f"Unexpected exception. Issue executing sql_query: {sql_query}.\n"
-		)
-		return False
+def execute_set_database_query(sql_query: str, runner_name: str = "unknown") -> bool:
+    try:
+        conn = get_database_connection()
+        cur = conn.cursor()
+        cur.execute(sql_query)
+        conn.commit()
+        cur.close()
+        conn.close()
+        return True
+    except Exception as e:
+        logger.exception(
+             f"Unexpected exception. Issue executing sql_query: {sql_query}.\n", 
+             stack_info=True, 
+             extra={"runner": runner_name}
+        )
+        if 'conn' in locals():
+            conn.close()
+        return False
 
 
 def drop_table(table: str) -> bool:
     sql_query = f"DROP TABLE IF EXISTS {table};"
     success = execute_set_database_query(sql_query)
     return success
-
-
-# def populate_runners_table(runners: dict) -> bool:
-#     for runner_name_pk, default_interval in runners.items():
-#         adjusted_interval = default_interval
-#         current_update_success = 0
-#         previous_update_success = 0
-#         last_successful_update_epoch_time = 0
-#         sql_query = (
-#             "INSERT INTO runners ("
-#             "runner_name_pk, "
-#             "active, "
-#             "adjusted_interval, "
-#             "default_interval, "
-#             "current_update_success, "
-#             "previous_update_success, "
-#             "last_successful_update_epoch_time) "
-#             "VALUES ("
-#             f"'{runner_name_pk}', "
-#             f"{active}, "
-#             f"{adjusted_interval}, "
-#             f"{default_interval}, "
-#             f"{current_update_success}, "
-#             f"{previous_update_success}, "
-#             f"{last_successful_update_epoch_time}"
-#             ");"
-#         )
-#         success = execute_set_database_query(sql_query)
-#         logger.info(f"Populated runners table with {runner_name_pk}")
-#     return success
 
 # def get_all_runners_status() -> list:
 # 	conn = get_database_connection()
@@ -196,33 +171,11 @@ def get_runner_status(runner_name_pk: str) -> dict | None:
 			"previous_update_success": result["previous_update_success"],
 			"epoch_time_previous_success": result["epoch_time_previous_success"],
 		}
-        logger.info(f"Got runner status for {runner_name_pk}:\n{runner_status}")
+        logger.info(f"Got runner status for {runner_name_pk}:\n{runner_status}", extra={"runner": runner_name_pk})
         return runner_status
     else:
-        logger.error(f"No runner status entry for {runner_name_pk}. Returning None.")
+        logger.error(f"No runner status entry for {runner_name_pk}. Returning None.", extra={"runner": runner_name_pk})
         return None
-
-# def update_runner_old(runner_info) -> None:
-#     try:
-#         runner_name_pk = runner_info["runner_name_pk"]
-#         active = runner_info["active"]
-#         adjusted_interval = runner_info["adjusted_interval"]
-#         default_interval = runner_info["default_interval"]
-#         current_update_success = runner_info["current_update_success"]
-#         last_update_success = runner_info["last_update_success"]
-#         last_successful_update_epoch_time = runner_info["last_successful_update_epoch_time"]
-
-#         sql_query = f"UPDATE runners SET active={active}, adjusted_interval={adjusted_interval}, default_interval={default_interval}, current_update_success={current_update_success}, last_update_success={last_update_success}, last_successful_update_epoch_time={last_successful_update_epoch_time} WHERE runner_name_pk='{runner_name_pk}';"
-
-#         execute_set_database_query(sql_query)
-
-#         logger.info(
-#             f"Succcessfully updated runner ({runner_name_pk}) database entry."
-# 		    "Submitted record data:\n"
-#             f"{runner_info}"
-#         )
-#     except Exception as e:
-#         logger.exception(f"Issue updating runner: {runner_name_pk}. Exception info:\n {e}", stack_info=True)
 
 
 def create_all_tables():
@@ -257,7 +210,7 @@ def delete_all_tables():
 		conn.close()
 		logger.info("Database tables deleted successfully")
 	except Exception as e:
-		logger.error(f"Error deleting database tables: {e}")
+		logger.error(f"Error deleting database tables: {e}", stack_info=True)
 
 def write_runner_status(runner_status: dict) -> None:
     try:
@@ -289,39 +242,24 @@ def write_runner_status(runner_status: dict) -> None:
         )
         execute_set_database_query(sql_query)
         logger.info(
-              f"Wrote runner status for {runner_status['runner_name_pk']}.\n"
-              f"Status details: {runner_status}"
+            f"Wrote runner status for {runner_status['runner_name_pk']}.\nStatus details:\n{runner_status}",
+            extra={"runner": runner_status["runner_name_pk"]}
         )
     except Exception as e:
         logger.exception(stack_info=True)
 
-def update_open_option_position(
-    position_uuid_pk: str, 
-    json_data: str, 
-    last_update_epoch_time: float, 
-    still_alive: int
-    ) -> bool:
-    try:
-        sql_query = f"INSERT INTO open_option_positions (position_uuid_pk, json_data, last_update_epoch_time, still_alive) VALUES ('{position_uuid_pk}', '{json_data}', {last_update_epoch_time}, {still_alive}) ON CONFLICT(position_uuid_pk) DO UPDATE SET json_data=excluded.json_data, last_update_epoch_time=excluded.last_update_epoch_time, still_alive=excluded.still_alive;"
-
-        execute_set_database_query(sql_query)
-    except Exception as e:
-        logger.exception(
-            f"Issue updating open_option_positions. "
-			f"Exception: {e}",
-            stack_info=True
-        )
 
 def update_open_option_positions(open_option_positions) -> None:
     set_table_field("open_option_positions", "still_alive", 0)
 
     for position in open_option_positions:
+        position_uuid_pk = position["id"]
         json_data = json.dumps(position)
         last_update_epoch_time = time.time()
         still_alive = 1
-        update_open_option_position(
-            position["id"], json_data, last_update_epoch_time, still_alive
-        )
+
+        sql_query = f"INSERT INTO open_option_positions (position_uuid_pk, json_data, last_update_epoch_time, still_alive) VALUES ('{position_uuid_pk}', '{json_data}', {last_update_epoch_time}, {still_alive}) ON CONFLICT(position_uuid_pk) DO UPDATE SET json_data=excluded.json_data, last_update_epoch_time=excluded.last_update_epoch_time, still_alive=excluded.still_alive;"
+        execute_set_database_query(sql_query)
 
     delete_rows_from_table_by_value("open_option_positions", "still_alive", 0)
 
@@ -371,23 +309,19 @@ def update_open_broker_option_orders_market_data(option_market_data: list) -> No
         try:
             sql_query = f"INSERT INTO open_broker_option_orders_market_data (option_uuid_pk, json_data, last_update_epoch_time, still_alive) VALUES ('{option_uuid_pk}', '{json_data}', {last_update_epoch_time}, {still_alive}) ON CONFLICT(option_uuid_pk) DO UPDATE SET json_data=excluded.json_data, last_update_epoch_time=excluded.last_update_epoch_time, still_alive=excluded.still_alive;"
             execute_set_database_query(sql_query)
-            return True
         except Exception as e:
             logger.exception(f"{e}", stack_info=True)
-            return False
 
     delete_rows_from_table_by_value("open_broker_option_orders_market_data", "still_alive", 0)
 
-def delete_rows_from_table_by_value(table, field, value):
+def delete_rows_from_table_by_value(table, field, value) -> None:
     sql_query = f"DELETE FROM {table} WHERE {field}={value};"
-    success = execute_set_database_query(sql_query)
-    return success
+    execute_set_database_query(sql_query)
 
 
-def set_table_field(table: str, field: str, value) -> bool:
+def set_table_field(table: str, field: str, value) -> None:
     sql_query = f"UPDATE {table} SET {field}={value};"
-    success = execute_set_database_query(sql_query)
-    return success
+    execute_set_database_query(sql_query)
 
 
 def get_json_field_from_table_as_list(table, field, key_name) -> list:
@@ -454,9 +388,9 @@ def insert_trigger_order(
 		"symbol, "
 		"expiration_date, "
 		"strike, "
-		"call_put, "
+		"call_or_put, "
 		"quantity, "
-		"market_limit, "
+		"market_or_limit, "
 		"below_tick, "
 		"above_tick, "
 		"cutoff_price, "
