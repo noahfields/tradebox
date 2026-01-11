@@ -804,3 +804,103 @@ def insert_bracket_order(
         cur.close()
         conn.close()
 
+
+def insert_trailing_order(
+        active: bool,
+        epoch_time_created_at: float,
+        execute_only_after_trigger_order_ids: list[int],
+        execute_only_after_bracket_order_ids: list[int],
+        execute_only_after_trailing_order_ids: list[int],
+        execution_deactivates_trigger_order_ids: list[int],
+        execution_deactivates_bracket_order_ids: list[int],
+        execution_deactivates_trailing_order_ids: list[int],
+        buy_or_sell: str,
+        credit_or_debit: str,
+        symbol: str,
+        strike: float,
+        call_or_put: str,
+        expiration_date: str,
+        rh_option_uuid: str,
+        quantity: int,
+        message_on_success: str,
+        message_on_failure: str,
+        below_tick: float,
+        above_tick: float,
+        cutoff_price: float,
+        max_order_attempts: int,
+        emergency_order_fill_on_failure: bool,
+        percent_from_high_sell_trigger: float,
+        sell_at_specific_price: float,
+    ) -> None:
+	
+    sql_query = (
+        "INSERT INTO bracket_option_orders("
+        "active, "
+        "epoch_time_created_at, "
+        "execute_only_after_trigger_order_ids, "
+        "execute_only_after_bracket_order_ids, "
+        "execute_only_after_trailing_order_ids, "
+        "execution_deactivates_trigger_order_ids, "
+        "execution_deactivates_bracket_order_ids, "
+        "execution_deactivates_trailing_order_ids, "
+        "buy_or_sell, "
+        "credit_or_debit, "
+        "symbol, "
+        "strike, "
+        "call_or_put, "
+        "expiration_date, "
+        "rh_option_uuid, "
+        "quantity, "
+        "message_on_success, "
+        "message_on_failure, "
+        "below_tick, "
+        "above_tick, "
+        "cutoff_price, "
+        "max_order_attempts, "
+        "emergency_order_fill_on_failure, "
+        "percent_from_high_sell_trigger, "
+        "sell_at_specific_price"
+        ") "
+        "VALUES ("
+        "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s"
+        ");"
+    )
+     
+    values = (
+        active,
+        epoch_time_created_at,
+        execute_only_after_trigger_order_ids,
+        execute_only_after_bracket_order_ids,
+        execute_only_after_trailing_order_ids,
+        execution_deactivates_trigger_order_ids,
+        execution_deactivates_bracket_order_ids,
+        execution_deactivates_trailing_order_ids,
+        buy_or_sell,
+        credit_or_debit,
+        symbol,
+        strike,
+        call_or_put,
+        expiration_date,
+        rh_option_uuid,
+        quantity,
+        message_on_success,
+        message_on_failure,
+        below_tick,
+        above_tick,
+        cutoff_price,
+        max_order_attempts,
+        emergency_order_fill_on_failure,
+        percent_from_high_sell_trigger, 
+        sell_at_specific_price
+    )
+
+    conn = get_database_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(sql_query, values)
+        conn.commit()
+    except Exception as e:
+        logger.exception(f"Issue inserting trailing order: {e}", stack_info=True)
+    finally:
+        cur.close()
+        conn.close()
