@@ -2,6 +2,7 @@ from concurrent.futures import ThreadPoolExecutor
 import json
 import logging
 import time
+import uuid
 
 import robin_stocks.robinhood as r
 
@@ -170,9 +171,7 @@ def get_data_open_broker_option_orders_market_data():
 	)
 	# SAMPLE DATA open_broker_option_order_legs
 	# [('[{"executions":[],"id":"69443130-4608-43c0-8ce5-1f225c685044","option":"https://api.robinhood.com/options/instruments/4aed1bc4-f8d4-48a7-a5b9-288ee30c63be/","position_effect":"close","ratio_quantity":1,"side":"sell","expiration_date":"2025-12-19","strike_price":"34.0000","option_type":"put","long_strategy_code":"4aed1bc4-f8d4-48a7-a5b9-288ee30c63be_L1","short_strategy_code":"4aed1bc4-f8d4-48a7-a5b9-288ee30c63be_S1"}]',)]
-	logger.info(
-		f"Fetched open_broker_option_orders legs: {open_broker_option_order_legs}"
-	)
+	logger.info(f"Fetched open_broker_option_orders legs: {open_broker_option_order_legs}")
 
 	cleaned_option_leg_ids = []
 	for leg in open_broker_option_order_legs:
@@ -195,7 +194,7 @@ def get_data_open_broker_option_orders_market_data():
 		option_market_data = option_market_data[0]
 		api_data.append(option_market_data)
 
-	logger.debug(f"Option data: {api_data}")
+	logger.info(f"get_data_open_broker_option_orders_market_data final option market data:\n{api_data}")
 	return api_data
 
 
@@ -205,9 +204,7 @@ def store_data_open_broker_option_orders_market_data(api_data):
 
 def get_data_trigger_option_orders_market_data():
 	# Get option IDs from trigger_option_orders table
-	option_ids = database.select_column_from_table(
-		"trigger_option_orders", "rh_option_uuid"
-	)
+	option_ids = database.select_column_from_table("trigger_option_orders", "rh_option_uuid")
 
 	api_data = []
 	for option_id in option_ids:
@@ -220,110 +217,6 @@ def get_data_trigger_option_orders_market_data():
 
 def store_data_trigger_option_orders_market_data(api_data):
 	database.update_trigger_option_orders_market_data(api_data)
-
-
-def deprecated_loop_runner(runner_name):
-	while True:
-		logger.info(f"Starting execution loop for {runner_name}.")
-
-		runner_info = database.get_runner_info(runner_name)
-		updated_runner_info = runner_info.copy()
-
-		logger.info(
-			f"Successfully received {runner_name} runner_info: {runner_info}"
-		)
-
-		if not runner_info["active"]:
-			logger.info(f"Runner {runner_name} is not active.")
-
-			updated_runner_info["current_update_success"] = 0
-			updated_runner_info["last_update_success"] = 0
-
-			logger.info(
-				f"Saving updated_runner_info for {runner_name}: "
-				f"{updated_runner_info}"
-			)
-			database.update_runner(updated_runner_info)
-
-			time.sleep(updated_runner_info["adjusted_interval"])
-			logger.info(
-				f"Concluded interval pause of "
-				f"{updated_runner_info['adjusted_interval']} seconds "
-				f"for {runner_name}."
-			)
-			continue
-
-		updated_runner_info["current_update_success"] = 0
-		logger.info(
-			f"Marking {runner_name} for failure: "
-			f"setting current_update_success to "
-			f"{updated_runner_info['current_update_success']}"
-		)
-		database.update_runner(updated_runner_info)
-
-		success = eval(f"{runner_name}()")
-
-		if success:
-			if (
-				updated_runner_info["adjusted_interval"]
-				> updated_runner_info["default_interval"]
-			):
-				updated_runner_info["adjusted_interval"] = (
-					updated_runner_info["adjusted_interval"] - 1
-				)
-
-			updated_runner_info["current_update_success"] = 1
-			updated_runner_info["last_update_success"] = 1
-			updated_runner_info["last_successful_update_epoch_time"] = (
-				time.time()
-			)
-
-			logger.info(
-				f"Updating {runner_name} record. Record details for update:\n"
-				f"{updated_runner_info}"
-			)
-			database.update_runner(updated_runner_info)
-
-			time.sleep(updated_runner_info["adjusted_interval"])
-			logger.info(
-				f"Runner {runner_name} paused for "
-				f"{updated_runner_info['adjusted_interval']} seconds."
-			)
-		else:
-			logger.info(
-				f"Changing adjusted_intveral from "
-				f"{updated_runner_info['adjusted_interval']} to "
-				f"{updated_runner_info['adjusted_interval'] + 1} seconds."
-			)
-			updated_runner_info["adjusted_interval"] = (
-				runner_info["adjusted_interval"] + 5
-			)
-
-			if (
-				updated_runner_info["adjusted_interval"]
-				>= config.MAXIMUM_INTERVAL
-			):
-				updated_runner_info["adjusted_interval"] = (
-					config.MAXIMUM_INTERVAL
-				)
-			logger.info(
-				f"Final decision on adjusted_interval: "
-				f"{updated_runner_info['adjusted_interval']} seconds"
-			)
-
-			updated_runner_info["current_update_success"] = 0
-			updated_runner_info["last_update_success"] = 0
-
-			logger.info(
-				f"Updating {runner_name} record. Record details for update:\n"
-				f"{updated_runner_info}"
-			)
-			database.update_runner(updated_runner_info)
-
-			time.sleep(updated_runner_info["adjusted_interval"])
-			logger.debug(
-				f"Runner {runner_info} paused for {updated_runner_info['adjusted_interval']} seconds."
-			)
 
 
 def start_runner(runner_dict):
@@ -417,7 +310,7 @@ def start_runner(runner_dict):
 				runner.status["adjusted_interval"] -= config.RUNNER_SUCCESS_ADJUSTMENT
 			if runner.status["adjusted_interval"] < runner.status["default_interval"]:
 				runner.status["adjusted_interval"] = runner.status["default_interval"]
-				
+
 			time.sleep(runner.status["adjusted_interval"])
 			runner.write_runner_status()
 			continue
@@ -441,23 +334,46 @@ def main():
 	database.create_all_tables()
 
 	orders.create_trigger_option_order(
-		1,
-		0,
-		0,
+		True,
+		time.time(),
+		[],
+		[],
+		[],
+		[],
+		[],
+		[],
 		"buy",
 		"debit",
 		"IWM",
 		258,
 		"call",
 		"2026-03-20",
-		"limit",
-		1.00,
 		1,
 		"success msg",
 		"failure msg",
-		3,
-		1,
+		10,
+		True,
+		str(uuid.uuid4())
 	)
+
+	# orders.create_trigger_option_order(
+	# 	1,
+	# 	0,
+	# 	0,
+	# 	"buy",
+	# 	"debit",
+	# 	"IWM",
+	# 	258,
+	# 	"call",
+	# 	"2026-03-20",
+	# 	"limit",
+	# 	1.00,
+	# 	1,
+	# 	"success msg",
+	# 	"failure msg",
+	# 	3,
+	# 	1,
+	# )
 
 	max_workers = len(RUNNERS)
 	with ThreadPoolExecutor(max_workers=max_workers) as runner_threads:

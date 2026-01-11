@@ -1,5 +1,6 @@
 import logging
 import time
+import uuid
 
 import robin_stocks.robinhood as r
 
@@ -9,55 +10,27 @@ import database
 logger = logging.getLogger(__name__)
 
 def create_trigger_option_order(
-        active: int,
-        execute_only_after_id: int,
-        execution_deactivates_order_id: int,
+        active: bool,
+        epoch_time_created_at: float,
+        execute_only_after_trigger_order_ids: list[int],
+        execute_only_after_bracket_order_ids: list[int],
+        execute_only_after_trailing_order_ids: list[int],
+        execution_deactivates_trigger_order_ids: list[int],
+        execution_deactivates_bracket_order_ids: list[int],
+        execution_deactivates_trailing_order_ids: list[int],
         buy_or_sell: str,
         credit_or_debit: str,
         symbol: str,
-        strike: float,
+        strike: str,
         call_or_put: str,
         expiration_date: str,
-        market_or_limit: str,
-        limit_price: float,
         quantity: int,
         message_on_success: str,
         message_on_failure: str,
         max_order_attempts: int,
-        emergency_order_fill_on_failure: int,
+        emergency_order_fill_on_failure: bool,
+        trigger_order_uuid: str,
 	):
-
-        # "trigger_order_id_pk": "SERIAL PRIMARY KEY",
-        # "active": "INTEGER",
-        # "epoch_time_created_at": "REAL",
-        # "executed": "INTEGER DEFAULT 0",
-        # "execute_only_after_id": "INTEGER",
-        # "execution_deactivates_order_id": "INTEGER",
-        # "buy_or_sell": "TEXT",
-        # "credit_or_debit": "TEXT",
-        # "symbol": "TEXT",
-        # "strike": "REAL",
-        # "call_or_put": "TEXT",
-        # "expiration_date": "TEXT",
-        # "rh_option_uuid": "TEXT",
-        # "market_or_limit": "TEXT",
-        # "limit_price": "REAL",
-        # "quantity": "INTEGER",
-        # "message_on_success": "TEXT",
-        # "message_on_failure": "TEXT",
-        # "below_tick": "REAL",
-        # "above_tick": "REAL",
-        # "cutoff_price": "REAL",
-        # "max_order_attempts": "INTEGER",
-        # "emergency_order_fill_on_failure": "INTEGER",
-	
-    try:
-        r.login(config.ROBINHOOD_USERNAME, config.ROBINHOOD_PASSWORD)
-        r.get_option_instrument_data(symbol, expiration_date, strike, call_or_put)
-    except Exception as e:
-        logger.exception(f"Issue fetching option instrument data: {e}", stack_info=True)
-        return None
-    
     logger.info('Begin creating trigger order.')
 
     logger.info(
@@ -91,28 +64,30 @@ def create_trigger_option_order(
 
 
     database.insert_trigger_order(
-        active=active,
-        epoch_time_created_at=time.time(),
-        executed=0,
-        execute_only_after_id=execute_only_after_id,
-        execution_deactivates_order_id=execution_deactivates_order_id,
-        buy_or_sell=buy_or_sell,
-        credit_or_debit=credit_or_debit,
-        symbol=symbol,
-        strike=strike,
-        call_or_put=call_or_put,
-        expiration_date=expiration_date,
-        rh_option_uuid=rh_option_uuid,
-        market_or_limit=market_or_limit,
-        limit_price=limit_price,
-        quantity=quantity,
-        message_on_success=message_on_success,
-        message_on_failure=message_on_failure,
-        below_tick=below_tick,
-        above_tick=above_tick,
-        cutoff_price=cutoff_price,
-        max_order_attempts=max_order_attempts,
-        emergency_order_fill_on_failure=emergency_order_fill_on_failure,
+        active,
+        epoch_time_created_at,
+        execute_only_after_trigger_order_ids,
+        execute_only_after_bracket_order_ids,
+        execute_only_after_trailing_order_ids,
+        execution_deactivates_trigger_order_ids,
+        execution_deactivates_bracket_order_ids,        
+        execution_deactivates_trailing_order_ids,
+        buy_or_sell,
+        credit_or_debit,
+        symbol,
+        strike,
+        call_or_put,
+        expiration_date,
+        rh_option_uuid,
+        quantity,
+        message_on_success,
+        message_on_failure,
+        below_tick,
+        above_tick,
+        cutoff_price,
+        max_order_attempts,
+        emergency_order_fill_on_failure,
+        trigger_order_uuid,
     )
 
     msg = 'Successfully created order for ' \

@@ -54,7 +54,7 @@ DATABASE_TABLE_SCHEMA = {
 
     "trigger_option_orders": {
         "order_id_pk": "SMALLSERIAL PRIMARY KEY",
-        "active": "INTEGER",
+        "active": "BOOLEAN",
         "epoch_time_created_at": "REAL",
         "executed": "INTEGER DEFAULT 0",
         "execute_only_after_trigger_order_ids": "INTEGER[]",
@@ -77,20 +77,20 @@ DATABASE_TABLE_SCHEMA = {
         "above_tick": "REAL",
         "cutoff_price": "REAL",
         "max_order_attempts": "INTEGER",
-        "emergency_order_fill_on_failure": "INTEGER",
-        "trigger_order_uuid": "UUID UNIQUE gen_random_uuid()",
+        "emergency_order_fill_on_failure": "BOOLEAN",
+        "trigger_order_uuid": "UUID",
     },
 
     "trigger_option_orders_market_data": {
         "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
         "json_data": "JSONB",
-        "still_alive": "INTEGER",
+        "still_alive": "BOOLEAN",
         "last_update_epoch_time": "REAL",
     },
 
     "trailing_option_orders": {
         "order_id_pk": "SMALLSERIAL PRIMARY KEY",
-        "active": "INTEGER",
+        "active": "BOOLEAN",
         "epoch_time_created_at": "REAL",
         "executed": "INTEGER DEFAULT 0",
         "execute_only_after_trigger_order_ids": "INTEGER[]",
@@ -113,7 +113,7 @@ DATABASE_TABLE_SCHEMA = {
         "above_tick": "REAL",
         "cutoff_price": "REAL",
         "max_order_attempts": "INTEGER",
-        "emergency_order_fill_on_failure": "INTEGER", 
+        "emergency_order_fill_on_failure": "BOOLEAN", 
         "percent_from_high_sell_trigger": "REAL",
         "sell_at_specific_price": "REAL",
         "highest_price_since_order_placed": "REAL",
@@ -122,13 +122,13 @@ DATABASE_TABLE_SCHEMA = {
     "trailing_option_orders_market_data": {
         "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
         "json_data": "JSONB",
-        "still_alive": "INTEGER",
+        "still_alive": "BOOLEAN",
         "last_update_epoch_time": "REAL",
     },
 
     "bracket_option_orders": {
         "order_id_pk": "SMALLSERIAL PRIMARY KEY",
-        "active": "INTEGER",
+        "active": "BOOLEAN",
         "epoch_time_created_at": "REAL",
         "executed": "INTEGER DEFAULT 0",
         "execute_only_after_trigger_order_ids": "INTEGER[]",
@@ -153,13 +153,13 @@ DATABASE_TABLE_SCHEMA = {
         "above_tick": "REAL",
         "cutoff_price": "REAL",
         "max_order_attempts": "INTEGER",
-        "emergency_order_fill_on_failure": "INTEGER", 
+        "emergency_order_fill_on_failure": "BOOLEAN", 
     },
 
     "bracket_option_orders_market_data": {
         "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
         "json_data": "JSONB",
-        "still_alive": "INTEGER",
+        "still_alive": "BOOLEAN",
         "last_update_epoch_time": "REAL",
     },
 }
@@ -197,10 +197,19 @@ def execute_set_database_query(sql_query: str, runner_name: str = "unknown") -> 
         return False
 
 
-def drop_table(table: str) -> bool:
+def drop_table(table: str) -> None:
     sql_query = f"DROP TABLE IF EXISTS {table};"
-    success = execute_set_database_query(sql_query)
-    return success
+
+    conn = get_database_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute(sql_query)
+    except Exception as e:
+        logger.info(f"{e}", stack_info=True)
+    finally:
+        cur.close()
+        conn.close()
 
 # def get_all_runners_status() -> list:
 # 	conn = get_database_connection()
@@ -259,6 +268,9 @@ def get_runner_status(runner_name_pk: str) -> dict | None:
 
 
 def create_all_tables():
+    conn = get_database_connection()
+    cur = conn.cursor()
+
     for table_name, columns in DATABASE_TABLE_SCHEMA.items():
         try:
             sql_query = (
@@ -271,26 +283,30 @@ def create_all_tables():
             sql_query = sql_query[:-2]
             sql_query += ");"
 
-            execute_set_database_query(sql_query)
+            cur.execute(sql_query)
+            conn.commit()
+
             logger.info(f"Database table {table_name} created.")
         except Exception as e:
             logger.exception(f"Issue creating database table {table_name}.")
 
+    cur.close()
+    conn.close()
+
 
 def delete_all_tables():
-	try:
-		conn = get_database_connection()
-		cur = conn.cursor()
-		
-		for table_name in DATABASE_TABLE_SCHEMA.keys():
-			cur.execute(f"DROP TABLE IF EXISTS {table_name};")
-		
-		conn.commit()
-		cur.close()
-		conn.close()
-		logger.info("Database tables deleted successfully")
-	except Exception as e:
-		logger.error(f"Error deleting database tables: {e}", stack_info=True)
+    conn = get_database_connection()
+    cur = conn.cursor()
+    try:
+        for table_name in DATABASE_TABLE_SCHEMA.keys():
+            cur.execute(f"DROP TABLE IF EXISTS {table_name};")
+            conn.commit()
+    except Exception as e:
+        logger.error(f"Error deleting database tables: {e}", stack_info=True)
+    finally:
+        cur.close()
+        conn.close()
+
 
 def write_runner_status(runner_status: dict) -> None:
     sql_query = (
@@ -374,79 +390,170 @@ def update_open_option_positions(open_option_positions) -> None:
 
 
 def update_open_option_positions_market_data(options_market_data: list) -> None:
-    set_table_field("open_option_positions_market_data", "still_alive", 0)
+    set_table_field("open_option_positions_market_data", "still_alive", False)
 
     for option in options_market_data:
         option_uuid_pk = option["instrument_id"]
         json_data = json.dumps(option)
         last_update_epoch_time = time.time()
-        still_alive = 1
-        try:
-            sql_query = f"INSERT INTO open_option_positions_market_data (option_uuid_pk, json_data, last_update_epoch_time, still_alive) VALUES ('{option_uuid_pk}', '{json_data}', {last_update_epoch_time}, {still_alive}) ON CONFLICT(option_uuid_pk) DO UPDATE SET json_data=excluded.json_data, last_update_epoch_time=excluded.last_update_epoch_time, still_alive=excluded.still_alive;"
-            execute_set_database_query(sql_query)
-        except Exception as e:
-            logger.exception(f"{e}", stack_info=True)     
+        still_alive = True
         
-    delete_rows_from_table_by_value("open_option_positions_market_data", "still_alive", 0)
+        sql_query = (
+            "INSERT INTO open_option_positions_market_data (option_uuid_pk, json_data, last_update_epoch_time, still_alive) "
+            "VALUES (%s, %s, %s, %s) "
+            "ON CONFLICT(option_uuid_pk) DO UPDATE SET "
+            "json_data=excluded.json_data, "
+            "last_update_epoch_time=excluded.last_update_epoch_time, "
+            "still_alive=excluded.still_alive;"
+        )
+        values = (option_uuid_pk, json_data, last_update_epoch_time, still_alive)
+        
+        conn = get_database_connection()
+        cur = conn.cursor()
+        try:
+            cur.execute(sql_query, values)
+            conn.commit()
+        except Exception as e:
+            logger.exception(f"Issue updating open option position market data: {e}", stack_info=True)
+        finally:
+            cur.close()
+            conn.close()
+        
+    delete_rows_from_table_by_value("open_option_positions_market_data", "still_alive", False)
 
 
 def update_open_broker_option_orders(open_broker_orders: list) -> None:
-    set_table_field("open_broker_option_orders", "still_alive", 0)
+    set_table_field("open_broker_option_orders", "still_alive", False)
 
     for order in open_broker_orders:
+        order_uuid_pk = order["id"]
+        json_data = json.dumps(order)
+        last_update_epoch_time = time.time()
+        still_alive = True
+        
+        sql_query = (
+            "INSERT INTO open_broker_option_orders (order_uuid_pk, json_data, still_alive, last_update_epoch_time) "
+            "VALUES (%s, %s, %s, %s) "
+            "ON CONFLICT(order_uuid_pk) DO UPDATE SET "
+            "json_data=excluded.json_data, "
+            "still_alive=excluded.still_alive, "
+            "last_update_epoch_time=excluded.last_update_epoch_time;"
+        )
+        values = (order_uuid_pk, json_data, still_alive, last_update_epoch_time)
+        
+        conn = get_database_connection()
+        cur = conn.cursor()
         try:
-            order_uuid_pk = order["id"]
-            json_data = json.dumps(order)
-            last_update_epoch_time = time.time()
-            still_alive = 1
-            sql_query = f"INSERT INTO open_broker_option_orders (order_uuid_pk, json_data, still_alive, last_update_epoch_time) VALUES ('{order_uuid_pk}', '{json_data}', {still_alive}, {last_update_epoch_time}) ON CONFLICT(order_uuid_pk) DO UPDATE SET json_data=excluded.json_data, still_alive=excluded.still_alive, last_update_epoch_time=excluded.last_update_epoch_time;"
-            execute_set_database_query(sql_query)
+            cur.execute(sql_query, values)
+            conn.commit()
         except Exception as e:
-            logger.exception(f"{e}", stack_info=True)
+            logger.exception(f"Issue updating open broker option order: {e}", stack_info=True)
+        finally:
+            cur.close()
+            conn.close()
 
-    delete_rows_from_table_by_value("open_broker_option_orders", "still_alive", 0)
+    delete_rows_from_table_by_value("open_broker_option_orders", "still_alive", False)
 
 
 def update_open_broker_option_orders_market_data(option_market_data: list) -> None:
-    set_table_field("open_broker_option_orders_market_data", "still_alive", 0)
+    set_table_field("open_broker_option_orders_market_data", "still_alive", False)
 
     for option in option_market_data:
         option_uuid_pk = option["instrument_id"]
         json_data = json.dumps(option)
         last_update_epoch_time = time.time()
-        still_alive = 1
+        still_alive = True
+        
+        sql_query = (
+            "INSERT INTO open_broker_option_orders_market_data (option_uuid_pk, json_data, last_update_epoch_time, still_alive) "
+            "VALUES (%s, %s, %s, %s) "
+            "ON CONFLICT(option_uuid_pk) DO UPDATE SET "
+            "json_data=excluded.json_data, "
+            "last_update_epoch_time=excluded.last_update_epoch_time, "
+            "still_alive=excluded.still_alive;"
+        )
+        values = (option_uuid_pk, json_data, last_update_epoch_time, still_alive)
+        
+        conn = get_database_connection()
+        cur = conn.cursor()
         try:
-            sql_query = f"INSERT INTO open_broker_option_orders_market_data (option_uuid_pk, json_data, last_update_epoch_time, still_alive) VALUES ('{option_uuid_pk}', '{json_data}', {last_update_epoch_time}, {still_alive}) ON CONFLICT(option_uuid_pk) DO UPDATE SET json_data=excluded.json_data, last_update_epoch_time=excluded.last_update_epoch_time, still_alive=excluded.still_alive;"
-            execute_set_database_query(sql_query)
+            cur.execute(sql_query, values)
+            conn.commit()
         except Exception as e:
-            logger.exception(f"{e}", stack_info=True)
+            logger.exception(f"Issue updating open_broker_option_orders_market_data: {e}", stack_info=True)
+        finally:
+            cur.close()
+            conn.close()
 
-    delete_rows_from_table_by_value("open_broker_option_orders_market_data", "still_alive", 0)
+    delete_rows_from_table_by_value("open_broker_option_orders_market_data", "still_alive", False)
+
 
 def update_trigger_option_orders_market_data(option_market_data: list) -> None:
-    set_table_field("trigger_option_orders_market_data", "still_alive", 0)
+    set_table_field("trigger_option_orders_market_data", "still_alive", False)
 
     for option in option_market_data:
         option_uuid_pk = option["instrument_id"]
         json_data = json.dumps(option)
         last_update_epoch_time = time.time()
-        still_alive = 1
+        still_alive = True
+        
+        sql_query = (
+            "INSERT INTO trigger_option_orders_market_data (option_uuid_pk, json_data, last_update_epoch_time, still_alive) "
+            "VALUES (%s, %s, %s, %s) "
+            "ON CONFLICT(option_uuid_pk) DO UPDATE SET "
+            "json_data=excluded.json_data, "
+            "last_update_epoch_time=excluded.last_update_epoch_time, "
+            "still_alive=excluded.still_alive;"
+        )
+        values = (option_uuid_pk, json_data, last_update_epoch_time, still_alive)
+        
+        conn = get_database_connection()
+        cur = conn.cursor()
         try:
-            sql_query = f"INSERT INTO trigger_option_orders_market_data (option_uuid_pk, json_data, last_update_epoch_time, still_alive) VALUES ('{option_uuid_pk}', '{json_data}', {last_update_epoch_time}, {still_alive}) ON CONFLICT(option_uuid_pk) DO UPDATE SET json_data=excluded.json_data, last_update_epoch_time=excluded.last_update_epoch_time, still_alive=excluded.still_alive;"
-            execute_set_database_query(sql_query)
+            cur.execute(sql_query, values)
+            conn.commit()
         except Exception as e:
-            logger.exception(f"{e}", stack_info=True)
+            logger.exception(f"Issue updating trigger_option_orders_market_data: {e}", stack_info=True)
+        finally:
+            cur.close()
+            conn.close()
 
-    delete_rows_from_table_by_value("trigger_option_orders_market_data", "still_alive", 0)
+    delete_rows_from_table_by_value("trigger_option_orders_market_data", "still_alive", False)
 
 def delete_rows_from_table_by_value(table, field, value) -> None:
-    sql_query = f"DELETE FROM {table} WHERE {field}={value};"
-    execute_set_database_query(sql_query)
+    sql_query = f"DELETE FROM {table} WHERE {field}=%s;"
+    values = (value, )
+
+    conn = get_database_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute(sql_query, values)
+        conn.commit()
+    except Exception as e:
+        logger.exception(f"{e}", stack_info=True)
+    finally:
+        cur.close()
+        conn.close()
 
 
 def set_table_field(table: str, field: str, value) -> None:
-    sql_query = f"UPDATE {table} SET {field}={value};"
-    execute_set_database_query(sql_query)
+    sql_query = f"UPDATE {table} SET {field}=%s;"
+    values = (value, )
+
+    conn = get_database_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute(sql_query, values)
+        conn.commit()
+    except Exception as e:
+        logger.exception(f"{e}", stack_info=True)
+    finally:
+        cur.close()
+        conn.close()
+         
+         
 
 def select_column_from_table(table: str, column: str) -> list:
     conn = get_database_connection()
@@ -497,11 +604,14 @@ def get_json_field_from_table(table: str, field: str, key_name: str) -> list:
 	return results
 
 def insert_trigger_order(
-        active: int,
-        epoch_time_created_at: str,
-        executed: int,
-        execute_only_after_id: int,
-        execution_deactivates_order_id: int,
+        active: bool,
+        epoch_time_created_at: float,
+        execute_only_after_trigger_order_ids: list[int],
+        execute_only_after_bracket_order_ids: list[int],
+        execute_only_after_trailing_order_ids: list[int],
+        execution_deactivates_trigger_order_ids: list[int],
+        execution_deactivates_bracket_order_ids: list[int],
+        execution_deactivates_trailing_order_ids: list[int],
         buy_or_sell: str,
         credit_or_debit: str,
         symbol: str,
@@ -509,8 +619,6 @@ def insert_trigger_order(
         call_or_put: str,
         expiration_date: str,
         rh_option_uuid: str,
-        market_or_limit: str,
-        limit_price: float,
         quantity: int,
         message_on_success: str,
         message_on_failure: str,
@@ -518,18 +626,18 @@ def insert_trigger_order(
         above_tick: float,
         cutoff_price: float,
         max_order_attempts: int,
-        emergency_order_fill_on_failure: int
+        emergency_order_fill_on_failure: bool,
+        trigger_order_uuid: str,
     ) -> None:
 	
-	sql_query = (
+    sql_query = (
         "INSERT INTO trigger_option_orders("
         "active, "
         "epoch_time_created_at, "
-        "executed, "
-		"execute_only_after_trigger_order_ids, "
+        "execute_only_after_trigger_order_ids, "
         "execute_only_after_trailing_order_ids, "
         "execute_only_after_bracket_order_ids, "
-		"execution_deactivates_trigger_order_ids, "
+        "execution_deactivates_trigger_order_ids, "
         "execution_deactivates_trailing_order_ids, "
         "execution_deactivates_bracket_order_ids, "
         "buy_or_sell, "
@@ -546,36 +654,39 @@ def insert_trigger_order(
         "above_tick, "
         "cutoff_price, "
         "max_order_attempts, "
-        "emergency_order_fill_on_failure"
+        "emergency_order_fill_on_failure, "
+        "trigger_order_uuid"
         ") "
         "VALUES ("
-        "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s"
+        "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s"
         ");"
-	)
+    )
      
     values = (
-        active,
-        epoch_time_created_at,
-        executed,
-        execute_only_after_id,
-        execution_deactivates_order_id,
-        buy_or_sell,
-        credit_or_debit,
-        symbol,
-        strike,
-        call_or_put,
-        expiration_date,
-        rh_option_uuid,
-        market_or_limit,
-        limit_price,
-        quantity,
-        message_on_success,
-        message_on_failure,
-        below_tick,
-        above_tick,
-        cutoff_price,
-        max_order_attempts,
-        emergency_order_fill_on_failure,
+        active, 
+        epoch_time_created_at, 
+        execute_only_after_trigger_order_ids, 
+        execute_only_after_trailing_order_ids, 
+        execute_only_after_bracket_order_ids, 
+        execution_deactivates_trigger_order_ids, 
+        execution_deactivates_trailing_order_ids, 
+        execution_deactivates_bracket_order_ids, 
+        buy_or_sell, 
+        credit_or_debit, 
+        symbol, 
+        strike, 
+        call_or_put, 
+        expiration_date, 
+        rh_option_uuid, 
+        quantity, 
+        message_on_success, 
+        message_on_failure, 
+        below_tick, 
+        above_tick, 
+        cutoff_price, 
+        max_order_attempts, 
+        emergency_order_fill_on_failure, 
+        trigger_order_uuid
     )
 
     try:
