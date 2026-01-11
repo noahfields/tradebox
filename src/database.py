@@ -56,7 +56,7 @@ DATABASE_TABLE_SCHEMA = {
         "order_id_pk": "SMALLSERIAL PRIMARY KEY",
         "active": "BOOLEAN",
         "epoch_time_created_at": "REAL",
-        "executed": "INTEGER DEFAULT 0",
+        "executed": "BOOLEAN DEFAULT FALSE",
         "execute_only_after_trigger_order_ids": "INTEGER[]",
         "execute_only_after_bracket_order_ids": "INTEGER[]",
         "execute_only_after_trailing_order_ids": "INTEGER[]",
@@ -88,49 +88,11 @@ DATABASE_TABLE_SCHEMA = {
         "last_update_epoch_time": "REAL",
     },
 
-    "trailing_option_orders": {
-        "order_id_pk": "SMALLSERIAL PRIMARY KEY",
-        "active": "BOOLEAN",
-        "epoch_time_created_at": "REAL",
-        "executed": "INTEGER DEFAULT 0",
-        "execute_only_after_trigger_order_ids": "INTEGER[]",
-        "execute_only_after_trailing_order_ids": "INTEGER[]",
-        "execute_only_after_bracket_order_ids": "INTEGER[]",
-        "execution_deactivates_trigger_order_ids": "INTEGER[]",
-        "execution_deactivates_trailing_order_ids": "INTEGER[]",
-        "execution_deactivates_bracket_order_ids": "INTEGER[]",
-        "buy_or_sell": "TEXT",
-        "credit_or_debit": "TEXT",
-        "symbol": "TEXT",
-        "strike": "REAL",
-        "call_or_put": "TEXT",
-        "expiration_date": "TEXT",
-        "rh_option_uuid": "TEXT",
-        "quantity": "INTEGER",
-        "message_on_success": "TEXT",
-        "message_on_failure": "TEXT",
-        "below_tick": "REAL",
-        "above_tick": "REAL",
-        "cutoff_price": "REAL",
-        "max_order_attempts": "INTEGER",
-        "emergency_order_fill_on_failure": "BOOLEAN", 
-        "percent_from_high_sell_trigger": "REAL",
-        "sell_at_specific_price": "REAL",
-        "highest_price_since_order_placed": "REAL",
-    },
-
-    "trailing_option_orders_market_data": {
-        "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
-        "json_data": "JSONB",
-        "still_alive": "BOOLEAN",
-        "last_update_epoch_time": "REAL",
-    },
-
     "bracket_option_orders": {
         "order_id_pk": "SMALLSERIAL PRIMARY KEY",
         "active": "BOOLEAN",
         "epoch_time_created_at": "REAL",
-        "executed": "INTEGER DEFAULT 0",
+        "executed": "BOOLEAN DEFAULT FALSE",
         "execute_only_after_trigger_order_ids": "INTEGER[]",
         "execute_only_after_bracket_order_ids": "INTEGER[]",
         "execute_only_after_trailing_order_ids": "INTEGER[]",
@@ -157,6 +119,44 @@ DATABASE_TABLE_SCHEMA = {
     },
 
     "bracket_option_orders_market_data": {
+        "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
+        "json_data": "JSONB",
+        "still_alive": "BOOLEAN",
+        "last_update_epoch_time": "REAL",
+    },
+
+    "trailing_option_orders": {
+        "order_id_pk": "SMALLSERIAL PRIMARY KEY",
+        "active": "BOOLEAN",
+        "epoch_time_created_at": "REAL",
+        "executed": "BOOLEAN DEFAULT FALSE",
+        "execute_only_after_trigger_order_ids": "INTEGER[]",
+        "execute_only_after_bracket_order_ids": "INTEGER[]",
+        "execute_only_after_trailing_order_ids": "INTEGER[]",
+        "execution_deactivates_trigger_order_ids": "INTEGER[]",
+        "execution_deactivates_bracket_order_ids": "INTEGER[]",
+        "execution_deactivates_trailing_order_ids": "INTEGER[]",
+        "buy_or_sell": "TEXT",
+        "credit_or_debit": "TEXT",
+        "symbol": "TEXT",
+        "strike": "REAL",
+        "call_or_put": "TEXT",
+        "expiration_date": "TEXT",
+        "rh_option_uuid": "TEXT",
+        "quantity": "INTEGER",
+        "message_on_success": "TEXT",
+        "message_on_failure": "TEXT",
+        "below_tick": "REAL",
+        "above_tick": "REAL",
+        "cutoff_price": "REAL",
+        "max_order_attempts": "INTEGER",
+        "emergency_order_fill_on_failure": "BOOLEAN", 
+        "percent_from_high_sell_trigger": "REAL",
+        "sell_at_specific_price": "REAL",
+        "highest_price_since_order_placed": "REAL",
+    },
+
+    "trailing_option_orders_market_data": {
         "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
         "json_data": "JSONB",
         "still_alive": "BOOLEAN",
@@ -700,81 +700,79 @@ def insert_trigger_order(
         cur.close()
         conn.close()
      
-def insert_trailing_order(
-		active: int,
-		epoch_time_created_at: str,
-		executed: int,
-		execute_only_after_trigger_order_ids: list,
-        execute_only_after_trailing_order_ids: list,
-        execute_only_after_bracket_order_ids: list,
-		execution_deactivates_trigger_order_ids: list,
-        execution_deactivates_trailing_order_ids: list,
-        execution_deactivates_bracket_order_ids: list,
-		buy_or_sell: str,
-        credit_or_debit: str,
-		symbol: str,
-		strike: float,
-		call_or_put: str,
-		expiration_date: str,
-		rh_option_uuid: str,
-		quantity: int,
-		message_on_success: str,
-		message_on_failure: str,
-		below_tick: float,
-		above_tick: float,
-		cutoff_price: float,
-		max_order_attempts: int,
-		emergency_order_fill_on_failure: int,
-        percent_from_high_sell_trigger: float,
-        sell_at_specific_price: float,
-	) -> None:
 
+def insert_bracket_order(
+        active: bool,
+        epoch_time_created_at: float,
+        execute_only_after_trigger_order_ids: list[int],
+        execute_only_after_bracket_order_ids: list[int],
+        execute_only_after_trailing_order_ids: list[int],
+        execution_deactivates_trigger_order_ids: list[int],
+        execution_deactivates_bracket_order_ids: list[int],
+        execution_deactivates_trailing_order_ids: list[int],
+        buy_or_sell: str,
+        credit_or_debit: str,
+        symbol: str,
+        strike: float,
+        call_or_put: str,
+        expiration_date: str,
+        rh_option_uuid: str,
+        quantity: int,
+        high_sell_mark_price: float,
+        low_sell_mark_price: float,
+        message_on_success: str,
+        message_on_failure: str,
+        below_tick: float,
+        above_tick: float,
+        cutoff_price: float,
+        max_order_attempts: int,
+        emergency_order_fill_on_failure: bool,
+        trigger_order_uuid: str,
+    ) -> None:
+	
     sql_query = (
-        "INSERT INTO trailing_option_orders( "
+        "INSERT INTO bracket_option_orders("
         "active, "
-		"epoch_time_created_at, "
-        "executed, "
-		"execute_only_after_trigger_order_ids, "
-        "execute_only_after_trailing_order_ids, "
+        "epoch_time_created_at, "
+        "execute_only_after_trigger_order_ids, "
         "execute_only_after_bracket_order_ids, "
-		"execution_deactivates_trigger_order_ids, "
-        "execution_deactivates_trailing_order_ids, "
+        "execute_only_after_trailing_order_ids, "
+        "execution_deactivates_trigger_order_ids, "
         "execution_deactivates_bracket_order_ids, "
-		"buy_or_sell, "
+        "execution_deactivates_trailing_order_ids, "
+        "buy_or_sell, "
         "credit_or_debit, "
-		"symbol, "
-		"strike, "
-		"call_or_put, "
+        "symbol, "
+        "strike, "
+        "call_or_put, "
         "expiration_date, "
-		"rh_option_uuid, "
-		"quantity, "
-		"message_on_success, "
-		"message_on_failure, "
+        "rh_option_uuid, "
+        "quantity, "
+        "high_sell_mark_price, "
+        "low_sell_mark_price, "
+        "message_on_success, "
+        "message_on_failure, "
         "below_tick, "
-		"above_tick, "
-		"cutoff_price, "
-		"max_order_attempts, "
-        "emergency_order_fill_on_failure,"
-        "percent_from_high_sell_trigger,"
-        "sell_at_specific_price"
-        ") VALUES ("
-        "%s, %s, %s, %s, %s, "
-        "%s, %s, %s, %s, %s, "
-        "%s, %s, %s, %s, %s, "
-        "%s, %s, %s, %s, %s, "
-        "%s, %s, %s, %s, %s"
+        "above_tick, "
+        "cutoff_price, "
+        "max_order_attempts, "
+        "emergency_order_fill_on_failure, "
+        "trigger_order_uuid"
+        ") "
+        "VALUES ("
+        "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s"
         ");"
-	)
+    )
+     
     values = (
         active,
         epoch_time_created_at,
-        executed,
         execute_only_after_trigger_order_ids,
-        execute_only_after_trailing_order_ids,
         execute_only_after_bracket_order_ids,
+        execute_only_after_trailing_order_ids,
         execution_deactivates_trigger_order_ids,
-        execution_deactivates_trailing_order_ids,
         execution_deactivates_bracket_order_ids,
+        execution_deactivates_trailing_order_ids,
         buy_or_sell,
         credit_or_debit,
         symbol,
@@ -783,6 +781,8 @@ def insert_trailing_order(
         expiration_date,
         rh_option_uuid,
         quantity,
+        high_sell_mark_price,
+        low_sell_mark_price,
         message_on_success,
         message_on_failure,
         below_tick,
@@ -790,8 +790,7 @@ def insert_trailing_order(
         cutoff_price,
         max_order_attempts,
         emergency_order_fill_on_failure,
-        percent_from_high_sell_trigger,
-        sell_at_specific_price,
+        trigger_order_uuid
     )
 
     try:
@@ -800,7 +799,8 @@ def insert_trailing_order(
         cur.execute(sql_query, values)
         conn.commit()
     except Exception as e:
-        logger.exception(f"Issue inserting trailing order: {e}", stack_info=True)
+        logger.exception(f"Issue inserting bracket order: {e}", stack_info=True)
     finally:
         cur.close()
         conn.close()
+
