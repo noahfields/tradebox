@@ -25,38 +25,44 @@ DATABASE_TABLE_SCHEMA = {
     "open_option_positions": {
         "position_uuid_pk": "VARCHAR(255) PRIMARY KEY",
         "json_data": "JSONB",
-        "still_alive": "INTEGER",
+        "still_alive": "BOOLEAN",
         "last_update_epoch_time": "REAL",
+        "local_id": "SMALLSERIAL",
     },
 
     "open_option_positions_market_data": {
         "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
         "json_data": "JSONB",
-        "still_alive": "INTEGER",
+        "still_alive": "BOOLEAN",
         "last_update_epoch_time": "REAL",
     },
 
     "open_broker_option_orders": {
         "order_uuid_pk": "VARCHAR(255) PRIMARY KEY",
         "json_data": "JSONB",
-        "still_alive": "INTEGER",
+        "still_alive": "BOOLEAN",
         "last_update_epoch_time": "REAL",
+        "local_id": "SMALLSERIAL",
     },
 
     "open_broker_option_orders_market_data": {
         "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
         "json_data": "JSONB",
-        "still_alive": "INTEGER",
+        "still_alive": "BOOLEAN",
         "last_update_epoch_time": "REAL",
     },
 
     "trigger_option_orders": {
-        "trigger_order_id_pk": "SMALLSERIAL PRIMARY KEY",
+        "order_id_pk": "SMALLSERIAL PRIMARY KEY",
         "active": "INTEGER",
         "epoch_time_created_at": "REAL",
         "executed": "INTEGER DEFAULT 0",
-        "execute_only_after_id": "INTEGER",
-        "execution_deactivates_order_id": "INTEGER",
+        "execute_only_after_trigger_order_ids": "INTEGER[]",
+        "execute_only_after_bracket_order_ids": "INTEGER[]",
+        "execute_only_after_trailing_order_ids": "INTEGER[]",
+        "execution_deactivates_trigger_order_ids": "INTEGER[]",
+        "execution_deactivates_bracket_order_ids": "INTEGER[]",
+        "execution_deactivates_trailing_order_ids": "INTEGER[]",
         "buy_or_sell": "TEXT",
         "credit_or_debit": "TEXT",
         "symbol": "TEXT",
@@ -64,8 +70,6 @@ DATABASE_TABLE_SCHEMA = {
         "call_or_put": "TEXT",
         "expiration_date": "TEXT",
         "rh_option_uuid": "TEXT",
-        "market_or_limit": "TEXT",
-        "limit_price": "REAL",
         "quantity": "INTEGER",
         "message_on_success": "TEXT",
         "message_on_failure": "TEXT",
@@ -74,9 +78,85 @@ DATABASE_TABLE_SCHEMA = {
         "cutoff_price": "REAL",
         "max_order_attempts": "INTEGER",
         "emergency_order_fill_on_failure": "INTEGER",
+        "trigger_order_uuid": "UUID UNIQUE gen_random_uuid()",
     },
 
     "trigger_option_orders_market_data": {
+        "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
+        "json_data": "JSONB",
+        "still_alive": "INTEGER",
+        "last_update_epoch_time": "REAL",
+    },
+
+    "trailing_option_orders": {
+        "order_id_pk": "SMALLSERIAL PRIMARY KEY",
+        "active": "INTEGER",
+        "epoch_time_created_at": "REAL",
+        "executed": "INTEGER DEFAULT 0",
+        "execute_only_after_trigger_order_ids": "INTEGER[]",
+        "execute_only_after_trailing_order_ids": "INTEGER[]",
+        "execute_only_after_bracket_order_ids": "INTEGER[]",
+        "execution_deactivates_trigger_order_ids": "INTEGER[]",
+        "execution_deactivates_trailing_order_ids": "INTEGER[]",
+        "execution_deactivates_bracket_order_ids": "INTEGER[]",
+        "buy_or_sell": "TEXT",
+        "credit_or_debit": "TEXT",
+        "symbol": "TEXT",
+        "strike": "REAL",
+        "call_or_put": "TEXT",
+        "expiration_date": "TEXT",
+        "rh_option_uuid": "TEXT",
+        "quantity": "INTEGER",
+        "message_on_success": "TEXT",
+        "message_on_failure": "TEXT",
+        "below_tick": "REAL",
+        "above_tick": "REAL",
+        "cutoff_price": "REAL",
+        "max_order_attempts": "INTEGER",
+        "emergency_order_fill_on_failure": "INTEGER", 
+        "percent_from_high_sell_trigger": "REAL",
+        "sell_at_specific_price": "REAL",
+        "highest_price_since_order_placed": "REAL",
+    },
+
+    "trailing_option_orders_market_data": {
+        "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
+        "json_data": "JSONB",
+        "still_alive": "INTEGER",
+        "last_update_epoch_time": "REAL",
+    },
+
+    "bracket_option_orders": {
+        "order_id_pk": "SMALLSERIAL PRIMARY KEY",
+        "active": "INTEGER",
+        "epoch_time_created_at": "REAL",
+        "executed": "INTEGER DEFAULT 0",
+        "execute_only_after_trigger_order_ids": "INTEGER[]",
+        "execute_only_after_bracket_order_ids": "INTEGER[]",
+        "execute_only_after_trailing_order_ids": "INTEGER[]",
+        "execution_deactivates_trigger_order_ids": "INTEGER[]",
+        "execution_deactivates_bracket_order_ids": "INTEGER[]",
+        "execution_deactivates_trailing_order_ids": "INTEGER[]",
+        "buy_or_sell": "TEXT",
+        "credit_or_debit": "TEXT",
+        "symbol": "TEXT",
+        "strike": "REAL",
+        "call_or_put": "TEXT",
+        "expiration_date": "TEXT",
+        "rh_option_uuid": "TEXT",
+        "quantity": "INTEGER",
+        "high_sell_mark_price": "REAL",
+        "low_sell_mark_price": "REAL",
+        "message_on_success": "TEXT",
+        "message_on_failure": "TEXT",
+        "below_tick": "REAL",
+        "above_tick": "REAL",
+        "cutoff_price": "REAL",
+        "max_order_attempts": "INTEGER",
+        "emergency_order_fill_on_failure": "INTEGER", 
+    },
+
+    "bracket_option_orders_market_data": {
         "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
         "json_data": "JSONB",
         "still_alive": "INTEGER",
@@ -213,55 +293,84 @@ def delete_all_tables():
 		logger.error(f"Error deleting database tables: {e}", stack_info=True)
 
 def write_runner_status(runner_status: dict) -> None:
+    sql_query = (
+        "INSERT INTO runners ("
+        "runner_name_pk, "
+        "active, "
+        "adjusted_interval, "
+        "default_interval, "
+        "current_update_success, "
+        "previous_update_success, "
+        "epoch_time_previous_success) "
+        "VALUES ("
+        "%s, %s, %s, %s, %s, %s, %s) "
+        "ON CONFLICT(runner_name_pk) DO UPDATE SET "
+        "active=excluded.active, "
+        "adjusted_interval=excluded.adjusted_interval, "
+        "default_interval=excluded.default_interval, "
+        "current_update_success=excluded.current_update_success, "
+        "previous_update_success=excluded.previous_update_success, "
+        "epoch_time_previous_success=excluded.epoch_time_previous_success"
+        ";"
+    )
+    values = (
+        runner_status["runner_name_pk"],
+        runner_status["active"],
+        runner_status["adjusted_interval"],
+        runner_status["default_interval"],
+        runner_status["current_update_success"],
+        runner_status["previous_update_success"],
+        runner_status["epoch_time_previous_success"],
+    )
+    conn = get_database_connection()
+    cur = conn.cursor()
     try:
-        sql_query = (
-            "INSERT INTO runners ("
-            "runner_name_pk, "
-			"active, "
-			"adjusted_interval, "
-            "default_interval, "
-			"current_update_success, "
-            "previous_update_success, "
-            "epoch_time_previous_success) "
-			"VALUES ("
-            f"\'{runner_status['runner_name_pk']}\', "
-            f"{runner_status['active']}, "
-            f"{runner_status['adjusted_interval']}, "
-            f"{runner_status['default_interval']}, "
-            f"{runner_status['current_update_success']}, "
-            f"{runner_status['previous_update_success']}, "
-            f"{runner_status['epoch_time_previous_success']}) "
-            "ON CONFLICT(runner_name_pk) DO UPDATE SET "
-            "active=excluded.active, "
-            "adjusted_interval=excluded.adjusted_interval, "
-            "default_interval=excluded.default_interval, "
-            "current_update_success=excluded.current_update_success, "
-            "previous_update_success=excluded.previous_update_success, "
-            "epoch_time_previous_success=excluded.epoch_time_previous_success"
-            ";"
-        )
-        execute_set_database_query(sql_query)
+        cur.execute(sql_query, values)
+        conn.commit()
         logger.info(
             f"Wrote runner status for {runner_status['runner_name_pk']}.\nStatus details:\n{runner_status}",
             extra={"runner": runner_status["runner_name_pk"]}
         )
     except Exception as e:
         logger.exception(stack_info=True)
+    finally:
+        cur.close()
+        conn.close()
 
 
 def update_open_option_positions(open_option_positions) -> None:
-    set_table_field("open_option_positions", "still_alive", 0)
+    set_table_field("open_option_positions", "still_alive", False)
 
     for position in open_option_positions:
         position_uuid_pk = position["id"]
         json_data = json.dumps(position)
         last_update_epoch_time = time.time()
-        still_alive = 1
+        still_alive = True
 
-        sql_query = f"INSERT INTO open_option_positions (position_uuid_pk, json_data, last_update_epoch_time, still_alive) VALUES ('{position_uuid_pk}', '{json_data}', {last_update_epoch_time}, {still_alive}) ON CONFLICT(position_uuid_pk) DO UPDATE SET json_data=excluded.json_data, last_update_epoch_time=excluded.last_update_epoch_time, still_alive=excluded.still_alive;"
-        execute_set_database_query(sql_query)
+        sql_query = (
+            "INSERT INTO open_option_positions (position_uuid_pk, json_data, last_update_epoch_time, still_alive) "
+            "VALUES (%s, %s, %s, %s) "
+            "ON CONFLICT(position_uuid_pk) DO UPDATE SET "
+            "json_data=excluded.json_data, "
+            "last_update_epoch_time=excluded.last_update_epoch_time, "
+            "still_alive=excluded.still_alive"
+        )
+        values = (position_uuid_pk, json_data, last_update_epoch_time, still_alive)
+        
+        conn = get_database_connection()
+        cur = conn.cursor()
+        try:
+            cur.execute(sql_query, values)
+            conn.commit()
+            cur.close()
+            conn.close()
+        except Exception as e:
+            logger.exception(f"Issue updating open option position: {e}", stack_info=True)
+        finally:
+             cur.close()
+             conn.close()
 
-    delete_rows_from_table_by_value("open_option_positions", "still_alive", 0)
+    delete_rows_from_table_by_value("open_option_positions", "still_alive", False)
 
 
 def update_open_option_positions_market_data(options_market_data: list) -> None:
@@ -388,11 +497,108 @@ def get_json_field_from_table(table: str, field: str, key_name: str) -> list:
 	return results
 
 def insert_trigger_order(
+        active: int,
+        epoch_time_created_at: str,
+        executed: int,
+        execute_only_after_id: int,
+        execution_deactivates_order_id: int,
+        buy_or_sell: str,
+        credit_or_debit: str,
+        symbol: str,
+        strike: float,
+        call_or_put: str,
+        expiration_date: str,
+        rh_option_uuid: str,
+        market_or_limit: str,
+        limit_price: float,
+        quantity: int,
+        message_on_success: str,
+        message_on_failure: str,
+        below_tick: float,
+        above_tick: float,
+        cutoff_price: float,
+        max_order_attempts: int,
+        emergency_order_fill_on_failure: int
+    ) -> None:
+	
+	sql_query = (
+        "INSERT INTO trigger_option_orders("
+        "active, "
+        "epoch_time_created_at, "
+        "executed, "
+		"execute_only_after_trigger_order_ids, "
+        "execute_only_after_trailing_order_ids, "
+        "execute_only_after_bracket_order_ids, "
+		"execution_deactivates_trigger_order_ids, "
+        "execution_deactivates_trailing_order_ids, "
+        "execution_deactivates_bracket_order_ids, "
+        "buy_or_sell, "
+        "credit_or_debit, "
+        "symbol, "
+        "strike, "
+        "call_or_put, "
+        "expiration_date, "
+        "rh_option_uuid, "
+        "quantity, "
+        "message_on_success, "
+        "message_on_failure, "
+        "below_tick, "
+        "above_tick, "
+        "cutoff_price, "
+        "max_order_attempts, "
+        "emergency_order_fill_on_failure"
+        ") "
+        "VALUES ("
+        "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s"
+        ");"
+	)
+     
+    values = (
+        active,
+        epoch_time_created_at,
+        executed,
+        execute_only_after_id,
+        execution_deactivates_order_id,
+        buy_or_sell,
+        credit_or_debit,
+        symbol,
+        strike,
+        call_or_put,
+        expiration_date,
+        rh_option_uuid,
+        market_or_limit,
+        limit_price,
+        quantity,
+        message_on_success,
+        message_on_failure,
+        below_tick,
+        above_tick,
+        cutoff_price,
+        max_order_attempts,
+        emergency_order_fill_on_failure,
+    )
+
+    try:
+        conn = get_database_connection()
+        cur = conn.cursor()
+        cur.execute(sql_query, values)
+        conn.commit()
+    except Exception as e:
+        logger.exception(f"Issue inserting trigger order: {e}", stack_info=True)
+    finally:
+        cur.close()
+        conn.close()
+     
+def insert_trailing_order(
 		active: int,
 		epoch_time_created_at: str,
 		executed: int,
-		execute_only_after_id: int,
-		execution_deactivates_order_id: int,
+		execute_only_after_trigger_order_ids: list,
+        execute_only_after_trailing_order_ids: list,
+        execute_only_after_bracket_order_ids: list,
+		execution_deactivates_trigger_order_ids: list,
+        execution_deactivates_trailing_order_ids: list,
+        execution_deactivates_bracket_order_ids: list,
 		buy_or_sell: str,
         credit_or_debit: str,
 		symbol: str,
@@ -400,8 +606,6 @@ def insert_trigger_order(
 		call_or_put: str,
 		expiration_date: str,
 		rh_option_uuid: str,
-		market_or_limit: str,
-		limit_price: float,
 		quantity: int,
 		message_on_success: str,
 		message_on_failure: str,
@@ -409,16 +613,22 @@ def insert_trigger_order(
 		above_tick: float,
 		cutoff_price: float,
 		max_order_attempts: int,
-		emergency_order_fill_on_failure: int
+		emergency_order_fill_on_failure: int,
+        percent_from_high_sell_trigger: float,
+        sell_at_specific_price: float,
 	) -> None:
-	
-	sql_query = (
-		"INSERT INTO trigger_option_orders("
+
+    sql_query = (
+        "INSERT INTO trailing_option_orders( "
         "active, "
 		"epoch_time_created_at, "
         "executed, "
-		"execute_only_after_id, "
-        "execution_deactivates_order_id, "
+		"execute_only_after_trigger_order_ids, "
+        "execute_only_after_trailing_order_ids, "
+        "execute_only_after_bracket_order_ids, "
+		"execution_deactivates_trigger_order_ids, "
+        "execution_deactivates_trailing_order_ids, "
+        "execution_deactivates_bracket_order_ids, "
 		"buy_or_sell, "
         "credit_or_debit, "
 		"symbol, "
@@ -426,41 +636,60 @@ def insert_trigger_order(
 		"call_or_put, "
         "expiration_date, "
 		"rh_option_uuid, "
-		"market_or_limit, "
-		"limit_price, "
-        "quantity, "
+		"quantity, "
 		"message_on_success, "
 		"message_on_failure, "
         "below_tick, "
 		"above_tick, "
 		"cutoff_price, "
 		"max_order_attempts, "
-		"emergency_order_fill_on_failure"
-		") "
-		"VALUES ("
-		f"{active}, "
-		f"{epoch_time_created_at}, "
-		f"{executed}, "
-		f"{execute_only_after_id}, "
-		f"{execution_deactivates_order_id}, "
-		f"'{buy_or_sell}', "
-		f"'{credit_or_debit}', "
-		f"'{symbol}', "
-		f"{strike}, "
-		f"'{call_or_put}', "
-		f"'{expiration_date}', "
-		f"'{rh_option_uuid}', "
-		f"'{market_or_limit}', "
-		f"{limit_price}, "
-		f"{quantity}, "
-		f"'{message_on_success}', "
-		f"'{message_on_failure}', "
-		f"{below_tick}, "
-		f"{above_tick}, "
-		f"{cutoff_price}, "
-		f"{max_order_attempts}, "
-        f"{emergency_order_fill_on_failure}"
+        "emergency_order_fill_on_failure,"
+        "percent_from_high_sell_trigger,"
+        "sell_at_specific_price"
+        ") VALUES ("
+        "%s, %s, %s, %s, %s, "
+        "%s, %s, %s, %s, %s, "
+        "%s, %s, %s, %s, %s, "
+        "%s, %s, %s, %s, %s, "
+        "%s, %s, %s, %s, %s"
         ");"
 	)
+    values = (
+        active,
+        epoch_time_created_at,
+        executed,
+        execute_only_after_trigger_order_ids,
+        execute_only_after_trailing_order_ids,
+        execute_only_after_bracket_order_ids,
+        execution_deactivates_trigger_order_ids,
+        execution_deactivates_trailing_order_ids,
+        execution_deactivates_bracket_order_ids,
+        buy_or_sell,
+        credit_or_debit,
+        symbol,
+        strike,
+        call_or_put,
+        expiration_date,
+        rh_option_uuid,
+        quantity,
+        message_on_success,
+        message_on_failure,
+        below_tick,
+        above_tick,
+        cutoff_price,
+        max_order_attempts,
+        emergency_order_fill_on_failure,
+        percent_from_high_sell_trigger,
+        sell_at_specific_price,
+    )
 
-	execute_set_database_query(sql_query)
+    try:
+        conn = get_database_connection()
+        cur = conn.cursor()
+        cur.execute(sql_query, values)
+        conn.commit()
+    except Exception as e:
+        logger.exception(f"Issue inserting trailing order: {e}", stack_info=True)
+    finally:
+        cur.close()
+        conn.close()

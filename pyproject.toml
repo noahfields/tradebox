@@ -18,10 +18,3 @@ dev = [
     "ruff>=0.14.10",
     "textual-dev>=1.8.0",
 ]
-
-[tool.ruff]
-line-length = 79
-
-[tool.ruff.format]
-quote-style = "double"
-indent-style = "tab"
