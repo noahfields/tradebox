@@ -154,6 +154,7 @@ DATABASE_TABLE_SCHEMA = {
         "percent_from_high_sell_trigger": "REAL",
         "sell_at_specific_price": "REAL",
         "highest_price_since_order_placed": "REAL",
+        "cost_basis": "REAL",
     },
 
     "trailing_option_orders_market_data": {
@@ -520,6 +521,116 @@ def update_trigger_option_orders_market_data(option_market_data: list) -> None:
 
     delete_rows_from_table_by_value("trigger_option_orders_market_data", "still_alive", False)
 
+
+def update_bracket_option_orders_market_data(option_market_data: list) -> None:
+    set_table_field("bracket_option_orders_market_data", "still_alive", False)
+
+    for option in option_market_data:
+        option_uuid_pk = option["instrument_id"]
+        json_data = json.dumps(option)
+        last_update_epoch_time = time.time()
+        still_alive = True
+        
+        sql_query = (
+            "INSERT INTO bracket_option_orders_market_data (option_uuid_pk, json_data, last_update_epoch_time, still_alive) "
+            "VALUES (%s, %s, %s, %s) "
+            "ON CONFLICT(option_uuid_pk) DO UPDATE SET "
+            "json_data=excluded.json_data, "
+            "last_update_epoch_time=excluded.last_update_epoch_time, "
+            "still_alive=excluded.still_alive;"
+        )
+        values = (option_uuid_pk, json_data, last_update_epoch_time, still_alive)
+        
+        conn = get_database_connection()
+        cur = conn.cursor()
+        try:
+            cur.execute(sql_query, values)
+            conn.commit()
+        except Exception as e:
+            logger.exception(f"Issue updating bracket_option_orders_market_data: {e}", stack_info=True)
+        finally:
+            cur.close()
+            conn.close()
+
+    delete_rows_from_table_by_value("bracket_option_orders_market_data", "still_alive", False)
+
+
+def update_trailing_option_orders_market_data(option_market_data: list) -> None:
+    set_table_field("trailing_option_orders_market_data", "still_alive", False)
+
+    for option in option_market_data:
+        option_uuid_pk = option["instrument_id"]
+        json_data = json.dumps(option)
+        last_update_epoch_time = time.time()
+        still_alive = True
+        
+        sql_query = (
+            "INSERT INTO trailing_option_orders_market_data (option_uuid_pk, json_data, last_update_epoch_time, still_alive) "
+            "VALUES (%s, %s, %s, %s) "
+            "ON CONFLICT(option_uuid_pk) DO UPDATE SET "
+            "json_data=excluded.json_data, "
+            "last_update_epoch_time=excluded.last_update_epoch_time, "
+            "still_alive=excluded.still_alive;"
+        )
+        values = (option_uuid_pk, json_data, last_update_epoch_time, still_alive)
+        
+        conn = get_database_connection()
+        cur = conn.cursor()
+        try:
+            cur.execute(sql_query, values)
+            conn.commit()
+        except Exception as e:
+            logger.exception(f"Issue updating trailing_option_orders_market_data: {e}", stack_info=True)
+        finally:
+            cur.close()
+            conn.close()
+
+    delete_rows_from_table_by_value("trailing_option_orders_market_data", "still_alive", False)
+
+
+def get_active_trailing_option_orders_list() -> list:
+    conn = get_database_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    sql_query = "SELECT * FROM trailing_option_orders WHERE executed=FALSE AND active=TRUE;"
+    cur.execute(sql_query)
+    results = cur.fetchall()
+
+    trailing_orders_list = []
+    for result in results:
+        order_info = {}
+        for key, value in result.items():
+            order_info[key] = value
+
+        trailing_orders_list.append(order_info)
+
+    cur.close()
+    conn.close()
+
+    return trailing_orders_list
+
+def get_trailing_option_order_market_data_by_order_uuid(option_uuid: str) -> dict | None:
+    conn = get_database_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    sql_query = f"SELECT * FROM trailing_option_orders_market_data WHERE option_uuid_pk=%s;"
+    values = (option_uuid, )
+    cur.execute(sql_query, values)
+    result = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    if result:
+        order_market_data = {}
+        for key, value in result.items():
+            order_market_data[key] = value
+
+        return order_market_data
+    else:
+        return None
+
+
 def delete_rows_from_table_by_value(table, field, value) -> None:
     sql_query = f"DELETE FROM {table} WHERE {field}=%s;"
     values = (value, )
@@ -727,7 +838,6 @@ def insert_bracket_order(
         cutoff_price: float,
         max_order_attempts: int,
         emergency_order_fill_on_failure: bool,
-        trigger_order_uuid: str,
     ) -> None:
 	
     sql_query = (
@@ -756,11 +866,9 @@ def insert_bracket_order(
         "above_tick, "
         "cutoff_price, "
         "max_order_attempts, "
-        "emergency_order_fill_on_failure, "
-        "trigger_order_uuid"
-        ") "
-        "VALUES ("
-        "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s"
+        "emergency_order_fill_on_failure"
+        ") VALUES ("
+        "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s"
         ");"
     )
      
@@ -790,7 +898,6 @@ def insert_bracket_order(
         cutoff_price,
         max_order_attempts,
         emergency_order_fill_on_failure,
-        trigger_order_uuid
     )
 
     try:
@@ -831,10 +938,11 @@ def insert_trailing_order(
         emergency_order_fill_on_failure: bool,
         percent_from_high_sell_trigger: float,
         sell_at_specific_price: float,
+        cost_basis: float
     ) -> None:
 	
     sql_query = (
-        "INSERT INTO bracket_option_orders("
+        "INSERT INTO trailing_option_orders("
         "active, "
         "epoch_time_created_at, "
         "execute_only_after_trigger_order_ids, "
@@ -859,10 +967,10 @@ def insert_trailing_order(
         "max_order_attempts, "
         "emergency_order_fill_on_failure, "
         "percent_from_high_sell_trigger, "
-        "sell_at_specific_price"
-        ") "
-        "VALUES ("
-        "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s"
+        "sell_at_specific_price, "
+        "highest_price_since_order_placed"
+        ") VALUES ("
+        "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s"
         ");"
     )
      
@@ -891,7 +999,8 @@ def insert_trailing_order(
         max_order_attempts,
         emergency_order_fill_on_failure,
         percent_from_high_sell_trigger, 
-        sell_at_specific_price
+        sell_at_specific_price,
+        cost_basis
     )
 
     conn = get_database_connection()
@@ -904,3 +1013,35 @@ def insert_trailing_order(
     finally:
         cur.close()
         conn.close()
+
+def get_executed_status_orders(trigger_order_ids, bracket_order_ids, trailing_order_ids):
+    conn = get_database_connection()
+    cur = conn.cursor()
+
+    executed_status_list = []
+
+    for order_id in trigger_order_ids:
+        sql_query = "SELECT executed FROM trigger_option_orders WHERE order_id_pk=%s;"
+        values = (order_id,)
+        cur.execute(sql_query, values)
+        result = cur.fetchone()[0]
+        executed_status_list.append(result)
+
+    for order_id in bracket_order_ids:
+        sql_query = "SELECT executed FROM bracket_option_orders WHERE order_id_pk=%s;"
+        values = (order_id,)
+        cur.execute(sql_query, values)
+        result = cur.fetchone()[0]
+        executed_status_list.append(result)
+
+    for order_id in trailing_order_ids:
+        sql_query = "SELECT executed FROM trailing_option_orders WHERE order_id_pk=%s;"
+        values = (order_id,)
+        cur.execute(sql_query, values)
+        result = cur.fetchone()[0]
+        executed_status_list.append(result)
+
+    cur.close()
+    conn.close()
+
+    return executed_status_list

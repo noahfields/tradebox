@@ -115,8 +115,7 @@ def create_bracket_option_order(
         message_on_success: str,
         message_on_failure: str,
         max_order_attempts: int,
-        emergency_order_fill_on_failure: bool,
-        trigger_order_uuid: str,
+        emergency_order_fill_on_failure: bool
 	):
     logger.info('Begin creating bracket order.')
 
@@ -176,7 +175,6 @@ def create_bracket_option_order(
         cutoff_price,
         max_order_attempts,
         emergency_order_fill_on_failure,
-        trigger_order_uuid,
     )
 
     msg = 'Successfully created bracket order for ' \
@@ -205,6 +203,7 @@ def create_trailing_option_order(
         emergency_order_fill_on_failure: bool,
         percent_from_high_sell_trigger: float,
         sell_at_specific_price: float,
+        cost_basis: float
 	):
     logger.info('Begin creating trailing order.')
 
@@ -264,6 +263,7 @@ def create_trailing_option_order(
         emergency_order_fill_on_failure,
         percent_from_high_sell_trigger,
         sell_at_specific_price,
+        cost_basis
     )
 
     msg = 'Successfully created trailing order for ' \
