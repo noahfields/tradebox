@@ -288,51 +288,60 @@ def monitor_bracket_option_orders():
 
 # WORKING
 def monitor_trailing_option_orders(runner_name):
-	active_trailing_orders = database.get_active_trailing_option_orders_list()
+	trailing_orders = database.get_trailing_option_orders_list()
 
-	for order in active_trailing_orders:
+	for order in trailing_orders:
 		logger.info(f"Monitoring trailing option order: {order}", extra={"runner": runner_name})
 
-		# get current market data
+		if order["executed"]:
+			logger.info(
+				f"Trailing order #{order["order_id_pk"]} already executed. Skipping monitor.", 
+				extra={"runner": runner_name}
+			)
+			continue
+
 		option_market_row = database.get_trailing_option_order_market_data_by_order_uuid(order["rh_option_uuid"])
 		logger.info(
 			f"Fetched option market data for trailing order {order['order_id_pk']}: {option_market_row}", 
 			extra={"runner": runner_name}
 		)
 		if option_market_row == None:
-			logger.info(f"No market data found for {order["rh_option_uuid"]}. Skipping this order.", extra={"runner": runner_name})
+			logger.info(
+				f"No market data found for {order["rh_option_uuid"]}. Skipping this order.", 
+				extra={"runner": runner_name}
+			)
 			continue
-		# {'order_id_pk': 1, 'active': True, 'epoch_time_created_at': 1768274200.0, 'executed': False, 'execute_only_after_trigger_order_ids': [], 'execute_only_after_bracket_order_ids': [], 'execute_only_after_trailing_order_ids': [], 'execution_deactivates_trigger_order_ids': [], 'execution_deactivates_bracket_order_ids': [], 'execution_deactivates_trailing_order_ids': [], 'buy_or_sell': 'sell', 'credit_or_debit': 'credit', 'symbol': 'IWM', 'strike': 258.0, 'call_or_put': 'put', 'expiration_date': '2026-03-20', 'rh_option_uuid': 'ee1be306-02bb-416d-aef5-cb964a76e4e7', 'quantity': 1, 'message_on_success': 'success msg', 'message_on_failure': 'failure msg', 'below_tick': 0.01, 'above_tick': 0.01, 'cutoff_price': 0.0, 'max_order_attempts': 10, 'emergency_order_fill_on_failure': True, 'percent_from_high_sell_trigger': 0.15, 'sell_at_specific_price': 0.25, 'highest_price_since_order_placed': None}
+		# {'order_id_pk': 1, 'active': True, 'epoch_time_created_at': 1768274200.0, 'executed': False, 'execute_only_after_trigger_order_ids': [], 'execute_only_after_bracket_order_ids': [], 'execute_only_after_trailing_order_ids': [], 'execution_deactivates_trigger_order_ids': [], 'execution_deactivates_bracket_order_ids': [], 'execution_deactivates_trailing_order_ids': [], 'buy_or_sell': 'sell', 'credit_or_debit': 'credit', 'symbol': 'IWM', 'strike': 258.0, 'call_or_put': 'put', 'expiration_date': '2026-03-20', 'rh_option_uuid': 'ee1be306-02bb-416d-aef5-cb964a76e4e7', 'quantity': 1, 'message_on_success': 'success msg', 'message_on_failure': 'failure msg', 'below_tick': 0.01, 'above_tick': 0.01, 'cutoff_price': 0.0, 'max_order_attempts': 10, 'emergency_order_fill_on_failure': True, 'percent_from_high_sell_trigger': 0.15, 'sell_at_specific_price': 0.25, 'highest_price_since_order_placed': NoneAND active=TRUE}
 
 		# {'option_uuid_pk': 'ee1be306-02bb-416d-aef5-cb964a76e4e7', 'json_data': {'rho': '-0.183402', 'vega': '0.430015', 'delta': '-0.396893', 'gamma': '0.017277', 'state': 'active', 'theta': '-0.055987', 'symbol': 'IWM', 'volume': 136, 'ask_size': 56, 'bid_size': 132, 'ask_price': '6.740000', 'bid_price': '6.680000', 'low_price': '7.440000', 'high_price': '8.100000', 'instrument': 'https://api.robinhood.com/options/instruments/ee1be306-02bb-416d-aef5-cb964a76e4e7/', 'mark_price': '6.710000', 'occ_symbol': 'IWM   260320P00258000', 'updated_at': '2026-01-12T21:14:59.686979751Z', 'instrument_id': 'ee1be306-02bb-416d-aef5-cb964a76e4e7', 'open_interest': 93, 'pricing_model': 'Bjerksund-Stensland 1993', 'last_trade_size': 59, 'break_even_price': '251.290000', 'last_trade_price': '7.460000', 'implied_volatility': '0.204667', 'adjusted_mark_price': '6.710000', 'previous_close_date': '2026-01-09', 'previous_close_price': '7.200000', 'chance_of_profit_long': '0.313193', 'chance_of_profit_short': '0.686807', 'low_fill_rate_buy_price': '6.699000', 'high_fill_rate_buy_price': '6.727000', 'low_fill_rate_sell_price': '6.720000', 'high_fill_rate_sell_price': '6.692000', 'adjusted_mark_price_round_down': '6.710000'}, 'still_alive': True, 'last_update_epoch_time': 1768274200.0}
 
+		highest_price_since_order_placed = float(order["highest_price_since_order_placed"])
 		current_mark_price = float(option_market_row["json_data"]["mark_price"])
-		highest_price_since_order_placed = order["highest_price_since_order_placed"]
 
-		if highest_price_since_order_placed == None:
+		if current_mark_price > highest_price_since_order_placed:
+			logger.info(f"New highest_price_since_order_placed for order {order['order_id_pk']}")
 			highest_price_since_order_placed = current_mark_price
-		else:
-			highest_price_since_order_placed = float(highest_price_since_order_placed)
-			if current_mark_price > highest_price_since_order_placed:
-				highest_price_since_order_placed = current_mark_price
+			conn = database.get_database_connection()
+			cur = conn.cursor()
+			sql_query = "UPDATE trailing_option_orders SET highest_price_since_order_placed=%s WHERE order_id_pk=%s;"
+			values = (highest_price_since_order_placed, order['order_id_pk'])
+			cur.execute(sql_query, values)
+			conn.commit()
+			cur.close()
+			conn.close()
 
 		percent_from_high_sell_trigger = float(order["percent_from_high_sell_trigger"])
 		sell_at_specific_price = float(order["sell_at_specific_price"])
 
-		execution_requires_trigger_order_ids = order["execute_only_after_trigger_order_ids"]
-		execution_requires_bracket_order_ids = order["execute_only_after_bracket_order_ids"]
-		execution_requires_trailing_order_ids = order["execute_only_after_trailing_order_ids"]
-		execution_deactivates_trigger_order_ids = order["execution_deactivates_trigger_order_ids"]
-		execution_deactivates_bracket_order_ids = order["execution_deactivates_bracket_order_ids"]
-		execution_deactivates_trailing_order_ids = order["execution_deactivates_trailing_order_ids"]
-
-		# see if order meets any market conditions
 		execute_order = False
 		if current_mark_price < highest_price_since_order_placed * percent_from_high_sell_trigger:
 			execute_order = True
 		if current_mark_price >= sell_at_specific_price:
 			execute_order = True
 
+		execution_requires_trigger_order_ids = order["execute_only_after_trigger_order_ids"]
+		execution_requires_bracket_order_ids = order["execute_only_after_bracket_order_ids"]
+		execution_requires_trailing_order_ids = order["execute_only_after_trailing_order_ids"]
 		logger.info("Checking that required previous orders have been executed.")
 		# get executed status of prior orders to see if valid
 		executed_statuses_list = database.get_executed_status_orders(
@@ -348,21 +357,25 @@ def monitor_trailing_option_orders(runner_name):
 		if order["executed"] == True:
 			execute_order = False
 
-		# write highest price since
-		conn = database.get_database_connection()
-		cur = conn.cursor()
-		sql_query = "UPDATE trailing_option_orders SET highest_price_since_order_placed=%s WHERE order_id_pk=%s;"
-		values = (highest_price_since_order_placed, order['order_id_pk'])
-		cur.execute(sql_query, values)
-		conn.commit()
-		cur.close()
-		conn.close()
+		if order["active"] == False:
+			execute_order = False
 
+		execution_deactivates_trigger_order_ids = order["execution_deactivates_trigger_order_ids"]
+		execution_deactivates_bracket_order_ids = order["execution_deactivates_bracket_order_ids"]
+		execution_deactivates_trailing_order_ids = order["execution_deactivates_trailing_order_ids"]
 		if execute_order:
-			pass
-			# execute order
-			# mark order as executed
-			# deactivate trigger, bracket, and trailing orders
+			try:
+				database.mark_order_executed(table="trailing_option_orders", order_id_pk=order["order_id_pk"])
+				database.deactivate_orders(
+					execution_deactivates_trigger_order_ids, 
+					execution_deactivates_bracket_order_ids, 
+					execution_deactivates_trailing_order_ids
+				)
+				orders.execute_market_sell(order)
+				logger.info(f"Executed sell for trailing order #{orders['order_id_pk']}")
+			except Exception as e:
+				logger.critical(f"Issue in selling trailing order #{orders['order_id_pk']}")
+
 
 
 def start_data_fetch_runner(runner_dict):

@@ -588,11 +588,11 @@ def update_trailing_option_orders_market_data(option_market_data: list) -> None:
     delete_rows_from_table_by_value("trailing_option_orders_market_data", "still_alive", False)
 
 
-def get_active_trailing_option_orders_list() -> list:
+def get_trailing_option_orders_list() -> list:
     conn = get_database_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    sql_query = "SELECT * FROM trailing_option_orders WHERE executed=FALSE AND active=TRUE;"
+    sql_query = "SELECT * FROM trailing_option_orders;"
     cur.execute(sql_query)
     results = cur.fetchall()
 
@@ -663,8 +663,46 @@ def set_table_field(table: str, field: str, value) -> None:
     finally:
         cur.close()
         conn.close()
-         
-         
+
+def deactivate_orders(
+        trigger_order_ids: list[int], 
+        bracket_order_ids: list[int], 
+        trailing_order_ids: list[int]
+    ):
+    conn = get_database_connection()
+    cur = conn.cursor()
+
+    for order_id in trigger_order_ids:
+        sql_query = "UPDATE trigger_option_orders SET active=False WHERE order_id_pk=%s;"
+        values = (order_id,)
+        cur.execute(sql_query, values)
+        conn.commit()
+
+    for order_id in bracket_order_ids:
+        sql_query = "UPDATE bracket_option_orders SET active=False WHERE order_id_pk=%s;"
+        values = (order_id,)
+        cur.execute(sql_query, values)
+        conn.commit()
+
+    for order_id in trailing_order_ids:
+        sql_query = "UPDATE trailing_option_orders SET active=False WHERE order_id_pk=%s;"
+        values = (order_id,)
+        cur.execute(sql_query, values)
+        conn.commit()
+
+    cur.close()
+    conn.close()
+
+def mark_order_executed(table, order_id_pk):
+    conn = get_database_connection()
+    cur = conn.cursor()
+    sql_query = f"UPDATE {table} SET executed=True WHERE order_id_pk=%s;"
+    values = (order_id_pk,)
+    cur.execute(sql_query, values)
+    conn.commit()
+    cur.close()
+    conn.close()
+
 
 def select_column_from_table(table: str, column: str) -> list:
     conn = get_database_connection()
