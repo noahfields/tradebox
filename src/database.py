@@ -79,6 +79,7 @@ DATABASE_TABLE_SCHEMA = {
         "max_order_attempts": "INTEGER",
         "emergency_order_fill_on_failure": "BOOLEAN",
         "trigger_order_uuid": "UUID",
+        "last_monitor_epoch_time": "REAL",
     },
 
     "trigger_option_orders_market_data": {
@@ -88,7 +89,7 @@ DATABASE_TABLE_SCHEMA = {
         "last_update_epoch_time": "REAL",
     },
 
-    "bracket_option_orders": {
+    "bracket_sell_option_orders": {
         "order_id_pk": "SMALLSERIAL PRIMARY KEY",
         "active": "BOOLEAN",
         "epoch_time_created_at": "REAL",
@@ -99,8 +100,6 @@ DATABASE_TABLE_SCHEMA = {
         "execution_deactivates_trigger_order_ids": "INTEGER[]",
         "execution_deactivates_bracket_order_ids": "INTEGER[]",
         "execution_deactivates_trailing_order_ids": "INTEGER[]",
-        "buy_or_sell": "TEXT",
-        "credit_or_debit": "TEXT",
         "symbol": "TEXT",
         "strike": "REAL",
         "call_or_put": "TEXT",
@@ -115,17 +114,18 @@ DATABASE_TABLE_SCHEMA = {
         "above_tick": "REAL",
         "cutoff_price": "REAL",
         "max_order_attempts": "INTEGER",
-        "emergency_order_fill_on_failure": "BOOLEAN", 
+        "emergency_order_fill_on_failure": "BOOLEAN",
+        "last_monitor_epoch_time": "REAL", 
     },
 
-    "bracket_option_orders_market_data": {
+    "bracket_sell_option_orders_market_data": {
         "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
         "json_data": "JSONB",
         "still_alive": "BOOLEAN",
         "last_update_epoch_time": "REAL",
     },
 
-    "trailing_option_orders": {
+    "trailing_sell_option_orders": {
         "order_id_pk": "SMALLSERIAL PRIMARY KEY",
         "active": "BOOLEAN",
         "epoch_time_created_at": "REAL",
@@ -136,8 +136,6 @@ DATABASE_TABLE_SCHEMA = {
         "execution_deactivates_trigger_order_ids": "INTEGER[]",
         "execution_deactivates_bracket_order_ids": "INTEGER[]",
         "execution_deactivates_trailing_order_ids": "INTEGER[]",
-        "buy_or_sell": "TEXT",
-        "credit_or_debit": "TEXT",
         "symbol": "TEXT",
         "strike": "REAL",
         "call_or_put": "TEXT",
@@ -154,10 +152,11 @@ DATABASE_TABLE_SCHEMA = {
         "percent_from_high_sell_trigger": "REAL",
         "sell_at_specific_price": "REAL",
         "highest_price_since_order_placed": "REAL",
-        "cost_basis": "REAL",
+        "purchase_price": "REAL",
+        "last_monitor_epoch_time": "REAL",
     },
 
-    "trailing_option_orders_market_data": {
+    "trailing_sell_option_orders_market_data": {
         "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
         "json_data": "JSONB",
         "still_alive": "BOOLEAN",
@@ -696,10 +695,12 @@ def deactivate_orders(
 def mark_order_executed(table, order_id_pk):
     conn = get_database_connection()
     cur = conn.cursor()
+
     sql_query = f"UPDATE {table} SET executed=True WHERE order_id_pk=%s;"
     values = (order_id_pk,)
     cur.execute(sql_query, values)
     conn.commit()
+    
     cur.close()
     conn.close()
 
@@ -950,7 +951,7 @@ def insert_bracket_order(
         conn.close()
 
 
-def insert_trailing_order(
+def insert_trailing_sell_order(
         active: bool,
         epoch_time_created_at: float,
         execute_only_after_trigger_order_ids: list[int],
@@ -959,8 +960,6 @@ def insert_trailing_order(
         execution_deactivates_trigger_order_ids: list[int],
         execution_deactivates_bracket_order_ids: list[int],
         execution_deactivates_trailing_order_ids: list[int],
-        buy_or_sell: str,
-        credit_or_debit: str,
         symbol: str,
         strike: float,
         call_or_put: str,
@@ -976,11 +975,11 @@ def insert_trailing_order(
         emergency_order_fill_on_failure: bool,
         percent_from_high_sell_trigger: float,
         sell_at_specific_price: float,
-        cost_basis: float
+        purchase_price: float
     ) -> None:
 	
     sql_query = (
-        "INSERT INTO trailing_option_orders("
+        "INSERT INTO trailing_sell_option_orders("
         "active, "
         "epoch_time_created_at, "
         "execute_only_after_trigger_order_ids, "
@@ -989,8 +988,6 @@ def insert_trailing_order(
         "execution_deactivates_trigger_order_ids, "
         "execution_deactivates_bracket_order_ids, "
         "execution_deactivates_trailing_order_ids, "
-        "buy_or_sell, "
-        "credit_or_debit, "
         "symbol, "
         "strike, "
         "call_or_put, "
@@ -1006,9 +1003,9 @@ def insert_trailing_order(
         "emergency_order_fill_on_failure, "
         "percent_from_high_sell_trigger, "
         "sell_at_specific_price, "
-        "highest_price_since_order_placed"
+        "purchase_price"
         ") VALUES ("
-        "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s"
+        "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s"
         ");"
     )
      
@@ -1021,8 +1018,6 @@ def insert_trailing_order(
         execution_deactivates_trigger_order_ids,
         execution_deactivates_bracket_order_ids,
         execution_deactivates_trailing_order_ids,
-        buy_or_sell,
-        credit_or_debit,
         symbol,
         strike,
         call_or_put,
@@ -1038,7 +1033,7 @@ def insert_trailing_order(
         emergency_order_fill_on_failure,
         percent_from_high_sell_trigger, 
         sell_at_specific_price,
-        cost_basis
+        purchase_price
     )
 
     conn = get_database_connection()

@@ -204,7 +204,7 @@ def create_trailing_option_order(
         emergency_order_fill_on_failure: bool,
         percent_from_high_sell_trigger: float,
         sell_at_specific_price: float,
-        cost_basis: float
+        purchase_price: float
 	):
     logger.info('Begin creating trailing order.')
 
@@ -271,7 +271,7 @@ def create_trailing_option_order(
         + f'{buy_or_sell} {quantity} {symbol}, {expiration_date}, {strike}, {call_or_put}.'
     logger.info(msg)
 
-
+# WORKING
 def execute_market_sell(order):
     # log timestamp
     start_timestamp = datetime.datetime.now().strftime('%H:%M:%S')
