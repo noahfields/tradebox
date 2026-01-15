@@ -7,271 +7,16 @@ import psycopg2.extras
 import time
 
 import config
+import schema
 
 logger = logging.getLogger(__name__)
-
-
-DATABASE_TABLE_SCHEMA = {
-	"runners": {
-        "runner_name_pk": "VARCHAR(255) PRIMARY KEY",
-        "active": "BOOLEAN",
-        "adjusted_interval": "INTEGER",
-        "default_interval": "INTEGER",
-        "current_update_success": "BOOLEAN",
-        "previous_update_success": "BOOLEAN",
-        "epoch_time_previous_success": "REAL",
-    },
-
-    "open_option_positions": {
-        "position_uuid_pk": "VARCHAR(255) PRIMARY KEY",
-        "json_data": "JSONB",
-        "still_alive": "BOOLEAN",
-        "last_update_epoch_time": "REAL",
-        "local_id": "SMALLSERIAL",
-    },
-
-    "open_option_positions_market_data": {
-        "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
-        "json_data": "JSONB",
-        "still_alive": "BOOLEAN",
-        "last_update_epoch_time": "REAL",
-    },
-
-    "open_broker_option_orders": {
-        "order_uuid_pk": "VARCHAR(255) PRIMARY KEY",
-        "json_data": "JSONB",
-        "still_alive": "BOOLEAN",
-        "last_update_epoch_time": "REAL",
-        "local_id": "SMALLSERIAL",
-    },
-
-    "open_broker_option_orders_market_data": {
-        "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
-        "json_data": "JSONB",
-        "still_alive": "BOOLEAN",
-        "last_update_epoch_time": "REAL",
-    },
-
-    "trigger_option_orders": {
-        "order_id_pk": "SMALLSERIAL PRIMARY KEY",
-        "active": "BOOLEAN",
-        "epoch_time_created_at": "REAL",
-        "executed": "BOOLEAN DEFAULT FALSE",
-        "execute_only_after_trigger_order_ids": "INTEGER[]",
-        "execute_only_after_bracket_order_ids": "INTEGER[]",
-        "execute_only_after_trailing_order_ids": "INTEGER[]",
-        "execution_deactivates_trigger_order_ids": "INTEGER[]",
-        "execution_deactivates_bracket_order_ids": "INTEGER[]",
-        "execution_deactivates_trailing_order_ids": "INTEGER[]",
-        "buy_or_sell": "TEXT",
-        "credit_or_debit": "TEXT",
-        "symbol": "TEXT",
-        "strike": "REAL",
-        "call_or_put": "TEXT",
-        "expiration_date": "TEXT",
-        "rh_option_uuid": "TEXT",
-        "quantity": "INTEGER",
-        "message_on_success": "TEXT",
-        "message_on_failure": "TEXT",
-        "below_tick": "REAL",
-        "above_tick": "REAL",
-        "cutoff_price": "REAL",
-        "max_order_attempts": "INTEGER",
-        "emergency_order_fill_on_failure": "BOOLEAN",
-        "trigger_order_uuid": "UUID",
-        "last_monitor_epoch_time": "REAL",
-    },
-
-    "trigger_option_orders_market_data": {
-        "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
-        "json_data": "JSONB",
-        "still_alive": "BOOLEAN",
-        "last_update_epoch_time": "REAL",
-    },
-
-    "bracket_sell_option_orders": {
-        "order_id_pk": "SMALLSERIAL PRIMARY KEY",
-        "active": "BOOLEAN",
-        "epoch_time_created_at": "REAL",
-        "executed": "BOOLEAN DEFAULT FALSE",
-        "execute_only_after_trigger_order_ids": "INTEGER[]",
-        "execute_only_after_bracket_order_ids": "INTEGER[]",
-        "execute_only_after_trailing_order_ids": "INTEGER[]",
-        "execution_deactivates_trigger_order_ids": "INTEGER[]",
-        "execution_deactivates_bracket_order_ids": "INTEGER[]",
-        "execution_deactivates_trailing_order_ids": "INTEGER[]",
-        "symbol": "TEXT",
-        "strike": "REAL",
-        "call_or_put": "TEXT",
-        "expiration_date": "TEXT",
-        "rh_option_uuid": "TEXT",
-        "quantity": "INTEGER",
-        "high_sell_mark_price": "REAL",
-        "low_sell_mark_price": "REAL",
-        "message_on_success": "TEXT",
-        "message_on_failure": "TEXT",
-        "below_tick": "REAL",
-        "above_tick": "REAL",
-        "cutoff_price": "REAL",
-        "max_order_attempts": "INTEGER",
-        "emergency_order_fill_on_failure": "BOOLEAN",
-        "last_monitor_epoch_time": "REAL", 
-    },
-
-    "bracket_sell_option_orders_market_data": {
-        "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
-        "json_data": "JSONB",
-        "still_alive": "BOOLEAN",
-        "last_update_epoch_time": "REAL",
-    },
-
-    "trailing_sell_option_orders": {
-        "order_id_pk": "SMALLSERIAL PRIMARY KEY",
-        "active": "BOOLEAN",
-        "epoch_time_created_at": "REAL",
-        "executed": "BOOLEAN DEFAULT FALSE",
-        "execute_only_after_trigger_order_ids": "INTEGER[]",
-        "execute_only_after_bracket_order_ids": "INTEGER[]",
-        "execute_only_after_trailing_order_ids": "INTEGER[]",
-        "execution_deactivates_trigger_order_ids": "INTEGER[]",
-        "execution_deactivates_bracket_order_ids": "INTEGER[]",
-        "execution_deactivates_trailing_order_ids": "INTEGER[]",
-        "symbol": "TEXT",
-        "strike": "REAL",
-        "call_or_put": "TEXT",
-        "expiration_date": "TEXT",
-        "rh_option_uuid": "TEXT",
-        "quantity": "INTEGER",
-        "message_on_success": "TEXT",
-        "message_on_failure": "TEXT",
-        "below_tick": "REAL",
-        "above_tick": "REAL",
-        "cutoff_price": "REAL",
-        "max_order_attempts": "INTEGER",
-        "emergency_order_fill_on_failure": "BOOLEAN", 
-        "percent_from_high_sell_trigger": "REAL",
-        "sell_at_specific_price": "REAL",
-        "highest_price_since_order_placed": "REAL",
-        "purchase_price": "REAL",
-        "last_monitor_epoch_time": "REAL",
-    },
-
-    "trailing_sell_option_orders_market_data": {
-        "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
-        "json_data": "JSONB",
-        "still_alive": "BOOLEAN",
-        "last_update_epoch_time": "REAL",
-    },
-}
-
-
-def get_database_connection() -> psycopg2.extensions.connection:
-	try:
-		conn = psycopg2.connect(config.DATABASE_URI)
-		conn.autocommit = False
-		return conn
-	except Exception as e:
-		logger.exception(
-			f"Error in database.get_database_connection(): {e}", 
-            stack_info=True
-		)
-
-
-def execute_set_database_query(sql_query: str, runner_name: str = "unknown") -> bool:
-    try:
-        conn = get_database_connection()
-        cur = conn.cursor()
-        cur.execute(sql_query)
-        conn.commit()
-        cur.close()
-        conn.close()
-        return True
-    except Exception as e:
-        logger.exception(
-             f"Unexpected exception. Issue executing sql_query: {sql_query}.\n", 
-             stack_info=True, 
-             extra={"runner": runner_name}
-        )
-        if 'conn' in locals():
-            conn.close()
-        return False
-
-
-def drop_table(table: str) -> None:
-    sql_query = f"DROP TABLE IF EXISTS {table};"
-
-    conn = get_database_connection()
-    cur = conn.cursor()
-
-    try:
-        cur.execute(sql_query)
-    except Exception as e:
-        logger.info(f"{e}", stack_info=True)
-    finally:
-        cur.close()
-        conn.close()
-
-# def get_all_runners_status() -> list:
-# 	conn = get_database_connection()
-# 	cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-# 	sql_query = "SELECT * FROM runners;"
-# 	cur.execute(sql_query)
-# 	results = cur.fetchall()
-
-# 	runner_status_list = []
-# 	for result in results:
-# 		runner_info = {
-# 			"runner_name": result["runner_name"],
-# 			"active": result["active"],
-# 			"adjusted_interval": result["adjusted_interval"],
-# 			"default_interval": result["default_interval"],
-# 			"current_update_successful": result["current_update_successful"],
-# 			"currently_successful": result["currently_successful"],
-# 			"last_successful_update_epoch_time": result["last_successful_update_epoch_time"],
-# 		}
-# 		runner_status_list.append(runner_info)
-
-# 	cur.close()
-# 	conn.close()
-
-# 	return runner_status_list
-
-def get_runner_status(runner_name_pk: str) -> dict | None:
-    conn = get_database_connection()
-    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
-
-    sql_query = (
-        f"SELECT * FROM runners WHERE runner_name_pk='{runner_name_pk}';"
-    )
-    cur.execute(sql_query)
-    result = cur.fetchone()
-
-    cur.close()
-    conn.close()
-
-    if result:
-        runner_status = {
-			"runner_name_pk": result["runner_name_pk"],
-			"active": result["active"],
-			"adjusted_interval": result["adjusted_interval"],
-			"default_interval": result["default_interval"],
-			"current_update_success": result["current_update_success"],
-			"previous_update_success": result["previous_update_success"],
-			"epoch_time_previous_success": result["epoch_time_previous_success"],
-		}
-        logger.info(f"Got runner status for {runner_name_pk}:\n{runner_status}", extra={"runner": runner_name_pk})
-        return runner_status
-    else:
-        logger.error(f"No runner status entry for {runner_name_pk}. Returning None.", extra={"runner": runner_name_pk})
-        return None
 
 
 def create_all_tables():
     conn = get_database_connection()
     cur = conn.cursor()
 
-    for table_name, columns in DATABASE_TABLE_SCHEMA.items():
+    for table_name, columns in schema.DATABASE_TABLES.items():
         try:
             sql_query = (
                 f"CREATE TABLE IF NOT EXISTS {table_name} ("
@@ -294,18 +39,80 @@ def create_all_tables():
     conn.close()
 
 
-def delete_all_tables():
+def drop_all_tables():
+    for table in schema.DATABASE_TABLES.keys():
+        drop_table(table)
+
+
+def drop_table(table: str) -> None:
+    sql_query = f"DROP TABLE IF EXISTS {table};"
+
     conn = get_database_connection()
     cur = conn.cursor()
+
     try:
-        for table_name in DATABASE_TABLE_SCHEMA.keys():
-            cur.execute(f"DROP TABLE IF EXISTS {table_name};")
-            conn.commit()
+        cur.execute(sql_query)
+        conn.commit()
     except Exception as e:
-        logger.error(f"Error deleting database tables: {e}", stack_info=True)
+        logger.info(f"{e}", stack_info=True)
     finally:
         cur.close()
         conn.close()
+
+
+def get_database_connection() -> psycopg2.extensions.connection:
+	try:
+		conn = psycopg2.connect(config.DATABASE_URI)
+		conn.autocommit = False
+		return conn
+	except Exception as e:
+		logger.exception(f"{e}", stack_info=True)
+
+
+def get_all_runners_status() -> list[dict]:
+    conn = get_database_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    sql_query = "SELECT * FROM runners;"
+    cur.execute(sql_query)
+    results = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    runners_status_list = []
+    for result in results:
+        runner_info = {}
+        for key, value in result.items():
+            runner_info[key] = value
+
+    runners_status_list.append(runner_info)
+
+    return runners_status_list
+
+
+def get_runner_status(runner_name_pk: str) -> dict | None:
+    conn = get_database_connection()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
+
+    sql_query = (f"SELECT * FROM runners WHERE runner_name_pk='{runner_name_pk}';")
+
+    cur.execute(sql_query)
+    result = cur.fetchone()
+
+    cur.close()
+    conn.close()
+
+    if result:
+        runner_status = {}
+        for key, value in result.items():
+            runner_status[key] = value
+
+        logger.info(f"Got runner status for {runner_name_pk}:\n{runner_status}", extra={"runner": runner_name_pk})
+        return runner_status
+    else:
+        logger.error(f"No runner status entry for {runner_name_pk}. Returning None.", extra={"runner": runner_name_pk})
+        return None
 
 
 def write_runner_status(runner_status: dict) -> None:
@@ -317,8 +124,8 @@ def write_runner_status(runner_status: dict) -> None:
         "default_interval, "
         "current_update_success, "
         "previous_update_success, "
-        "epoch_time_previous_success) "
-        "VALUES ("
+        "epoch_time_previous_success"
+        ") VALUES ("
         "%s, %s, %s, %s, %s, %s, %s) "
         "ON CONFLICT(runner_name_pk) DO UPDATE SET "
         "active=excluded.active, "
@@ -348,7 +155,7 @@ def write_runner_status(runner_status: dict) -> None:
             extra={"runner": runner_status["runner_name_pk"]}
         )
     except Exception as e:
-        logger.exception(stack_info=True)
+        logger.exception(stack_info=True, extra={"runner": runner_status["runner_name_pk"]})
     finally:
         cur.close()
         conn.close()
@@ -954,25 +761,26 @@ def insert_bracket_order(
 def insert_trailing_sell_order(
         active: bool,
         epoch_time_created_at: float,
+        executed: bool,
         execute_only_after_trigger_order_ids: list[int],
         execute_only_after_bracket_order_ids: list[int],
         execute_only_after_trailing_order_ids: list[int],
         execution_deactivates_trigger_order_ids: list[int],
         execution_deactivates_bracket_order_ids: list[int],
         execution_deactivates_trailing_order_ids: list[int],
+        quantity: int,
         symbol: str,
-        strike: float,
         call_or_put: str,
         expiration_date: str,
-        rh_option_uuid: str,
-        quantity: int,
-        message_on_success: str,
-        message_on_failure: str,
+        strike: float,
         below_tick: float,
         above_tick: float,
         cutoff_price: float,
+        robinhood_option_uuid: str,
+        message_on_success: str,
+        message_on_failure: str,
         max_order_attempts: int,
-        emergency_order_fill_on_failure: bool,
+        emergency_order_fill_on_failure: bool,   
         percent_from_high_sell_trigger: float,
         sell_at_specific_price: float,
         purchase_price: float
@@ -982,23 +790,24 @@ def insert_trailing_sell_order(
         "INSERT INTO trailing_sell_option_orders("
         "active, "
         "epoch_time_created_at, "
+        "executed, "
         "execute_only_after_trigger_order_ids, "
         "execute_only_after_bracket_order_ids, "
         "execute_only_after_trailing_order_ids, "
         "execution_deactivates_trigger_order_ids, "
         "execution_deactivates_bracket_order_ids, "
         "execution_deactivates_trailing_order_ids, "
+        "quantity, "
         "symbol, "
-        "strike, "
         "call_or_put, "
         "expiration_date, "
-        "rh_option_uuid, "
-        "quantity, "
-        "message_on_success, "
-        "message_on_failure, "
+        "strike, "
         "below_tick, "
         "above_tick, "
         "cutoff_price, "
+        "robinhood_option_uuid, "
+        "message_on_success, "
+        "message_on_failure, "
         "max_order_attempts, "
         "emergency_order_fill_on_failure, "
         "percent_from_high_sell_trigger, "
@@ -1010,29 +819,30 @@ def insert_trailing_sell_order(
     )
      
     values = (
-        active,
-        epoch_time_created_at,
-        execute_only_after_trigger_order_ids,
-        execute_only_after_bracket_order_ids,
-        execute_only_after_trailing_order_ids,
-        execution_deactivates_trigger_order_ids,
-        execution_deactivates_bracket_order_ids,
-        execution_deactivates_trailing_order_ids,
-        symbol,
-        strike,
-        call_or_put,
-        expiration_date,
-        rh_option_uuid,
-        quantity,
-        message_on_success,
-        message_on_failure,
-        below_tick,
-        above_tick,
-        cutoff_price,
-        max_order_attempts,
-        emergency_order_fill_on_failure,
+        active, 
+        epoch_time_created_at, 
+        executed, 
+        execute_only_after_trigger_order_ids, 
+        execute_only_after_bracket_order_ids, 
+        execute_only_after_trailing_order_ids, 
+        execution_deactivates_trigger_order_ids, 
+        execution_deactivates_bracket_order_ids, 
+        execution_deactivates_trailing_order_ids, 
+        quantity, 
+        symbol, 
+        call_or_put, 
+        expiration_date, 
+        strike, 
+        below_tick, 
+        above_tick, 
+        cutoff_price, 
+        robinhood_option_uuid, 
+        message_on_success, 
+        message_on_failure, 
+        max_order_attempts, 
+        emergency_order_fill_on_failure, 
         percent_from_high_sell_trigger, 
-        sell_at_specific_price,
+        sell_at_specific_price, 
         purchase_price
     )
 
@@ -1046,6 +856,7 @@ def insert_trailing_sell_order(
     finally:
         cur.close()
         conn.close()
+
 
 def get_executed_status_orders(trigger_order_ids, bracket_order_ids, trailing_order_ids):
     conn = get_database_connection()
