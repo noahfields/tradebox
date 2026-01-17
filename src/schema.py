@@ -283,24 +283,24 @@ API_VERIFICATION_DEFAULT_KEYSETS = {
 }
 
 RUNNERS = [
-	# {
-	# 	"runner_name": "open_option_positions",
-	# 	"active": True,
-	# 	"get_data_function": get_data_open_option_positions,
-	# 	"verify_data_keyset": "get_open_option_positions",
-	# 	"store_data_function": store_data_open_option_positions,
-	# 	"default_interval": config.OPEN_POSITIONS_REFRESH_INTERVAL,
-	# 	"type": "data_fetch",
-	# },
-	# {
-	# 	"runner_name": "open_option_positions_market_data",
-	# 	"active": True,
-	# 	"get_data_function": get_data_open_option_positions_market_data,
-	# 	"verify_data_keyset": "get_option_market_data_by_id",
-	# 	"store_data_function": store_data_open_option_positions_market_data,
-	# 	"default_interval": config.MARKET_DATA_REFRESH_INTERVAL,
-	# 	"type": "data_fetch",
-	# },
+	{
+		"runner_name": "open_option_positions",
+		"active": True,
+		"get_data_function": get_data_open_option_positions,
+		"verify_data_keyset": "get_open_option_positions",
+		"store_data_function": store_data_open_option_positions,
+		"default_interval": config.OPEN_POSITIONS_REFRESH_INTERVAL,
+		"type": "data_fetch",
+	},
+	{
+		"runner_name": "open_option_positions_market_data",
+		"active": True,
+		"get_data_function": get_data_open_option_positions_market_data,
+		"verify_data_keyset": "get_option_market_data_by_id",
+		"store_data_function": store_data_open_option_positions_market_data,
+		"default_interval": config.MARKET_DATA_REFRESH_INTERVAL,
+		"type": "data_fetch",
+	},
 	# {
 	# 	"runner_name": "open_broker_option_orders",
 	# 	"active": True,
