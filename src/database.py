@@ -361,8 +361,8 @@ def update_bracket_option_orders_market_data(option_market_data: list) -> None:
     delete_rows_from_table_by_value("bracket_option_orders_market_data", "still_alive", False)
 
 
-def update_trailing_option_orders_market_data(option_market_data: list) -> None:
-    set_table_field("trailing_option_orders_market_data", "still_alive", False)
+def update_trailing_sell_option_orders_market_data(option_market_data: list) -> None:
+    set_table_field("trailing_sell_option_orders_market_data", "still_alive", False)
 
     for option in option_market_data:
         option_uuid_pk = option["instrument_id"]
@@ -371,7 +371,7 @@ def update_trailing_option_orders_market_data(option_market_data: list) -> None:
         still_alive = True
         
         sql_query = (
-            "INSERT INTO trailing_option_orders_market_data (option_uuid_pk, json_data, last_update_epoch_time, still_alive) "
+            "INSERT INTO trailing_sell_option_orders_market_data (option_uuid_pk, json_data, last_update_epoch_time, still_alive) "
             "VALUES (%s, %s, %s, %s) "
             "ON CONFLICT(option_uuid_pk) DO UPDATE SET "
             "json_data=excluded.json_data, "
@@ -386,40 +386,41 @@ def update_trailing_option_orders_market_data(option_market_data: list) -> None:
             cur.execute(sql_query, values)
             conn.commit()
         except Exception as e:
-            logger.exception(f"Issue updating trailing_option_orders_market_data: {e}", stack_info=True)
+            logger.exception(f"Issue updating trailing_sell_option_orders_market_data: {e}", stack_info=True)
         finally:
             cur.close()
             conn.close()
 
-    delete_rows_from_table_by_value("trailing_option_orders_market_data", "still_alive", False)
+    delete_rows_from_table_by_value("trailing_sell_option_orders_market_data", "still_alive", False)
 
 
-def get_trailing_option_orders_list() -> list:
+def get_trailing_sell_option_orders_list() -> list[dict]:
     conn = get_database_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    sql_query = "SELECT * FROM trailing_option_orders;"
+    sql_query = "SELECT * FROM trailing_sell_option_orders;"
     cur.execute(sql_query)
     results = cur.fetchall()
 
-    trailing_orders_list = []
+    trailing_sell_option_orders_list = []
     for result in results:
         order_info = {}
         for key, value in result.items():
             order_info[key] = value
 
-        trailing_orders_list.append(order_info)
+        trailing_sell_option_orders_list.append(order_info)
 
     cur.close()
     conn.close()
 
-    return trailing_orders_list
+    return trailing_sell_option_orders_list
 
-def get_trailing_option_order_market_data_by_order_uuid(option_uuid: str) -> dict | None:
+
+def get_trailing_sell_option_order_market_data_by_order_uuid(option_uuid: str) -> dict | None:
     conn = get_database_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    sql_query = f"SELECT * FROM trailing_option_orders_market_data WHERE option_uuid_pk=%s;"
+    sql_query = f"SELECT * FROM trailing_sell_option_orders_market_data WHERE option_uuid_pk=%s;"
     values = (option_uuid, )
     cur.execute(sql_query, values)
     result = cur.fetchone()
@@ -485,13 +486,13 @@ def deactivate_orders(
         conn.commit()
 
     for order_id in bracket_order_ids:
-        sql_query = "UPDATE bracket_option_orders SET active=False WHERE order_id_pk=%s;"
+        sql_query = "UPDATE bracket_sell_option_orders SET active=False WHERE order_id_pk=%s;"
         values = (order_id,)
         cur.execute(sql_query, values)
         conn.commit()
 
     for order_id in trailing_order_ids:
-        sql_query = "UPDATE trailing_option_orders SET active=False WHERE order_id_pk=%s;"
+        sql_query = "UPDATE trailing_sell_option_orders SET active=False WHERE order_id_pk=%s;"
         values = (order_id,)
         cur.execute(sql_query, values)
         conn.commit()
@@ -673,7 +674,7 @@ def insert_bracket_order(
         strike: float,
         call_or_put: str,
         expiration_date: str,
-        rh_option_uuid: str,
+        robinhood_option_uuid: str,
         quantity: int,
         high_sell_mark_price: float,
         low_sell_mark_price: float,
@@ -763,11 +764,11 @@ def insert_trailing_sell_order(
         epoch_time_created_at: float,
         executed: bool,
         execute_only_after_trigger_order_ids: list[int],
-        execute_only_after_bracket_order_ids: list[int],
-        execute_only_after_trailing_order_ids: list[int],
+        execute_only_after_bracket_sell_order_ids: list[int],
+        execute_only_after_trailing_sell_order_ids: list[int],
         execution_deactivates_trigger_order_ids: list[int],
-        execution_deactivates_bracket_order_ids: list[int],
-        execution_deactivates_trailing_order_ids: list[int],
+        execution_deactivates_bracket_sell_order_ids: list[int],
+        execution_deactivates_trailing_sell_order_ids: list[int],
         quantity: int,
         symbol: str,
         call_or_put: str,
@@ -792,11 +793,11 @@ def insert_trailing_sell_order(
         "epoch_time_created_at, "
         "executed, "
         "execute_only_after_trigger_order_ids, "
-        "execute_only_after_bracket_order_ids, "
-        "execute_only_after_trailing_order_ids, "
+        "execute_only_after_bracket_sell_order_ids, "
+        "execute_only_after_trailing_sell_order_ids, "
         "execution_deactivates_trigger_order_ids, "
-        "execution_deactivates_bracket_order_ids, "
-        "execution_deactivates_trailing_order_ids, "
+        "execution_deactivates_bracket_sell_order_ids, "
+        "execution_deactivates_trailing_sell_order_ids, "
         "quantity, "
         "symbol, "
         "call_or_put, "
@@ -823,11 +824,11 @@ def insert_trailing_sell_order(
         epoch_time_created_at, 
         executed, 
         execute_only_after_trigger_order_ids, 
-        execute_only_after_bracket_order_ids, 
-        execute_only_after_trailing_order_ids, 
+        execute_only_after_bracket_sell_order_ids, 
+        execute_only_after_trailing_sell_order_ids, 
         execution_deactivates_trigger_order_ids, 
-        execution_deactivates_bracket_order_ids, 
-        execution_deactivates_trailing_order_ids, 
+        execution_deactivates_bracket_sell_order_ids, 
+        execution_deactivates_trailing_sell_order_ids, 
         quantity, 
         symbol, 
         call_or_put, 
@@ -872,14 +873,14 @@ def get_executed_status_orders(trigger_order_ids, bracket_order_ids, trailing_or
         executed_status_list.append(result)
 
     for order_id in bracket_order_ids:
-        sql_query = "SELECT executed FROM bracket_option_orders WHERE order_id_pk=%s;"
+        sql_query = "SELECT executed FROM bracket_sell_option_orders WHERE order_id_pk=%s;"
         values = (order_id,)
         cur.execute(sql_query, values)
         result = cur.fetchone()[0]
         executed_status_list.append(result)
 
     for order_id in trailing_order_ids:
-        sql_query = "SELECT executed FROM trailing_option_orders WHERE order_id_pk=%s;"
+        sql_query = "SELECT executed FROM trailing_sell_option_orders WHERE order_id_pk=%s;"
         values = (order_id,)
         cur.execute(sql_query, values)
         result = cur.fetchone()[0]

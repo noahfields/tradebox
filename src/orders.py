@@ -68,7 +68,7 @@ def create_trigger_option_order(
         logger.info(msg)
         return
     else:
-        rh_option_uuid = instrument_data['id']
+        robinhood_option_uuid = instrument_data['id']
         below_tick = instrument_data['min_ticks']['below_tick']
         above_tick = instrument_data['min_ticks']['above_tick']
         cutoff_price = instrument_data['min_ticks']['cutoff_price']
@@ -89,7 +89,7 @@ def create_trigger_option_order(
         strike,
         call_or_put,
         expiration_date,
-        rh_option_uuid,
+        robinhood_option_uuid,
         quantity,
         message_on_success,
         message_on_failure,
@@ -155,7 +155,7 @@ def create_bracket_option_order(
         logger.info(msg)
         return
     else:
-        rh_option_uuid = instrument_data['id']
+        robinhood_option_uuid = instrument_data['id']
         below_tick = instrument_data['min_ticks']['below_tick']
         above_tick = instrument_data['min_ticks']['above_tick']
         cutoff_price = instrument_data['min_ticks']['cutoff_price']
@@ -176,7 +176,7 @@ def create_bracket_option_order(
         strike,
         call_or_put,
         expiration_date,
-        rh_option_uuid,
+        robinhood_option_uuid,
         quantity,
         high_sell_mark_price,
         low_sell_mark_price,
@@ -194,16 +194,16 @@ def create_bracket_option_order(
     logger.info(msg)
 
 
-def create_trailing_option_sell_order(
+def create_trailing_sell_option_order(
     active: bool,
     epoch_time_created_at: float,
     executed: bool,
     execute_only_after_trigger_order_ids: list[int],
-    execute_only_after_bracket_order_ids: list[int],
-    execute_only_after_trailing_order_ids: list[int],
+    execute_only_after_bracket_sell_order_ids: list[int],
+    execute_only_after_trailing_sell_order_ids: list[int],
     execution_deactivates_trigger_order_ids: list[int],
-    execution_deactivates_bracket_order_ids: list[int],
-    execution_deactivates_trailing_order_ids: list[int],
+    execution_deactivates_bracket_sell_order_ids: list[int],
+    execution_deactivates_trailing_sell_order_ids: list[int],
     quantity: int,
     symbol: str,
     call_or_put: str,
@@ -250,11 +250,11 @@ def create_trailing_option_sell_order(
         epoch_time_created_at, 
         executed, 
         execute_only_after_trigger_order_ids,
-        execute_only_after_bracket_order_ids,
-        execute_only_after_trailing_order_ids,
+        execute_only_after_bracket_sell_order_ids,
+        execute_only_after_trailing_sell_order_ids,
         execution_deactivates_trigger_order_ids,
-        execution_deactivates_bracket_order_ids,
-        execution_deactivates_trailing_order_ids,
+        execution_deactivates_bracket_sell_order_ids,
+        execution_deactivates_trailing_sell_order_ids,
         quantity, 
         symbol, 
         call_or_put, 
@@ -280,6 +280,9 @@ def create_trailing_option_sell_order(
 
 # WORKING
 def execute_market_sell(order):
+    logger.info(f"Executing sell order: {order}")
+    pass
+
     # log timestamp
     start_timestamp = datetime.datetime.now().strftime('%H:%M:%S')
     logger.info(f"Begin execute_market_sell for order at {start_timestamp}. Order info:\n{order}")
@@ -299,7 +302,7 @@ def execute_market_sell(order):
     robinhood_reported_current_position_size = None
     open_option_positions = r.options.get_open_option_positions()
     for open_pos in open_option_positions:
-        if open_pos['option_id'] == order_info['rh_option_uuid']:
+        if open_pos['option_id'] == order_info['robinhood_option_uuid']:
             msg = (
                 'Existing position info before any trades: \n'
                 + f'{json.dumps(open_pos)}'
@@ -313,7 +316,7 @@ def execute_market_sell(order):
     if robinhood_reported_current_position_size is None:
         msg = (
             'No open position found for order # '
-            + f'{order_info["order_id"]}, RH option ID: {order_info["rh_option_uuid"]}.\n'
+            + f'{order_info["order_id"]}, RH option ID: {order_info["robinhood_option_uuid"]}.\n'
             + 'Exiting market sell order.'
         )
         logger.info(msg)
@@ -361,7 +364,7 @@ def execute_market_sell(order):
         logger.info(msg)
 
         # Get Robinhood option market data
-        option_market_data = r.options.get_option_market_data_by_id(order_info['rh_option_uuid'])[0]
+        option_market_data = r.options.get_option_market_data_by_id(order_info['robinhood_option_uuid'])[0]
         logger.info(f'Current raw market data: {json.dumps(option_market_data)}')
         this_order_sell_price = float(option_market_data['bid_price'])
         if this_order_sell_price == 0.0:
@@ -421,7 +424,7 @@ def execute_market_sell(order):
         )
         logger.info(msg)
         for open_pos in open_option_positions:
-            if open_pos['option_id'] == order_info['rh_option_uuid']:
+            if open_pos['option_id'] == order_info['robinhood_option_uuid']:
                 trade_progress_info['current_position_size'] = int(float(open_pos['quantity']))
                 position_still_exists = True
         if position_still_exists is False:
@@ -440,7 +443,7 @@ def execute_market_sell(order):
     # Establish final position information
     open_option_positions = r.options.get_open_option_positions()
     for open_pos in open_option_positions:
-        if open_pos['option_id'] == order_info['rh_option_uuid']:
+        if open_pos['option_id'] == order_info['robinhood_option_uuid']:
             trade_progress_info['current_position_size'] = int(float(open_pos['quantity']))
             trade_progress_info['actual_closing_position_size'] = int(float(open_pos['quantity']))
     logger.info(f'Opening position size: {trade_progress_info["opening_position_size"]}')

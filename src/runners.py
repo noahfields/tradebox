@@ -15,6 +15,138 @@ import schema
 logger = log.setup_runners_logger("runners")
 
 
+API_VERIFICATION_DEFAULT_KEYSETS = {
+	"get_open_option_positions": {
+		"account": "https://api.robinhood.com/accounts/5QU45833/",
+		"account_number": "5QU45833",
+		"average_price": "-16.0000",
+		"chain_id": "72362eb7-bc7c-4d10-9be4-48a53fffd101",
+		"chain_symbol": "IWM",
+		"id": "876c8360-ce18-4c31-b31f-e760270b091d",
+		"option": "https://api.robinhood.com/options/instruments/2b4dde4d-c7b7-4c6c-8290-a70f76cedaf9/",
+		"type": "short",
+		"pending_buy_quantity": "0.0000",
+		"pending_expired_quantity": "0.0000",
+		"pending_expiration_quantity": "0.0000",
+		"pending_exercise_quantity": "0.0000",
+		"pending_assignment_quantity": "0.0000",
+		"pending_sell_quantity": "0.0000",
+		"quantity": "17.0000",
+		"intraday_quantity": "17.0000",
+		"intraday_average_open_price": "-16.0000",
+		"created_at": "2025-12-19T21:09:50.112600Z",
+		"expiration_date": "2025-12-22",
+		"trade_value_multiplier": "100.0000",
+		"updated_at": "2025-12-19T21:09:50.501378Z",
+		"url": "https://api.robinhood.com/options/positions/876c8360-ce18-4c31-b31f-e760270b091d/",
+		"option_id": "2b4dde4d-c7b7-4c6c-8290-a70f76cedaf9",
+		"clearing_running_quantity": "17.0000",
+		"clearing_cost_basis": "272.0000",
+		"clearing_direction": "credit",
+		"clearing_intraday_running_quantity": "17.0000",
+		"clearing_intraday_cost_basis": "272.0000",
+		"clearing_intraday_direction": "credit",
+		"opened_at": "2025-12-19T21:09:50.116471Z",
+	},
+	"get_option_market_data_by_id": {
+		"adjusted_mark_price": "0.200000",
+		"adjusted_mark_price_round_down": "0.200000",
+		"ask_price": "0.210000",
+		"ask_size": 2,
+		"bid_price": "0.190000",
+		"bid_size": 98,
+		"break_even_price": "248.800000",
+		"high_price": "1.330000",
+		"instrument": "https://api.robinhood.com/options/instruments/2b4dde4d-c7b7-4c6c-8290-a70f76cedaf9/",
+		"instrument_id": "2b4dde4d-c7b7-4c6c-8290-a70f76cedaf9",
+		"last_trade_price": "0.210000",
+		"last_trade_size": 1,
+		"low_price": "0.160000",
+		"mark_price": "0.200000",
+		"open_interest": 1473,
+		"previous_close_date": "2025-12-18",
+		"previous_close_price": "1.810000",
+		"updated_at": "2025-12-19T21:14:59.805486725Z",
+		"volume": 9984,
+		"symbol": "IWM",
+		"occ_symbol": "IWM   251222P00249000",
+		"state": "active",
+		"chance_of_profit_long": "0.159818",
+		"chance_of_profit_short": "0.840182",
+		"delta": "-0.183593",
+		"gamma": "0.133426",
+		"implied_volatility": "0.117049",
+		"rho": "-0.002116",
+		"theta": "-0.152646",
+		"vega": "0.045217",
+		"pricing_model": "Bjerksund-Stensland 1993",
+		"high_fill_rate_buy_price": "0.205000",
+		"high_fill_rate_sell_price": "0.194000",
+		"low_fill_rate_buy_price": "0.195000",
+		"low_fill_rate_sell_price": "0.204000",
+	},
+	"get_all_open_option_orders": {
+		"account_number": "5QU45833",
+		"cancel_url": "https://api.robinhood.com/options/orders/694781e4-11ef-4af7-b3cc-a739ccec0da3/cancel/",
+		"canceled_quantity": "0.00000",
+		"created_at": "2025-12-21T05:13:08.046546Z",
+		"direction": "debit",
+		"id": "694781e4-11ef-4af7-b3cc-a739ccec0da3",
+		"legs": [
+			{
+				"executions": [],
+				"id": "694781e4-0f2f-4fee-bc09-97f3c2c8c0d9",
+				"option": "https://api.robinhood.com/options/instruments/4e188c22-aef8-4f43-8dd0-411acc486654/",
+				"position_effect": "open",
+				"ratio_quantity": 1,
+				"side": "buy",
+				"expiration_date": "2025-12-23",
+				"strike_price": "255.0000",
+				"option_type": "call",
+				"long_strategy_code": "4e188c22-aef8-4f43-8dd0-411acc486654_L1",
+				"short_strategy_code": "4e188c22-aef8-4f43-8dd0-411acc486654_S1",
+			}
+		],
+		"pending_quantity": "2.00000",
+		"premium": "3.00000000",
+		"processed_premium": "0",
+		"processed_premium_direction": "debit",
+		"market_hours": "regular_hours",
+		"net_amount": "0",
+		"net_amount_direction": "debit",
+		"price": "0.03000000",
+		"processed_quantity": "0.00000",
+		"quantity": "2.00000",
+		"ref_id": "dd0c09ef-716c-4261-953d-62a7259fbea8",
+		"regulatory_fees": "0",
+		"contract_fees": "0",
+		"gold_savings": "0",
+		"state": "queued",
+		"time_in_force": "gfd",
+		"trigger": "immediate",
+		"type": "limit",
+		"updated_at": "2025-12-21T05:13:08.384132Z",
+		"chain_id": "72362eb7-bc7c-4d10-9be4-48a53fffd101",
+		"chain_symbol": "IWM",
+		"response_category": None,
+		"opening_strategy": "long_call",
+		"closing_strategy": None,
+		"stop_price": None,
+		"form_source": "option_chain",
+		"client_bid_at_submission": "0.11000000",
+		"client_ask_at_submission": "0.13000000",
+		"client_time_at_submission": None,
+		"average_net_premium_paid": "0.00000000",
+		"estimated_total_net_amount": "6.04",
+		"estimated_total_net_amount_direction": "debit",
+		"is_replaceable": True,
+		"strategy": "long_call",
+		"derived_state": "queued",
+		"sales_taxes": [],
+	},
+}
+
+
 class MonitorRunner:
 	def __init__(self, runner_dict):
 		self.monitor_function = runner_dict["monitor_function"]
@@ -236,7 +368,7 @@ def store_data_open_broker_option_orders_market_data(api_data):
 
 
 def get_data_trigger_option_orders_market_data():
-	option_ids = database.select_column_from_table("trigger_option_orders", "rh_option_uuid")
+	option_ids = database.select_column_from_table("trigger_option_orders", "robinhood_option_uuid")
 
 	api_data = []
 	for option_id in option_ids:
@@ -252,7 +384,7 @@ def store_data_trigger_option_orders_market_data(api_data):
 
 
 def get_data_bracket_option_orders_market_data():
-	option_ids = database.select_column_from_table("bracket_option_orders", "rh_option_uuid")
+	option_ids = database.select_column_from_table("bracket_option_orders", "robinhood_option_uuid")
 
 	api_data = []
 	for option_id in option_ids:
@@ -267,8 +399,8 @@ def store_data_bracket_option_orders_market_data(api_data):
 	database.update_bracket_option_orders_market_data(api_data)
 
 
-def get_data_trailing_option_orders_market_data():
-	option_ids = database.select_column_from_table("trailing_option_orders", "rh_option_uuid")
+def get_data_trailing_sell_option_orders_market_data():
+	option_ids = database.select_column_from_table("trailing_sell_option_orders", "robinhood_option_uuid")
 
 	api_data = []
 	for option_id in option_ids:
@@ -279,17 +411,13 @@ def get_data_trailing_option_orders_market_data():
 	return api_data
 
 
-def store_data_trailing_option_orders_market_data(api_data):
-	database.update_trailing_option_orders_market_data(api_data)
-
-
-def monitor_bracket_option_orders():
-	pass
+def store_data_trailing_sell_option_orders_market_data(api_data):
+	database.update_trailing_sell_option_orders_market_data(api_data)
 
 
 # WORKING
-def monitor_trailing_option_orders(runner_name):
-	trailing_orders = database.get_trailing_option_orders_list()
+def monitor_trailing_sell_option_orders(runner_name):
+	trailing_orders = database.get_trailing_sell_option_orders_list()
 
 	for order in trailing_orders:
 		logger.info(f"Monitoring trailing option order: {order}", extra={"runner": runner_name})
@@ -301,31 +429,34 @@ def monitor_trailing_option_orders(runner_name):
 			)
 			continue
 
-		option_market_row = database.get_trailing_option_order_market_data_by_order_uuid(order["rh_option_uuid"])
+		option_market_row = database.get_trailing_sell_option_order_market_data_by_order_uuid(order["robinhood_option_uuid"])
 		logger.info(
 			f"Fetched option market data for trailing order {order['order_id_pk']}: {option_market_row}", 
 			extra={"runner": runner_name}
 		)
 		if option_market_row == None:
 			logger.info(
-				f"No market data found for {order["rh_option_uuid"]}. Skipping this order.", 
+				f"No market data found for {order["robinhood_option_uuid"]}. Skipping this order.", 
 				extra={"runner": runner_name}
 			)
 			continue
-		# {'order_id_pk': 1, 'active': True, 'epoch_time_created_at': 1768274200.0, 'executed': False, 'execute_only_after_trigger_order_ids': [], 'execute_only_after_bracket_order_ids': [], 'execute_only_after_trailing_order_ids': [], 'execution_deactivates_trigger_order_ids': [], 'execution_deactivates_bracket_order_ids': [], 'execution_deactivates_trailing_order_ids': [], 'buy_or_sell': 'sell', 'credit_or_debit': 'credit', 'symbol': 'IWM', 'strike': 258.0, 'call_or_put': 'put', 'expiration_date': '2026-03-20', 'rh_option_uuid': 'ee1be306-02bb-416d-aef5-cb964a76e4e7', 'quantity': 1, 'message_on_success': 'success msg', 'message_on_failure': 'failure msg', 'below_tick': 0.01, 'above_tick': 0.01, 'cutoff_price': 0.0, 'max_order_attempts': 10, 'emergency_order_fill_on_failure': True, 'percent_from_high_sell_trigger': 0.15, 'sell_at_specific_price': 0.25, 'highest_price_since_order_placed': NoneAND active=TRUE}
-
-		# {'option_uuid_pk': 'ee1be306-02bb-416d-aef5-cb964a76e4e7', 'json_data': {'rho': '-0.183402', 'vega': '0.430015', 'delta': '-0.396893', 'gamma': '0.017277', 'state': 'active', 'theta': '-0.055987', 'symbol': 'IWM', 'volume': 136, 'ask_size': 56, 'bid_size': 132, 'ask_price': '6.740000', 'bid_price': '6.680000', 'low_price': '7.440000', 'high_price': '8.100000', 'instrument': 'https://api.robinhood.com/options/instruments/ee1be306-02bb-416d-aef5-cb964a76e4e7/', 'mark_price': '6.710000', 'occ_symbol': 'IWM   260320P00258000', 'updated_at': '2026-01-12T21:14:59.686979751Z', 'instrument_id': 'ee1be306-02bb-416d-aef5-cb964a76e4e7', 'open_interest': 93, 'pricing_model': 'Bjerksund-Stensland 1993', 'last_trade_size': 59, 'break_even_price': '251.290000', 'last_trade_price': '7.460000', 'implied_volatility': '0.204667', 'adjusted_mark_price': '6.710000', 'previous_close_date': '2026-01-09', 'previous_close_price': '7.200000', 'chance_of_profit_long': '0.313193', 'chance_of_profit_short': '0.686807', 'low_fill_rate_buy_price': '6.699000', 'high_fill_rate_buy_price': '6.727000', 'low_fill_rate_sell_price': '6.720000', 'high_fill_rate_sell_price': '6.692000', 'adjusted_mark_price_round_down': '6.710000'}, 'still_alive': True, 'last_update_epoch_time': 1768274200.0}
-
-		highest_price_since_order_placed = float(order["highest_price_since_order_placed"])
+		
+		if order["highest_price_since_order_placed"] == None:
+			highest_price_since_order_placed = float(option_market_row["json_data"]["mark_price"])
+			logger.info(f"Setting initial highest_price_since_order_placed for order {order['order_id_pk']}: highest_price_since_order_placed: {highest_price_since_order_placed}, current_mark_price: {option_market_row['json_data']['mark_price']}", extra={"runner": runner_name})
+		else:
+			highest_price_since_order_placed = float(order["highest_price_since_order_placed"])
+			logger.info(f"Existing highest_price_since_order_placed for order {order['order_id_pk']}: {highest_price_since_order_placed}", extra={"runner": runner_name})
 		current_mark_price = float(option_market_row["json_data"]["mark_price"])
+		logger.info(f"Current mark price for order {order['order_id_pk']}: {current_mark_price}", extra={"runner": runner_name})
 
 		if current_mark_price > highest_price_since_order_placed:
-			logger.info(f"New highest_price_since_order_placed for order {order['order_id_pk']}")
+			logger.info(f"New highest_price_since_order_placed for order {order['order_id_pk']}: {current_mark_price} (old: {highest_price_since_order_placed})", extra={"runner": runner_name})
 			highest_price_since_order_placed = current_mark_price
 			conn = database.get_database_connection()
 			cur = conn.cursor()
-			sql_query = "UPDATE trailing_option_orders SET highest_price_since_order_placed=%s WHERE order_id_pk=%s;"
-			values = (highest_price_since_order_placed, order['order_id_pk'])
+			sql_query = "UPDATE trailing_sell_option_orders SET highest_price_since_order_placed=%s WHERE order_id_pk=%s;"
+			values = (highest_price_since_order_placed, order["order_id_pk"])
 			cur.execute(sql_query, values)
 			conn.commit()
 			cur.close()
@@ -337,45 +468,52 @@ def monitor_trailing_option_orders(runner_name):
 		execute_order = False
 		if current_mark_price < highest_price_since_order_placed * percent_from_high_sell_trigger:
 			execute_order = True
+			logger.info(f"Current mark price {current_mark_price} is below percent threshold for order. Selling: {order} {option_market_row}", extra={"runner": runner_name})
 		if current_mark_price >= sell_at_specific_price:
 			execute_order = True
+			logger.info(f"Current mark price {current_mark_price} is above specific price trigger for order. Selling: {order} {option_market_row}", extra={"runner": runner_name})
 
 		execution_requires_trigger_order_ids = order["execute_only_after_trigger_order_ids"]
-		execution_requires_bracket_order_ids = order["execute_only_after_bracket_order_ids"]
-		execution_requires_trailing_order_ids = order["execute_only_after_trailing_order_ids"]
-		logger.info("Checking that required previous orders have been executed.")
-		# get executed status of prior orders to see if valid
+		execution_requires_bracket_sell_order_ids = order["execute_only_after_bracket_sell_order_ids"]
+		execution_requires_trailing_sell_order_ids = order["execute_only_after_trailing_sell_order_ids"]
+		logger.info("Checking that required previous orders have been executed.", extra={"runner": runner_name})
 		executed_statuses_list = database.get_executed_status_orders(
 			execution_requires_trigger_order_ids,
-			execution_requires_bracket_order_ids,
-			execution_requires_trailing_order_ids
+			execution_requires_bracket_sell_order_ids,
+			execution_requires_trailing_sell_order_ids
 		)
 		logger.info(f"Executed statuses list: {executed_statuses_list}", extra={"runner": runner_name})
 		for order_executed in executed_statuses_list:
 			if order_executed == False:
+				logger.info("A required previous order has not been executed. Not executing this trailing sell order yet.", extra={"runner": runner_name})
 				execute_order = False
 
 		if order["executed"] == True:
+			logger.info("Order already executed. Not executing again.", extra={"runner": runner_name})
 			execute_order = False
 
 		if order["active"] == False:
+			logger.info("Order is not active. Not executing.", extra={"runner": runner_name})
 			execute_order = False
 
 		execution_deactivates_trigger_order_ids = order["execution_deactivates_trigger_order_ids"]
-		execution_deactivates_bracket_order_ids = order["execution_deactivates_bracket_order_ids"]
-		execution_deactivates_trailing_order_ids = order["execution_deactivates_trailing_order_ids"]
+		execution_deactivates_bracket_sell_order_ids = order["execution_deactivates_bracket_sell_order_ids"]
+		execution_deactivates_trailing_sell_order_ids = order["execution_deactivates_trailing_sell_order_ids"]
 		if execute_order:
 			try:
-				database.mark_order_executed(table="trailing_option_orders", order_id_pk=order["order_id_pk"])
+				database.mark_order_executed(table="trailing_sell_option_orders", order_id_pk=order["order_id_pk"])
+				logger.info(f"Marked trailing order #{order['order_id_pk']} as executed.", extra={"runner": runner_name})
 				database.deactivate_orders(
 					execution_deactivates_trigger_order_ids, 
-					execution_deactivates_bracket_order_ids, 
-					execution_deactivates_trailing_order_ids
+					execution_deactivates_bracket_sell_order_ids, 
+					execution_deactivates_trailing_sell_order_ids
 				)
+				logger.info(f"Deactivated dependent orders for trailing order #{order['order_id_pk']}", extra={"runner": runner_name})
+				logger.info(f"Placing market sell for trailing order #{order['order_id_pk']}: {order}", extra={"runner": runner_name})
 				orders.execute_market_sell(order)
-				logger.info(f"Executed sell for trailing order #{orders['order_id_pk']}")
+				logger.info(f"Executed sell for trailing order #{order['order_id_pk']}: {order}", extra={"runner": runner_name})
 			except Exception as e:
-				logger.critical(f"Issue in selling trailing order #{orders['order_id_pk']}")
+				logger.critical(f"Issue selling trailing order #{order['order_id_pk']}", extra={"runner": runner_name})
 
 
 
@@ -546,33 +684,32 @@ def main():
 	r.login(config.ROBINHOOD_USERNAME, config.ROBINHOOD_PASSWORD)
 	orders.robinhood_login()
 
-
 	# for dev only, refactor later
 	database.drop_all_tables()
 	database.create_all_tables()
 
-	orders.create_trigger_option_order(
-		active=True,
-		epoch_time_created_at=time.time(),
-		execute_only_after_trigger_order_ids=[],
-		execute_only_after_bracket_order_ids=[],
-		execute_only_after_trailing_order_ids=[],
-		execution_deactivates_trigger_order_ids=[],
-		execution_deactivates_bracket_order_ids=[],
-		execution_deactivates_trailing_order_ids=[],
-		buy_or_sell="buy",
-		credit_or_debit="debit",
-		symbol="IWM",
-		strike=258,
-		call_or_put="call",
-		expiration_date="2026-03-20",
-		quantity=1,
-		message_on_success="success msg",
-		message_on_failure="failure msg",
-		max_order_attempts=10,
-		emergency_order_fill_on_failure=True,
-		trigger_order_uuid=str(uuid.uuid4())
-	)
+	# orders.create_trigger_option_order(
+	# 	active=True,
+	# 	epoch_time_created_at=time.time(),
+	# 	execute_only_after_trigger_order_ids=[],
+	# 	execute_only_after_bracket_order_ids=[],
+	# 	execute_only_after_trailing_order_ids=[],
+	# 	execution_deactivates_trigger_order_ids=[],
+	# 	execution_deactivates_bracket_order_ids=[],
+	# 	execution_deactivates_trailing_order_ids=[],
+	# 	buy_or_sell="buy",
+	# 	credit_or_debit="debit",
+	# 	symbol="IWM",
+	# 	strike=258,
+	# 	call_or_put="call",
+	# 	expiration_date="2026-03-20",
+	# 	quantity=1,
+	# 	message_on_success="success msg",
+	# 	message_on_failure="failure msg",
+	# 	max_order_attempts=10,
+	# 	emergency_order_fill_on_failure=True,
+	# 	trigger_order_uuid=str(uuid.uuid4())
+	# )
 
 	# orders.create_trigger_option_order(
 	# 	active=True,
@@ -621,17 +758,17 @@ def main():
     #     emergency_order_fill_on_failure=True
 	# )
 
-	orders.create_trailing_option_sell_order(
+	orders.create_trailing_sell_option_order(
 		active=True, 
 		epoch_time_created_at=time.time(), 
 		executed=False, 
 		execute_only_after_trigger_order_ids=[], 
-		execute_only_after_bracket_order_ids=[], 
-		execute_only_after_trailing_order_ids=[], 
+		execute_only_after_bracket_sell_order_ids=[], 
+		execute_only_after_trailing_sell_order_ids=[], 
 		execution_deactivates_trigger_order_ids=[], 
-		execution_deactivates_bracket_order_ids=[], 
-		execution_deactivates_trailing_order_ids=[], 
-		quantit=1,
+		execution_deactivates_bracket_sell_order_ids=[], 
+		execution_deactivates_trailing_sell_order_ids=[], 
+		quantity=1,
 		symbol="IWM",
 		call_or_put="call",
 		expiration_date="2026-03-20",
@@ -642,18 +779,99 @@ def main():
 		emergency_order_fill_on_failure=True, 
 		percent_from_high_sell_trigger=.90,
 		sell_at_specific_price=18.00,
-		purchase_price: 2.00,
+		purchase_price=2.00,
 	)
 
-	max_workers = len(schema.RUNNERS)
+	max_workers = len(RUNNERS)
 	with ThreadPoolExecutor(max_workers=max_workers) as runner_threads:
 		logger.info("Starting runners.")
-		for runner in schema.RUNNERS:
+		for runner in RUNNERS:
 			# start_runner(runner)
 			if runner["type"] == "data_fetch":
 				runner_threads.submit(start_data_fetch_runner, runner)
-			if runner["type"] == "monitor":
+			if runner["type"] == "order_monitor":
 				runner_threads.submit(start_monitor_runner, runner)
+
+
+RUNNERS = [
+	# {
+	# 	"runner_name": "open_option_positions",
+	# 	"active": True,
+	# 	"get_data_function": get_data_open_option_positions,
+	# 	"verify_data_keyset": "get_open_option_positions",
+	# 	"store_data_function": store_data_open_option_positions,
+	# 	"default_interval": config.OPEN_POSITIONS_REFRESH_INTERVAL,
+	# 	"type": "data_fetch",
+	# },
+	# {
+	# 	"runner_name": "open_option_positions_market_data",
+	# 	"active": True,
+	# 	"get_data_function": get_data_open_option_positions_market_data,
+	# 	"verify_data_keyset": "get_option_market_data_by_id",
+	# 	"store_data_function": store_data_open_option_positions_market_data,
+	# 	"default_interval": config.MARKET_DATA_REFRESH_INTERVAL,
+	# 	"type": "data_fetch",
+	# },
+	# {
+	# 	"runner_name": "open_broker_option_orders",
+	# 	"active": True,
+	# 	"get_data_function": get_data_open_broker_option_orders,
+	# 	"verify_data_keyset": "get_all_open_option_orders",
+	# 	"store_data_function": store_data_open_broker_option_orders,
+	# 	"default_interval": config.BROKER_ORDERS_REFRESH_INTERVAL,
+	# 	"type": "data_fetch",
+	# },
+	# {
+	# 	"runner_name": "open_broker_option_orders_market_data",
+	# 	"active": True,
+	# 	"get_data_function": get_data_open_broker_option_orders_market_data,
+	# 	"verify_data_keyset": "get_option_market_data_by_id",
+	# 	"store_data_function": store_data_open_broker_option_orders_market_data,
+	# 	"default_interval": config.BROKER_ORDERS_REFRESH_INTERVAL,
+	# 	"type": "data_fetch",
+	# },
+	# {
+	# 	"runner_name": "trigger_option_orders_market_data",
+	# 	"active": True,
+	# 	"get_data_function": get_data_trigger_option_orders_market_data,
+	# 	"verify_data_keyset": "get_option_market_data_by_id",
+	# 	"store_data_function": store_data_trigger_option_orders_market_data,
+	# 	"default_interval": config.MARKET_DATA_REFRESH_INTERVAL,
+	# 	"type": "data_fetch",
+	# },
+	# {
+	# 	"runner_name": "bracket_sell_option_orders_market_data",
+	# 	"active": True,
+	# 	"get_data_function": get_data_bracket_option_orders_market_data,
+	# 	"verify_data_keyset": "get_option_market_data_by_id",
+	# 	"store_data_function": store_data_bracket_option_orders_market_data,
+	# 	"default_interval": config.MARKET_DATA_REFRESH_INTERVAL,
+	# 	"type": "data_fetch",
+	# },
+	{
+		"runner_name": "trailing_sell_option_orders_market_data",
+		"active": True,
+		"get_data_function": get_data_trailing_sell_option_orders_market_data,
+		"verify_data_keyset": "get_option_market_data_by_id",
+		"store_data_function": store_data_trailing_sell_option_orders_market_data,
+		"default_interval": config.MARKET_DATA_REFRESH_INTERVAL,
+		"type": "data_fetch",
+	},
+	# {
+	# 	"runner_name": "monitor_bracket_sell_option_orders",
+	# 	"active": True,
+	# 	"monitor_function": monitor_bracket_option_orders,
+	# 	"default_interval": 1,
+	# 	"type": "order_monitor",
+	# },
+	{
+		"runner_name": "monitor_trailing_sell_option_orders",
+		"active": True,
+		"monitor_function": monitor_trailing_sell_option_orders,
+		"default_interval": 1,
+		"type": "order_monitor",
+	},
+]
 
 
 if __name__ == "__main__":
