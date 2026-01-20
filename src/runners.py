@@ -16,136 +16,141 @@ logger = log.setup_runners_logger("runners")
 
 
 API_VERIFICATION_DEFAULT_KEYSETS = {
-	"get_open_option_positions": {
-		"account": "https://api.robinhood.com/accounts/5QU45833/",
-		"account_number": "5QU45833",
-		"average_price": "-16.0000",
-		"chain_id": "72362eb7-bc7c-4d10-9be4-48a53fffd101",
-		"chain_symbol": "IWM",
-		"id": "876c8360-ce18-4c31-b31f-e760270b091d",
-		"option": "https://api.robinhood.com/options/instruments/2b4dde4d-c7b7-4c6c-8290-a70f76cedaf9/",
-		"type": "short",
-		"pending_buy_quantity": "0.0000",
-		"pending_expired_quantity": "0.0000",
-		"pending_expiration_quantity": "0.0000",
-		"pending_exercise_quantity": "0.0000",
-		"pending_assignment_quantity": "0.0000",
-		"pending_sell_quantity": "0.0000",
-		"quantity": "17.0000",
-		"intraday_quantity": "17.0000",
-		"intraday_average_open_price": "-16.0000",
-		"created_at": "2025-12-19T21:09:50.112600Z",
-		"expiration_date": "2025-12-22",
-		"trade_value_multiplier": "100.0000",
-		"updated_at": "2025-12-19T21:09:50.501378Z",
-		"url": "https://api.robinhood.com/options/positions/876c8360-ce18-4c31-b31f-e760270b091d/",
-		"option_id": "2b4dde4d-c7b7-4c6c-8290-a70f76cedaf9",
-		"clearing_running_quantity": "17.0000",
-		"clearing_cost_basis": "272.0000",
-		"clearing_direction": "credit",
-		"clearing_intraday_running_quantity": "17.0000",
-		"clearing_intraday_cost_basis": "272.0000",
-		"clearing_intraday_direction": "credit",
-		"opened_at": "2025-12-19T21:09:50.116471Z",
-	},
-	"get_option_market_data_by_id": {
-		"adjusted_mark_price": "0.200000",
-		"adjusted_mark_price_round_down": "0.200000",
-		"ask_price": "0.210000",
-		"ask_size": 2,
-		"bid_price": "0.190000",
-		"bid_size": 98,
-		"break_even_price": "248.800000",
-		"high_price": "1.330000",
-		"instrument": "https://api.robinhood.com/options/instruments/2b4dde4d-c7b7-4c6c-8290-a70f76cedaf9/",
-		"instrument_id": "2b4dde4d-c7b7-4c6c-8290-a70f76cedaf9",
-		"last_trade_price": "0.210000",
-		"last_trade_size": 1,
-		"low_price": "0.160000",
-		"mark_price": "0.200000",
-		"open_interest": 1473,
-		"previous_close_date": "2025-12-18",
-		"previous_close_price": "1.810000",
-		"updated_at": "2025-12-19T21:14:59.805486725Z",
-		"volume": 9984,
-		"symbol": "IWM",
-		"occ_symbol": "IWM   251222P00249000",
-		"state": "active",
-		"chance_of_profit_long": "0.159818",
-		"chance_of_profit_short": "0.840182",
-		"delta": "-0.183593",
-		"gamma": "0.133426",
-		"implied_volatility": "0.117049",
-		"rho": "-0.002116",
-		"theta": "-0.152646",
-		"vega": "0.045217",
-		"pricing_model": "Bjerksund-Stensland 1993",
-		"high_fill_rate_buy_price": "0.205000",
-		"high_fill_rate_sell_price": "0.194000",
-		"low_fill_rate_buy_price": "0.195000",
-		"low_fill_rate_sell_price": "0.204000",
-	},
-	"get_all_open_option_orders": {
-		"account_number": "5QU45833",
-		"cancel_url": "https://api.robinhood.com/options/orders/694781e4-11ef-4af7-b3cc-a739ccec0da3/cancel/",
-		"canceled_quantity": "0.00000",
-		"created_at": "2025-12-21T05:13:08.046546Z",
-		"direction": "debit",
-		"id": "694781e4-11ef-4af7-b3cc-a739ccec0da3",
-		"legs": [
-			{
-				"executions": [],
-				"id": "694781e4-0f2f-4fee-bc09-97f3c2c8c0d9",
-				"option": "https://api.robinhood.com/options/instruments/4e188c22-aef8-4f43-8dd0-411acc486654/",
-				"position_effect": "open",
-				"ratio_quantity": 1,
-				"side": "buy",
-				"expiration_date": "2025-12-23",
-				"strike_price": "255.0000",
-				"option_type": "call",
-				"long_strategy_code": "4e188c22-aef8-4f43-8dd0-411acc486654_L1",
-				"short_strategy_code": "4e188c22-aef8-4f43-8dd0-411acc486654_S1",
-			}
-		],
-		"pending_quantity": "2.00000",
-		"premium": "3.00000000",
-		"processed_premium": "0",
-		"processed_premium_direction": "debit",
-		"market_hours": "regular_hours",
-		"net_amount": "0",
-		"net_amount_direction": "debit",
-		"price": "0.03000000",
-		"processed_quantity": "0.00000",
-		"quantity": "2.00000",
-		"ref_id": "dd0c09ef-716c-4261-953d-62a7259fbea8",
-		"regulatory_fees": "0",
-		"contract_fees": "0",
-		"gold_savings": "0",
-		"state": "queued",
-		"time_in_force": "gfd",
-		"trigger": "immediate",
-		"type": "limit",
-		"updated_at": "2025-12-21T05:13:08.384132Z",
-		"chain_id": "72362eb7-bc7c-4d10-9be4-48a53fffd101",
-		"chain_symbol": "IWM",
-		"response_category": None,
-		"opening_strategy": "long_call",
-		"closing_strategy": None,
-		"stop_price": None,
-		"form_source": "option_chain",
-		"client_bid_at_submission": "0.11000000",
-		"client_ask_at_submission": "0.13000000",
-		"client_time_at_submission": None,
-		"average_net_premium_paid": "0.00000000",
-		"estimated_total_net_amount": "6.04",
-		"estimated_total_net_amount_direction": "debit",
-		"is_replaceable": True,
-		"strategy": "long_call",
-		"derived_state": "queued",
-		"sales_taxes": [],
-	},
+    "get_open_option_positions": {
+        "account": "https://api.robinhood.com/accounts/5QU43333/",
+        "account_number": "5QU45833",
+        "average_price": "39.0000",
+        "chain_id": "72362eb7-bc7c-4d10-9be4-48a53fffd101",
+        "chain_symbol": "IWM",
+        "id": "0105c689-f713-48b5-a5af-3394481691e5",
+        "option": "https://api.robinhood.com/options/instruments/6e2980cb-87e9-45bc-abd8-b12508015a9f/",
+        "type": "long",
+        "pending_buy_quantity": "0.0000",
+        "pending_expired_quantity": "0.0000",
+        "pending_expiration_quantity": "0.0000",
+        "pending_exercise_quantity": "0.0000",
+        "pending_assignment_quantity": "0.0000",
+        "pending_sell_quantity": "1.0000",
+        "quantity": "1.0000",
+        "intraday_quantity": "1.0000",
+        "intraday_average_open_price": "39.0000",
+        "created_at": "2026-01-16T20:34:54.307396Z",
+        "expiration_date": "2026-01-20",
+        "trade_value_multiplier": "100.0000",
+        "updated_at": "2026-01-17T17:47:41.814399Z",
+        "url": "https://api.robinhood.com/options/positions/0105c689-f713-48b5-a5af-3394481691e5/",
+        "option_id": "6e2980cb-87e9-45bc-abd8-b12508015a9f",
+        "clearing_running_quantity": "1.0000",
+        "clearing_cost_basis": "39.0000",
+        "clearing_direction": "debit",
+        "clearing_intraday_running_quantity": "1.0000",
+        "clearing_intraday_cost_basis": "39.0000",
+        "clearing_intraday_direction": "debit",
+        "opened_at": "2026-01-16T20:34:54.318101Z",
+    },
+    "get_option_market_data_by_id": {
+        "adjusted_mark_price": "0.380000",
+        "adjusted_mark_price_round_down": "0.380000",
+        "ask_price": "0.390000",
+        "ask_size": "50",
+        "bid_price": "0.370000",
+        "bid_size": "145",
+        "break_even_price": "262.620000",
+        "high_price": "0.810000",
+        "instrument": "https://api.robinhood.com/options/instruments/6e2980cb-87e9-45bc-abd8-b12508015a9f/",
+        "instrument_id": "6e2980cb-87e9-45bc-abd8-b12508015a9f",
+        "last_trade_price": "0.390000",
+        "last_trade_size": "1",
+        "low_price": "0.220000",
+        "mark_price": "0.380000",
+        "open_interest": "1724",
+        "previous_close_date": "2026-01-15",
+        "previous_close_price": "0.780000",
+        "updated_at": "2026-01-16T21:14:59.823367617Z",
+        "volume": "10897",
+        "symbol": "IWM",
+        "occ_symbol": "IWM   260120P00263000",
+        "state": "active",
+        "chance_of_profit_long": "0.173179",
+        "chance_of_profit_short": "0.826821",
+        "delta": "-0.200402",
+        "gamma": "0.083173",
+        "implied_volatility": "0.164583",
+        "rho": "-0.003166",
+        "theta": "-0.212409",
+        "vega": "0.057430",
+        "pricing_model": "Bjerksund-Stensland 1993",
+        "high_fill_rate_buy_price": "0.385000",
+        "high_fill_rate_sell_price": "0.374000",
+        "low_fill_rate_buy_price": "0.375000",
+        "low_fill_rate_sell_price": "0.384000",
+    },
+    "get_option_instrument_data_by_id": {
+        "chain_id": "72362eb7-bc7c-4d10-9be4-48a53fffd101",
+        "chain_symbol": "IWM",
+        "created_at": "2026-01-06T02:05:47.060976Z",
+        "expiration_date": "2026-01-20",
+        "id": "6e2980cb-87e9-45bc-abd8-b12508015a9f",
+        "issue_date": "2026-01-06",
+        "min_ticks": "{'above_tick': '0.01', 'below_tick': '0.01', 'cutoff_price': '0.00'}",
+        "rhs_tradability": "tradable",
+        "state": "active",
+        "strike_price": "263.0000",
+        "tradability": "tradable",
+        "type": "put",
+        "updated_at": "2026-01-06T02:05:47.060980Z",
+        "url": "https://api.robinhood.com/options/instruments/6e2980cb-87e9-45bc-abd8-b12508015a9f/",
+        "sellout_datetime": "2026-01-20T20:45:00+00:00",
+        "long_strategy_code": "6e2980cb-87e9-45bc-abd8-b12508015a9f_L1",
+        "short_strategy_code": "6e2980cb-87e9-45bc-abd8-b12508015a9f_S1",
+        "underlying_type": "equity",
+    },
+    "get_all_open_option_orders": {
+        "account_number": "5QU45833",
+        "cancel_url": "https://api.robinhood.com/options/orders/696bcb3d-88ff-457a-9028-2decefe0a8d2/cancel/",
+        "canceled_quantity": "0.00000",
+        "created_at": "2026-01-17T17:47:41.723307Z",
+        "direction": "credit",
+        "id": "696bcb3d-88ff-457a-9028-2decefe0a8d2",
+        "legs": "[{'executions': [], 'id': '696bcb3d-eddd-4b17-918e-3956b4502037', 'option': 'https://api.robinhood.com/options/instruments/6e2980cb-87e9-45bc-abd8-b12508015a9f/', 'position_effect': 'close', 'ratio_quantity': 1, 'side': 'sell', 'expiration_date': '2026-01-20', 'strike_price': '263.0000', 'option_type': 'put', 'long_strategy_code': '6e2980cb-87e9-45bc-abd8-b12508015a9f_L1', 'short_strategy_code': '6e2980cb-87e9-45bc-abd8-b12508015a9f_S1'}]",
+        "pending_quantity": "1.00000",
+        "premium": "200.00000000",
+        "processed_premium": "0",
+        "processed_premium_direction": "credit",
+        "market_hours": "regular_hours",
+        "net_amount": "0",
+        "net_amount_direction": "credit",
+        "price": "2.00000000",
+        "processed_quantity": "0.00000",
+        "quantity": "1.00000",
+        "ref_id": "7635f341-af6a-49e7-b6d0-134f9248faca",
+        "regulatory_fees": "0",
+        "contract_fees": "0",
+        "gold_savings": "0",
+        "state": "queued",
+        "time_in_force": "gfd",
+        "trigger": "immediate",
+        "type": "limit",
+        "updated_at": "2026-01-17T17:47:41.994186Z",
+        "chain_id": "72362eb7-bc7c-4d10-9be4-48a53fffd101",
+        "chain_symbol": "IWM",
+        "response_category": "None",
+        "opening_strategy": "None",
+        "closing_strategy": "long_put",
+        "stop_price": "None",
+        "form_source": "strategy_detail",
+        "client_bid_at_submission": "0.39000000",
+        "client_ask_at_submission": "0.37000000",
+        "client_time_at_submission": "None",
+        "average_net_premium_paid": "0.00000000",
+        "estimated_total_net_amount": "199.96",
+        "estimated_total_net_amount_direction": "credit",
+        "is_replaceable": "True",
+        "strategy": "short_put",
+        "derived_state": "queued",
+        "sales_taxes": "[]",
+    },
 }
-
 
 class MonitorRunner:
 	def __init__(self, runner_dict):
@@ -416,8 +421,8 @@ def store_data_trailing_sell_option_orders_market_data(api_data):
 
 
 # WORKING
-def monitor_trailing_sell_option_orders(runner_name):
-	trailing_orders = database.get_trailing_sell_option_orders_list()
+def monitor_trailing_sell_option_orders(runner_name: str) -> None:
+	trailing_orders = database.get_all_from_table("trailing_sell_option_orders")
 
 	for order in trailing_orders:
 		logger.info(f"Monitoring trailing option order: {order}", extra={"runner": runner_name})
@@ -429,38 +434,53 @@ def monitor_trailing_sell_option_orders(runner_name):
 			)
 			continue
 
-		option_market_row = database.get_trailing_sell_option_order_market_data_by_order_uuid(order["robinhood_option_uuid"])
+		option_market_row = database.get_single_row_from_table(
+			table="trailing_sell_option_orders_market_data", 
+			where_field="option_uuid_pk", 
+			where_value=order["robinhood_option_uuid"]
+		)
 		logger.info(
 			f"Fetched option market data for trailing order {order['order_id_pk']}: {option_market_row}", 
 			extra={"runner": runner_name}
 		)
 		if option_market_row == None:
 			logger.info(
-				f"No market data found for {order["robinhood_option_uuid"]}. Skipping this order.", 
+				f"No market data found for option id# {order["robinhood_option_uuid"]} {order['symbol']} | {order['expiration_date']} | {order['strike']} | {order['call_or_put']}. Skipping this order.", 
 				extra={"runner": runner_name}
 			)
 			continue
 		
 		if order["highest_price_since_order_placed"] == None:
-			highest_price_since_order_placed = float(option_market_row["json_data"]["mark_price"])
-			logger.info(f"Setting initial highest_price_since_order_placed for order {order['order_id_pk']}: highest_price_since_order_placed: {highest_price_since_order_placed}, current_mark_price: {option_market_row['json_data']['mark_price']}", extra={"runner": runner_name})
+			highest_price_since_order_placed = float(order["purchase_price"])
+			logger.info(
+				f"Setting initial highest_price_since_order_placed for order to purchase_price #{order['order_id_pk']}: purchase_price={order['purchase_price']}, highest_price_since_order_placed={highest_price_since_order_placed}", 
+				extra={"runner": runner_name}
+			)
 		else:
 			highest_price_since_order_placed = float(order["highest_price_since_order_placed"])
-			logger.info(f"Existing highest_price_since_order_placed for order {order['order_id_pk']}: {highest_price_since_order_placed}", extra={"runner": runner_name})
+			logger.info(
+				f"Existing highest_price_since_order_placed for order {order['order_id_pk']}: {highest_price_since_order_placed}", 
+				extra={"runner": runner_name}
+			)
 		current_mark_price = float(option_market_row["json_data"]["mark_price"])
-		logger.info(f"Current mark price for order {order['order_id_pk']}: {current_mark_price}", extra={"runner": runner_name})
+		logger.info(
+			f"Current mark price for order {order['order_id_pk']}: {current_mark_price}", 
+			extra={"runner": runner_name}
+		)
 
 		if current_mark_price > highest_price_since_order_placed:
-			logger.info(f"New highest_price_since_order_placed for order {order['order_id_pk']}: {current_mark_price} (old: {highest_price_since_order_placed})", extra={"runner": runner_name})
+			logger.info(
+				f"New highest mark price {current_mark_price} exceeds previous highest price {highest_price_since_order_placed} for order {order['order_id_pk']}. Updating highest price.", 
+				extra={"runner": runner_name}
+			)
 			highest_price_since_order_placed = current_mark_price
-			conn = database.get_database_connection()
-			cur = conn.cursor()
-			sql_query = "UPDATE trailing_sell_option_orders SET highest_price_since_order_placed=%s WHERE order_id_pk=%s;"
-			values = (highest_price_since_order_placed, order["order_id_pk"])
-			cur.execute(sql_query, values)
-			conn.commit()
-			cur.close()
-			conn.close()
+			database.set_table_field_where(
+				table="trailing_sell_option_orders",
+				field="highest_price_since_order_placed",
+				field_value=highest_price_since_order_placed,
+				where_field="order_id_pk",
+				where_value=order["order_id_pk"]
+			)
 
 		percent_from_high_sell_trigger = float(order["percent_from_high_sell_trigger"])
 		sell_at_specific_price = float(order["sell_at_specific_price"])
@@ -501,7 +521,13 @@ def monitor_trailing_sell_option_orders(runner_name):
 		execution_deactivates_trailing_sell_order_ids = order["execution_deactivates_trailing_sell_order_ids"]
 		if execute_order:
 			try:
-				database.mark_order_executed(table="trailing_sell_option_orders", order_id_pk=order["order_id_pk"])
+				database.set_table_field_value_where(
+					table="trailing_sell_option_orders", 
+					field="executed", 
+					field_value=True, 
+					where_field="order_id_pk", 
+					where_value=order["order_id_pk"]
+				)
 				logger.info(f"Marked trailing order #{order['order_id_pk']} as executed.", extra={"runner": runner_name})
 				database.deactivate_orders(
 					execution_deactivates_trigger_order_ids, 
@@ -510,10 +536,10 @@ def monitor_trailing_sell_option_orders(runner_name):
 				)
 				logger.info(f"Deactivated dependent orders for trailing order #{order['order_id_pk']}", extra={"runner": runner_name})
 				logger.info(f"Placing market sell for trailing order #{order['order_id_pk']}: {order}", extra={"runner": runner_name})
-				orders.execute_market_sell(order)
+				orders.execute_market_sell(order, runner_name)
 				logger.info(f"Executed sell for trailing order #{order['order_id_pk']}: {order}", extra={"runner": runner_name})
 			except Exception as e:
-				logger.critical(f"Issue selling trailing order #{order['order_id_pk']}", extra={"runner": runner_name})
+				logger.exception(f"Issue selling trailing order #{order['order_id_pk']}. Exception: {e}", extra={"runner": runner_name})
 
 
 
@@ -680,6 +706,7 @@ def start_monitor_runner(runner_dict):
 
 def main():
 	database.logger = logging.getLogger("runners")
+	orders.logger = logging.getLogger("runners")
 
 	r.login(config.ROBINHOOD_USERNAME, config.ROBINHOOD_PASSWORD)
 	orders.robinhood_login()
@@ -770,16 +797,16 @@ def main():
 		execution_deactivates_trailing_sell_order_ids=[], 
 		quantity=1,
 		symbol="IWM",
-		call_or_put="call",
-		expiration_date="2026-03-20",
-		strike=258,
+		call_or_put="put",
+		expiration_date="2026-01-21",
+		strike=255,
 		message_on_success="success msg",
 		message_on_failure="failure msg",
 		max_order_attempts=10,
 		emergency_order_fill_on_failure=True, 
 		percent_from_high_sell_trigger=.90,
-		sell_at_specific_price=18.00,
-		purchase_price=2.00,
+		sell_at_specific_price=.35,
+		purchase_price=.39,
 	)
 
 	max_workers = len(RUNNERS)

@@ -5,6 +5,7 @@ import json
 import psycopg2
 import psycopg2.extras
 import time
+from typing import Any
 
 import config
 import schema
@@ -394,49 +395,54 @@ def update_trailing_sell_option_orders_market_data(option_market_data: list) -> 
     delete_rows_from_table_by_value("trailing_sell_option_orders_market_data", "still_alive", False)
 
 
-def get_trailing_sell_option_orders_list() -> list[dict]:
+def get_all_from_table(table: str) -> list[dict]:
     conn = get_database_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    sql_query = "SELECT * FROM trailing_sell_option_orders;"
+    sql_query = f"SELECT * FROM {table};"
     cur.execute(sql_query)
     results = cur.fetchall()
 
-    trailing_sell_option_orders_list = []
+    result_list = []
     for result in results:
-        order_info = {}
+        item_info = {}
         for key, value in result.items():
-            order_info[key] = value
+            item_info[key] = value
 
-        trailing_sell_option_orders_list.append(order_info)
+        result_list.append(item_info)
 
     cur.close()
     conn.close()
 
-    return trailing_sell_option_orders_list
+    return result_list
 
 
-def get_trailing_sell_option_order_market_data_by_order_uuid(option_uuid: str) -> dict | None:
+def get_single_row_from_table(table: str, where_field: str, where_value: Any) -> dict | None:
     conn = get_database_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
 
-    sql_query = f"SELECT * FROM trailing_sell_option_orders_market_data WHERE option_uuid_pk=%s;"
-    values = (option_uuid, )
-    cur.execute(sql_query, values)
-    result = cur.fetchone()
+    sql_query = f"SELECT * FROM {table} WHERE {where_field}=%s;"
+    values = (where_value, )
 
-    cur.close()
-    conn.close()
+    result = None
+    try:
+        cur.execute(sql_query, values)
+        result = cur.fetchone()
+    except Exception as e:
+        logger.exception(f"Issue fetching single row from {table} where {where_field}={where_value}: {e}", stack_info=True)
+        result = None
+    finally:
+        cur.close()
+        conn.close()
 
     if result:
-        order_market_data = {}
+        row_data = {}
         for key, value in result.items():
-            order_market_data[key] = value
+            row_data[key] = value
 
-        return order_market_data
+        return row_data
     else:
         return None
-
 
 def delete_rows_from_table_by_value(table, field, value) -> None:
     sql_query = f"DELETE FROM {table} WHERE {field}=%s;"
@@ -455,7 +461,7 @@ def delete_rows_from_table_by_value(table, field, value) -> None:
         conn.close()
 
 
-def set_table_field(table: str, field: str, value) -> None:
+def set_table_field(table: str, field: str, value: Any) -> None:
     sql_query = f"UPDATE {table} SET {field}=%s;"
     values = (value, )
 
@@ -500,17 +506,63 @@ def deactivate_orders(
     cur.close()
     conn.close()
 
-def mark_order_executed(table, order_id_pk):
+def set_table_field_value_where(
+        table: str, 
+        field: str, 
+        field_value: Any, 
+        where_field: str, 
+        where_value: Any
+    ) -> None:
+    sql_query = f"UPDATE {table} SET {field}=%s WHERE {where_field}=%s;"
+    values = (field_value, where_value)
+
     conn = get_database_connection()
     cur = conn.cursor()
 
-    sql_query = f"UPDATE {table} SET executed=True WHERE order_id_pk=%s;"
-    values = (order_id_pk,)
-    cur.execute(sql_query, values)
-    conn.commit()
+    try:
+        cur.execute(sql_query, values)
+        conn.commit()
+    except Exception as e:
+        logger.exception(f"{e}", stack_info=True)
+    finally:
+        cur.close()
+        conn.close()
+
+
+def update_trailing_sell_option_order_highest_price_since_order_placed(
+        order_id_pk: int, 
+        highest_price_since_order_placed: float
+    ) -> None:
+    conn = get_database_connection()
+    cur = conn.cursor()
+
+    sql_query = "UPDATE trailing_sell_option_orders SET highest_price_since_order_placed=%s WHERE order_id_pk=%s;"
+    values = (highest_price_since_order_placed, order_id_pk)
+    try:
+        cur.execute(sql_query, values)
+        conn.commit()
+    except Exception as e:
+        logger.exception(f"Issue updating highest_price_since_order_placed: {e}", stack_info=True)
+    finally:
+        cur.close()
+        conn.close()
+
     
-    cur.close()
-    conn.close()
+def set_table_field_where(table: str, field: str, field_value: Any, where_field: str, where_value: Any) -> None:
+    sql_query = f"UPDATE {table} SET {field}=%s WHERE {where_field}=%s;"
+    values = (field_value, where_value)
+
+    conn = get_database_connection()
+    cur = conn.cursor()
+
+    try:
+        cur.execute(sql_query, values)
+        conn.commit()
+    except Exception as e:
+        logger.exception(f"{e}", stack_info=True)
+    finally:
+        cur.close()
+        conn.close()
 
 
 def select_column_from_table(table: str, column: str) -> list:
