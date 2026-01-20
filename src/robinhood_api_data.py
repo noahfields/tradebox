@@ -1,7 +1,7 @@
 API_VERIFICATION_DEFAULT_KEYSETS = {
     "get_open_option_positions": {
         "account": "https://api.robinhood.com/accounts/5QU43333/",
-        "account_number": "5QU45833",
+        "account_number": "5QU4533333",
         "average_price": "39.0000",
         "chain_id": "72362eb7-bc7c-4d10-9be4-48a53fffd101",
         "chain_symbol": "IWM",
