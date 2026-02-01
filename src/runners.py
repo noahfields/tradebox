@@ -592,7 +592,9 @@ def start_data_fetch_runner(runner_dict):
 		runner.write_runner_status()
 
 		try:
+			# Get API data
 			api_data = runner.get_data()
+
 			logger.info(
 				f"Runner {runner.status['runner_name_pk']} api_data: {api_data}",
 				extra={"runner": runner.status["runner_name_pk"]},
@@ -639,7 +641,9 @@ def start_data_fetch_runner(runner_dict):
 			)
 
 		try:
+			# Store API data
 			runner.store_data(api_data)
+			
 			runner.status["current_update_success"] = True
 			runner.status["previous_update_success"] = True
 			runner.status["epoch_time_previous_success"] = time.time()
@@ -697,7 +701,9 @@ def start_monitor_runner(runner_dict):
 		runner.write_runner_status()
 
 		try:
+			# Call the monitor function
 			runner_dict["monitor_function"](runner_dict['runner_name'])
+
 			runner.status["current_update_success"] = True
 			runner.status["previous_update_success"] = True
 			runner.status["epoch_time_previous_success"] = time.time()
