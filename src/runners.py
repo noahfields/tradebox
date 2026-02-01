@@ -488,10 +488,23 @@ def monitor_trailing_sell_option_orders(runner_name: str) -> None:
 		execute_order = False
 		if current_mark_price < highest_price_since_order_placed * percent_from_high_sell_trigger:
 			execute_order = True
-			logger.info(f"Current mark price {current_mark_price} is below percent threshold for order. Selling: {order} {option_market_row}", extra={"runner": runner_name})
+			logger.info(
+				f"Current mark price {current_mark_price} is below percent threshold for order.\n"
+				f"Current mark price {current_mark_price}.\n"
+				f"Highest price since order placed {highest_price_since_order_placed}.\n"
+				f"Percent from high sell trigger: {percent_from_high_sell_trigger}.\n"
+				f"Selling: {order} {option_market_row}",
+				extra={"runner": runner_name}
+			)
 		if current_mark_price >= sell_at_specific_price:
 			execute_order = True
-			logger.info(f"Current mark price {current_mark_price} is above specific price trigger for order. Selling: {order} {option_market_row}", extra={"runner": runner_name})
+			logger.info(
+				f"Specific price trigger met for order.\n"
+				f"Specific price trigger: {sell_at_specific_price}.\n"
+				f"Current mark price: {current_mark_price}.\n"
+				f"Selling: {order} {option_market_row}",
+				extra={"runner": runner_name}
+			)
 
 		execution_requires_trigger_order_ids = order["execute_only_after_trigger_order_ids"]
 		execution_requires_bracket_sell_order_ids = order["execute_only_after_bracket_sell_order_ids"]
@@ -536,7 +549,7 @@ def monitor_trailing_sell_option_orders(runner_name: str) -> None:
 				)
 				logger.info(f"Deactivated dependent orders for trailing order #{order['order_id_pk']}", extra={"runner": runner_name})
 				logger.info(f"Placing market sell for trailing order #{order['order_id_pk']}: {order}", extra={"runner": runner_name})
-				orders.execute_market_sell(order, runner_name)
+				orders.execute_market_sell(order, runner_name, f"Executing trailing sell order: {order}")
 				logger.info(f"Executed sell for trailing order #{order['order_id_pk']}: {order}", extra={"runner": runner_name})
 			except Exception as e:
 				logger.exception(f"Issue selling trailing order #{order['order_id_pk']}. Exception: {e}", extra={"runner": runner_name})
@@ -756,7 +769,8 @@ def main():
 	# 	quantity=1,
 	# 	message_on_success="success msg",
 	# 	message_on_failure="failure msg",
-	# 	max_order_attempts=10,
+	# 	max_mark_order_attempts=4,
+	#   max_spread_order_attempts=4,
 	# 	emergency_order_fill_on_failure=True,
 	# 	trigger_order_uuid=str(uuid.uuid4())
 	# )
@@ -781,7 +795,8 @@ def main():
     #     low_sell_mark_price=0.15,
     #     message_on_success="success msg",
     #     message_on_failure="failure msg",
-    #     max_order_attempts=10,
+	# 	  max_mark_order_attempts=4,
+	#     max_spread_order_attempts=4,
     #     emergency_order_fill_on_failure=True
 	# )
 
@@ -797,16 +812,17 @@ def main():
 		execution_deactivates_trailing_sell_order_ids=[], 
 		quantity=1,
 		symbol="IWM",
-		call_or_put="put",
-		expiration_date="2026-01-21",
-		strike=255,
+		call_or_put="call",
+		expiration_date="2026-02-02",
+		strike=269.0,
 		message_on_success="success msg",
 		message_on_failure="failure msg",
-		max_order_attempts=10,
+		max_mark_order_attempts=4,
+		max_spread_order_attempts=4,
 		emergency_order_fill_on_failure=True, 
 		percent_from_high_sell_trigger=.90,
-		sell_at_specific_price=.35,
-		purchase_price=.39,
+		sell_at_specific_price=.01,
+		purchase_price=.02,
 	)
 
 	max_workers = len(RUNNERS)

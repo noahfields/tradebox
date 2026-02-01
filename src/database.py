@@ -444,6 +444,7 @@ def get_single_row_from_table(table: str, where_field: str, where_value: Any) ->
     else:
         return None
 
+
 def delete_rows_from_table_by_value(table, field, value) -> None:
     sql_query = f"DELETE FROM {table} WHERE {field}=%s;"
     values = (value, )
@@ -477,11 +478,12 @@ def set_table_field(table: str, field: str, value: Any) -> None:
         cur.close()
         conn.close()
 
+
 def deactivate_orders(
         trigger_order_ids: list[int], 
         bracket_order_ids: list[int], 
         trailing_order_ids: list[int]
-    ):
+    ) -> None:
     conn = get_database_connection()
     cur = conn.cursor()
 
@@ -505,6 +507,7 @@ def deactivate_orders(
 
     cur.close()
     conn.close()
+
 
 def set_table_field_value_where(
         table: str, 
@@ -635,7 +638,8 @@ def insert_trigger_order(
         below_tick: float,
         above_tick: float,
         cutoff_price: float,
-        max_order_attempts: int,
+        max_mark_order_attempts: int,
+        max_spread_order_attempts: int,
         emergency_order_fill_on_failure: bool,
         trigger_order_uuid: str,
     ) -> None:
@@ -663,12 +667,13 @@ def insert_trigger_order(
         "below_tick, "
         "above_tick, "
         "cutoff_price, "
-        "max_order_attempts, "
+        "max_mark_order_attempts, "
+        "max_spread_order_attempts, "
         "emergency_order_fill_on_failure, "
         "trigger_order_uuid"
         ") "
         "VALUES ("
-        "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s"
+        "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s"
         ");"
     )
      
@@ -694,7 +699,8 @@ def insert_trigger_order(
         below_tick, 
         above_tick, 
         cutoff_price, 
-        max_order_attempts, 
+        max_mark_order_attempts, 
+        max_spread_order_attempts,
         emergency_order_fill_on_failure, 
         trigger_order_uuid
     )
@@ -735,7 +741,8 @@ def insert_bracket_order(
         below_tick: float,
         above_tick: float,
         cutoff_price: float,
-        max_order_attempts: int,
+        max_mark_order_attempts: int,
+        max_spread_order_attempts: int,
         emergency_order_fill_on_failure: bool,
     ) -> None:
 	
@@ -755,7 +762,7 @@ def insert_bracket_order(
         "strike, "
         "call_or_put, "
         "expiration_date, "
-        "rh_option_uuid, "
+        "robinhood_option_uuid, "
         "quantity, "
         "high_sell_mark_price, "
         "low_sell_mark_price, "
@@ -764,10 +771,11 @@ def insert_bracket_order(
         "below_tick, "
         "above_tick, "
         "cutoff_price, "
-        "max_order_attempts, "
+        "max_mark_order_attempts, "
+        "max_spread_order_attempts, "
         "emergency_order_fill_on_failure"
         ") VALUES ("
-        "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s"
+        "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s"
         ");"
     )
      
@@ -786,7 +794,7 @@ def insert_bracket_order(
         strike,
         call_or_put,
         expiration_date,
-        rh_option_uuid,
+        robinhood_option_uuid,
         quantity,
         high_sell_mark_price,
         low_sell_mark_price,
@@ -795,7 +803,8 @@ def insert_bracket_order(
         below_tick,
         above_tick,
         cutoff_price,
-        max_order_attempts,
+        max_mark_order_attempts,
+        max_spread_order_attempts,
         emergency_order_fill_on_failure,
     )
 
@@ -832,7 +841,8 @@ def insert_trailing_sell_order(
         robinhood_option_uuid: str,
         message_on_success: str,
         message_on_failure: str,
-        max_order_attempts: int,
+        max_mark_order_attempts: int,
+        max_spread_order_attempts: int,
         emergency_order_fill_on_failure: bool,   
         percent_from_high_sell_trigger: float,
         sell_at_specific_price: float,
@@ -861,13 +871,14 @@ def insert_trailing_sell_order(
         "robinhood_option_uuid, "
         "message_on_success, "
         "message_on_failure, "
-        "max_order_attempts, "
+        "max_mark_order_attempts, "
+        "max_spread_order_attempts, "
         "emergency_order_fill_on_failure, "
         "percent_from_high_sell_trigger, "
         "sell_at_specific_price, "
         "purchase_price"
         ") VALUES ("
-        "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s"
+        "%s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s, %s"
         ");"
     )
      
@@ -892,7 +903,8 @@ def insert_trailing_sell_order(
         robinhood_option_uuid, 
         message_on_success, 
         message_on_failure, 
-        max_order_attempts, 
+        max_mark_order_attempts, 
+        max_spread_order_attempts,
         emergency_order_fill_on_failure, 
         percent_from_high_sell_trigger, 
         sell_at_specific_price, 

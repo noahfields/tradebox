@@ -9,6 +9,7 @@ import robin_stocks.robinhood as r
 
 import config
 import database
+import log
 import pushover
 
 logger = logging.getLogger(__name__)
@@ -41,7 +42,8 @@ def create_trigger_option_order(
         quantity: int,
         message_on_success: str,
         message_on_failure: str,
-        max_order_attempts: int,
+        max_mark_order_attempts: int,
+        max_spread_order_attempts: int,
         emergency_order_fill_on_failure: bool,
         trigger_order_uuid: str,
 	):
@@ -99,7 +101,8 @@ def create_trigger_option_order(
         below_tick,
         above_tick,
         cutoff_price,
-        max_order_attempts,
+        max_mark_order_attempts,
+        max_spread_order_attempts,
         emergency_order_fill_on_failure,
         trigger_order_uuid,
     )
@@ -129,7 +132,8 @@ def create_bracket_option_order(
         low_sell_mark_price: float,
         message_on_success: str,
         message_on_failure: str,
-        max_order_attempts: int,
+        max_mark_order_attempts: int,
+        max_spread_order_attempts: int,
         emergency_order_fill_on_failure: bool
 	):
     logger.info("Begin creating bracket order.")
@@ -188,7 +192,8 @@ def create_bracket_option_order(
         below_tick,
         above_tick,
         cutoff_price,
-        max_order_attempts,
+        max_mark_order_attempts,
+        max_spread_order_attempts,
         emergency_order_fill_on_failure,
     )
 
@@ -214,7 +219,8 @@ def create_trailing_sell_option_order(
     strike: float,
     message_on_success: str,
     message_on_failure: str,
-    max_order_attempts: int,
+    max_mark_order_attempts: int,
+    max_spread_order_attempts: int,
     emergency_order_fill_on_failure: bool, 
     percent_from_high_sell_trigger: float,
     sell_at_specific_price: float,
@@ -269,7 +275,8 @@ def create_trailing_sell_option_order(
         robinhood_option_uuid, 
         message_on_success, 
         message_on_failure, 
-        max_order_attempts, 
+        max_mark_order_attempts, 
+        max_spread_order_attempts,
         emergency_order_fill_on_failure,   
         percent_from_high_sell_trigger, 
         sell_at_specific_price, 
@@ -281,9 +288,24 @@ def create_trailing_sell_option_order(
         f"{quantity} {symbol}, {expiration_date}, {strike}, {call_or_put}."
     )
 
-# WORKING
-def execute_market_sell(order: dict, runner_name: str) -> None:
-    logger.info(f"Executing sell order: {order}", extra={"runner": runner_name})
+
+# order dict could be any of the following:
+# trigger_option_orders (as sell, determined by caller
+# bracket_sell_option_orders
+# trailing_sell_option_orders
+def execute_market_sell(order: dict, runner_name: str, order_description: str) -> None:
+    order_log = log.OrderLogger(
+        symbol=order["symbol"],
+        expiration_date=order["expiration_date"],
+        strike=order["strike"],
+        quantity=order["quantity"],
+        buy_or_sell="sell",
+        credit_or_debit="credit",
+        description=order_description
+    )
+    order_log.log(f"Executing sell order. Order details: \n{order}")
+
+    logger.info(f"Executing sell order. Order details: \n{order}", extra={"runner": runner_name})
 
     # log timestamp
     start_timestamp = datetime.datetime.now().strftime("%H:%M:%S")
@@ -445,7 +467,7 @@ def execute_market_sell(order: dict, runner_name: str) -> None:
             if open_pos["option_id"] == order["robinhood_option_uuid"]:
                 trade_progress_info["current_position_size"] = int(float(open_pos["quantity"]))
                 position_still_exists = True
-        if position_still_exists is False:
+        if position_still_exists == False:
             trade_progress_info["current_position_size"] = 0
         logger.info(
             f"Updated current position size: {trade_progress_info['current_position_size']}", 
@@ -488,7 +510,7 @@ def execute_market_sell(order: dict, runner_name: str) -> None:
         if isinstance(trade_progress_info["actual_closing_position_size"], int) and (trade_progress_info["actual_closing_position_size"] > trade_progress_info["goal_final_position_size"]):
             logger.info("Emergency fill executing.")
             quantity_to_sell = trade_progress_info["actual_closing_position_size"] - trade_progress_info["goal_final_position_size"]
-            execute_sell_emergency_fill(order, quantity_to_sell, email_message_part_one)
+            execute_sell_emergency_fill(order, quantity_to_sell, runner_name, email_message_part_one)
         else:
             logger.info("Emergency fill not required based on current position size.")
             logger.info(email_message_part_one)
@@ -560,7 +582,7 @@ def execute_sell_emergency_fill(order: dict, quantity_to_sell: int, runner_name:
         extra={"runner": runner_name}
     )
 
-    time.sleep(20)
+    time.sleep(5)
 
     try:
         res = r.orders.cancel_option_order(order_result["id"])

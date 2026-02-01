@@ -1,11 +1,14 @@
+import datetime
 import json
 import logging
 import logging.handlers
 import os
 import sys
+import uuid
+
+from zoneinfo import ZoneInfo
 
 import config
-import globals
 
 
 class SafeFormatter(logging.Formatter):
@@ -32,16 +35,20 @@ class JSONFormatter(logging.Formatter):
 		return json.dumps(log_data)
 
 
-def create_log_directory():
-	log_dir = f"{globals.REPO_DIR}/logs"
+def create_log_directory() -> None:
+	log_dir = f"{config.LOG_BASE_DIR}"
 	try:
 		os.makedirs(log_dir)
-		return log_dir
 	except FileExistsError as e:
-		print(f"log directory exists already: {e}")
-		return log_dir
-	except Exception as e:
-		print(f"Unexpected exception: {e}")
+		print(f"{config.LOG_BASE_DIR} directory exists already: {e}")
+
+
+def create_log_orders_directory() -> None:
+	log_orders_dir = f"{config.LOG_ORDERS_DIR}"
+	try:
+		os.makedirs(log_orders_dir)
+	except FileExistsError as e:
+		print(f"{config.LOG_ORDERS_DIR} directory exists already: {e}")
 
 
 def setup_runners_logger(
@@ -82,3 +89,34 @@ def setup_runners_logger(
 		logger.addHandler(stream_handler)
 
 	return logger
+
+class OrderLogger():
+	def __init__(self, symbol, expiration_date, strike, quantity, buy_or_sell, credit_or_debit, description):
+		self.symbol = symbol
+		self.expiration_date = expiration_date
+		self.strike = strike
+		self.quantity = quantity
+		self.buy_or_sell = buy_or_sell
+		self.credit_or_debit = credit_or_debit
+		self.description = description
+		self.unique_id = str(uuid.uuid4())
+		
+		self.log_file_path = os.path.join(
+			config.LOG_ORDERS_DIR,
+			f"order_{self.symbol}_{self.expiration_date}_{self.strike}_{self.buy_or_sell}_{self.quantity}_for_{self.credit_or_debit}_{self.unique_id}.log"
+		)
+
+		self.log(
+			f"Created OrderLogger for {self.description}.\n"
+			f"Log file: {self.log_file_path}\n"
+			f"Details: symbol={self.symbol}, expiration_date={self.expiration_date}, strike={self.strike}, quantity={self.quantity}, buy_or_sell={self.buy_or_sell}, credit_or_debit={self.credit_or_debit}\n"
+		)
+		
+
+	def log(self, message: str) -> None:
+		est_timestamp = datetime.datetime.now(ZoneInfo("America/New_York")).strftime("%Y-%m-%d %H:%M:%S %Z")
+
+		log_message = f"{est_timestamp}\n{message}\n\n"
+		with open(self.log_file_path, "a") as log_file:
+			log_file.write(log_message)
+
