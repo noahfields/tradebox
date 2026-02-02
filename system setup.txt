@@ -1,0 +1,49 @@
+Debian Setup
+
+Basic setup: 
+	- user: nfields
+	- as root: usermod -aG sudo nfields
+	- set NOPASSWD sudo privileges on nfields:
+		- sudo visudo
+		- at end of file add:
+			- nfields ALL=(ALL) NOPASSWD:ALL
+
+
+Directories:
+	- Tradebox lives here:
+		- /home/nfields/tradebox
+
+
+Install:
+	- ufw
+		- Ngninx open
+		- OpenSSH open
+		- Postgres closed
+
+	- pyenv/python
+		- requires build dependencies (online)
+		- run pyenv install script
+
+		- "pyenv install 3.14.2"
+		- "pyenv global 3.14.2"
+		- install requirements.txt to global (no venv)
+		- 'pip install -r /path/to/requirements.txt'
+			- no venv, install to pyenv global (e.g., 3.14.2)
+
+	- postgres:
+		- use debian 13 default postgres
+		- add nfields PSQL as superuser 
+		- create 'tradebox' database
+		- default ports, not open to internet
+
+	- nginx
+		- find DO tutorial on Flask/wsgi/nginx for setup
+
+
+
+
+
+
+
+
+
