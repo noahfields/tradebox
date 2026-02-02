@@ -5,6 +5,8 @@ db.sqlite3
 notebooks/
 *.ipynb
 
+*.sock
+
 # draft, scrap, working documents
 garbage_pile.py
 sandbox.py/
