@@ -5,3 +5,5 @@ python-dotenv>=1.2.1
 flask>=3.1.2
 gunicorn>=20.1.0
 textual-dev>=1.8.0
+wheel
+uwsgi

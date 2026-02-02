@@ -32,9 +32,11 @@ Install:
 
 	- postgres:
 		- use debian 13 default postgres
-		- add nfields PSQL as superuser 
-		- create 'tradebox' database
-		- default ports, not open to internet
+			- sudo apt install postgresql -y
+			- sudo systemctl start postgresql && sudo systemctl enable postgresql
+			- sudo -u postgres psql
+			- create database tradebox;
+			- create role nfields with login superuser password 'devonly';
 
 	- nginx
 		- find DO tutorial on Flask/wsgi/nginx for setup
