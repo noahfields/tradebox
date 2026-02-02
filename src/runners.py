@@ -1,6 +1,6 @@
-from concurrent.futures import ThreadPoolExecutor
 import json
 import logging
+import sys
 import time
 import uuid
 
@@ -12,7 +12,7 @@ import log
 import orders
 import schema
 
-logger = log.setup_runners_logger("runners")
+logger = logging.getLogger(__name__)
 
 
 API_VERIFICATION_DEFAULT_KEYSETS = {
@@ -723,16 +723,15 @@ def start_monitor_runner(runner_dict):
 			continue
 
 
-def main():
-	database.logger = logging.getLogger("runners")
-	orders.logger = logging.getLogger("runners")
+def main(runner_name):
+	# set up logging
+	log_name = f"runner_{runner_name}"
+	logger = log.setup_runner_logger(log_name)
+	database.logger = logging.getLogger(log_name)
+	orders.logger = logging.getLogger(log_name)
 
 	r.login(config.ROBINHOOD_USERNAME, config.ROBINHOOD_PASSWORD)
 	orders.robinhood_login()
-
-	# for dev only, refactor later
-	database.drop_all_tables()
-	database.create_all_tables()
 
 	# orders.create_trigger_option_order(
 	# 	active=True,
@@ -806,61 +805,59 @@ def main():
     #     emergency_order_fill_on_failure=True
 	# )
 
-	orders.create_trailing_sell_option_order(
-		active=True, 
-		epoch_time_created_at=time.time(), 
-		executed=False, 
-		execute_only_after_trigger_order_ids=[], 
-		execute_only_after_bracket_sell_order_ids=[], 
-		execute_only_after_trailing_sell_order_ids=[], 
-		execution_deactivates_trigger_order_ids=[], 
-		execution_deactivates_bracket_sell_order_ids=[], 
-		execution_deactivates_trailing_sell_order_ids=[], 
-		quantity=1,
-		symbol="IWM",
-		call_or_put="call",
-		expiration_date="2026-02-02",
-		strike=269.0,
-		message_on_success="success msg",
-		message_on_failure="failure msg",
-		max_mark_order_attempts=4,
-		max_spread_order_attempts=4,
-		emergency_order_fill_on_failure=True, 
-		percent_from_high_sell_trigger=.90,
-		sell_at_specific_price=.01,
-		purchase_price=.02,
-	)
+	# orders.create_trailing_sell_option_order(
+	# 	active=True, 
+	# 	epoch_time_created_at=time.time(), 
+	# 	executed=False, 
+	# 	execute_only_after_trigger_order_ids=[], 
+	# 	execute_only_after_bracket_sell_order_ids=[], 
+	# 	execute_only_after_trailing_sell_order_ids=[], 
+	# 	execution_deactivates_trigger_order_ids=[], 
+	# 	execution_deactivates_bracket_sell_order_ids=[], 
+	# 	execution_deactivates_trailing_sell_order_ids=[], 
+	# 	quantity=1,
+	# 	symbol="IWM",
+	# 	call_or_put="call",
+	# 	expiration_date="2026-02-02",
+	# 	strike=269.0,
+	# 	message_on_success="success msg",
+	# 	message_on_failure="failure msg",
+	# 	max_mark_order_attempts=4,
+	# 	max_spread_order_attempts=4,
+	# 	emergency_order_fill_on_failure=True, 
+	# 	percent_from_high_sell_trigger=.90,
+	# 	sell_at_specific_price=.01,
+	# 	purchase_price=.02,
+	# )
 
-	max_workers = len(RUNNERS)
-	with ThreadPoolExecutor(max_workers=max_workers) as runner_threads:
-		logger.info("Starting runners.")
-		for runner in RUNNERS:
-			# start_runner(runner)
-			if runner["type"] == "data_fetch":
-				runner_threads.submit(start_data_fetch_runner, runner)
-			if runner["type"] == "order_monitor":
-				runner_threads.submit(start_monitor_runner, runner)
+	runner = RUNNERS[runner_name]
+	if runner["type"] == "data_fetch":
+		start_data_fetch_runner(runner)
+	if runner["type"] == "order_monitor":
+		start_monitor_runner(runner)
 
 
-RUNNERS = [
-	# {
-	# 	"runner_name": "open_option_positions",
-	# 	"active": True,
-	# 	"get_data_function": get_data_open_option_positions,
-	# 	"verify_data_keyset": "get_open_option_positions",
-	# 	"store_data_function": store_data_open_option_positions,
-	# 	"default_interval": config.OPEN_POSITIONS_REFRESH_INTERVAL,
-	# 	"type": "data_fetch",
-	# },
-	# {
-	# 	"runner_name": "open_option_positions_market_data",
-	# 	"active": True,
-	# 	"get_data_function": get_data_open_option_positions_market_data,
-	# 	"verify_data_keyset": "get_option_market_data_by_id",
-	# 	"store_data_function": store_data_open_option_positions_market_data,
-	# 	"default_interval": config.MARKET_DATA_REFRESH_INTERVAL,
-	# 	"type": "data_fetch",
-	# },
+RUNNERS = {
+	"open_option_positions": 
+		{
+			"runner_name": "open_option_positions",
+			"active": True,
+			"get_data_function": get_data_open_option_positions,
+			"verify_data_keyset": "get_open_option_positions",
+			"store_data_function": store_data_open_option_positions,
+			"default_interval": config.OPEN_POSITIONS_REFRESH_INTERVAL,
+			"type": "data_fetch",
+		},
+	"open_option_positions_market_data":
+		{
+			"runner_name": "open_option_positions_market_data",
+			"active": True,
+			"get_data_function": get_data_open_option_positions_market_data,
+			"verify_data_keyset": "get_option_market_data_by_id",
+			"store_data_function": store_data_open_option_positions_market_data,
+			"default_interval": config.MARKET_DATA_REFRESH_INTERVAL,
+			"type": "data_fetch",
+		},
 	# {
 	# 	"runner_name": "open_broker_option_orders",
 	# 	"active": True,
@@ -897,31 +894,31 @@ RUNNERS = [
 	# 	"default_interval": config.MARKET_DATA_REFRESH_INTERVAL,
 	# 	"type": "data_fetch",
 	# },
-	{
-		"runner_name": "trailing_sell_option_orders_market_data",
-		"active": True,
-		"get_data_function": get_data_trailing_sell_option_orders_market_data,
-		"verify_data_keyset": "get_option_market_data_by_id",
-		"store_data_function": store_data_trailing_sell_option_orders_market_data,
-		"default_interval": config.MARKET_DATA_REFRESH_INTERVAL,
-		"type": "data_fetch",
-	},
 	# {
-	# 	"runner_name": "monitor_bracket_sell_option_orders",
+	# 	"runner_name": "trailing_sell_option_orders_market_data",
 	# 	"active": True,
-	# 	"monitor_function": monitor_bracket_option_orders,
+	# 	"get_data_function": get_data_trailing_sell_option_orders_market_data,
+	# 	"verify_data_keyset": "get_option_market_data_by_id",
+	# 	"store_data_function": store_data_trailing_sell_option_orders_market_data,
+	# 	"default_interval": config.MARKET_DATA_REFRESH_INTERVAL,
+	# 	"type": "data_fetch",
+	# },
+	# # {
+	# # 	"runner_name": "monitor_bracket_sell_option_orders",
+	# # 	"active": True,
+	# # 	"monitor_function": monitor_bracket_option_orders,
+	# # 	"default_interval": 1,
+	# # 	"type": "order_monitor",
+	# # },
+	# {
+	# 	"runner_name": "monitor_trailing_sell_option_orders",
+	# 	"active": True,
+	# 	"monitor_function": monitor_trailing_sell_option_orders,
 	# 	"default_interval": 1,
 	# 	"type": "order_monitor",
 	# },
-	{
-		"runner_name": "monitor_trailing_sell_option_orders",
-		"active": True,
-		"monitor_function": monitor_trailing_sell_option_orders,
-		"default_interval": 1,
-		"type": "order_monitor",
-	},
-]
+}
 
 
 if __name__ == "__main__":
-	main()
+	main(runner=sys.argv[1])

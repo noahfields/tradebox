@@ -12,11 +12,15 @@ from textual.widgets import (
 	TabPane,
 )
 
+import robin_stocks.robinhood as r
+
+import config
 import database
+import orders
 
 
 class Tradebox(App):
-	CSS_PATH = "tcss/2_console_desktop.tcss"
+	CSS_PATH = "tcss/console_desktop.tcss"
 	BINDINGS = [("q", "request_quit", "Quit")]
 
 	def compose(self) -> ComposeResult:
@@ -62,47 +66,48 @@ class RunnerStatus(Static):
 				yield Label(" ", id="runner-update-open-option-positions-status", classes="status-label")
 
 			with Horizontal(classes="runner-status-section"):
-				yield Label("Position Market Data")
+				yield Label("Pos. MKT")
 				yield Label(" ", id="runner-update-open-option-positions-market-data-active", classes="active-label")
 				yield Label(" ", id="runner-update-open-option-positions-market-data-status", classes="status-label")
 
-			with Horizontal(classes="runner-status-section"):
-				yield Label("Broker Orders")
-				yield Label(" ", id="runner-update-open-broker-option-orders-active", classes="active-label")
-				yield Label(" ", id="runner-update-open-broker-option-orders-status", classes="status-label")
+			# with Horizontal(classes="runner-status-section"):
+			# 	yield Label("Broker Orders")
+			# 	yield Label(" ", id="runner-update-open-broker-option-orders-active", classes="active-label")
+			# 	yield Label(" ", id="runner-update-open-broker-option-orders-status", classes="status-label")
 
-			with Horizontal(classes="runner-status-section"):
-				yield Label("Broker Orders Market Data")
-				yield Label(" ", id="runner-broker-orders-market-data-active", classes="active-label")
-				yield Label(" ", id="runner-broker-orders-market-data-status", classes="status-label")
+			# with Horizontal(classes="runner-status-section"):
+			# 	yield Label("Broker Orders Market Data")
+			# 	yield Label(" ", id="runner-broker-orders-market-data-active", classes="active-label")
+			# 	yield Label(" ", id="runner-broker-orders-market-data-status", classes="status-label")
 
-			with Horizontal(classes="runner-status-section"):
-				yield Label("Trigger Market Data")
-				yield Label(" ", id="runner-trigger-market-data-active", classes="active-label")
-				yield Label(" ", id="runner-trigger-market-data-status", classes="status-label")
+			# with Horizontal(classes="runner-status-section"):
+			# 	yield Label("Trigger Market Data")
+			# 	yield Label(" ", id="runner-trigger-market-data-active", classes="active-label")
+			# 	yield Label(" ", id="runner-trigger-market-data-status", classes="status-label")
 
-			with Horizontal(classes="runner-status-section"):
-				yield Label("Trailing Orders")
-				yield Label(" ", id="runner-trailing-orders-active", classes="active-label")
-				yield Label(" ", id="runner-trailing-orders-status", classes="status-label")
+			# with Horizontal(classes="runner-status-section"):
+			# 	yield Label("Trailing Orders")
+			# 	yield Label(" ", id="runner-trailing-orders-active", classes="active-label")
+			# 	yield Label(" ", id="runner-trailing-orders-status", classes="status-label")
 
-			with Horizontal(classes="runner-status-section"):
-				yield Label("Trailing Market Data")
-				yield Label(" ", id="runner-trailing-orders-market-data-active", classes="active-label")
-				yield Label(" ", id="runner-trailing-orders-market-data-status", classes="status-label")
+			# with Horizontal(classes="runner-status-section"):
+			# 	yield Label("Trailing Market Data")
+			# 	yield Label(" ", id="runner-trailing-orders-market-data-active", classes="active-label")
+			# 	yield Label(" ", id="runner-trailing-orders-market-data-status", classes="status-label")
 
-			with Horizontal(classes="runner-status-section"):
-				yield Label("Bracket Orders")
-				yield Label(" ", id="runner-bracket-orders-active", classes="active-label")
-				yield Label(" ", id="runner-bracket-orders-status", classes="status-label")
+			# with Horizontal(classes="runner-status-section"):
+			# 	yield Label("Bracket Orders")
+			# 	yield Label(" ", id="runner-bracket-orders-active", classes="active-label")
+			# 	yield Label(" ", id="runner-bracket-orders-status", classes="status-label")
 
-			with Horizontal(classes="runner-status-section"):
-				yield Label("Bracket Market Data")
-				yield Label(" ", id="runner-bracket-orders-market-data-active", classes="active-label")
-				yield Label(" ", id="runner-bracket-orders-market-data-status", classes="status-label")
+			# with Horizontal(classes="runner-status-section"):
+			# 	yield Label("Bracket Market Data")
+			# 	yield Label(" ", id="runner-bracket-orders-market-data-active", classes="active-label")
+			# 	yield Label(" ", id="runner-bracket-orders-market-data-status", classes="status-label")
 
 	def on_mount(self) -> None:
-		self.set_interval(1, self.refresh_data)
+		pass
+		#self.set_interval(1, self.refresh_data)
 
 	def refresh_data(self) -> None:
 		runners_status_list = database.get_all_runners_status()
@@ -114,12 +119,16 @@ class RunnerStatus(Static):
 				f"#runner-{runner_status['runner_name'].replace('_', '-')}-status", Label
 			)
 
-			if runner_status["active"]:
+			if runner_status["active"] == True:
 				active_label.styles.background = "green"
 			else:
 				active_label.styles.background = "red"
 
-			if runner_status["last_update_successful"]:
+			runner_healthy = False
+			if runner_status["current_update_success"] or runner_status["previous_update_success"]:
+				runner_healthy = True
+
+			if runner_healthy == True:
 				status_label.styles.background = "green"
 			else:
 				status_label.styles.background = "red"
@@ -171,6 +180,15 @@ class ModalScreenQuit(ModalScreen):
 
 
 if __name__ == "__main__":
+	# LOGIN TO ROBINHOOD
+	r.login(
+		username=config.ROBINHOOD_USERNAME,
+		password=config.ROBINHOOD_PASSWORD,
+	)
+
+	# MAKE SURE DATABASE TABLES EXIST
+	database.create_all_tables()
+
 	app = Tradebox()
 	app.theme = "nord"
 	app.run()

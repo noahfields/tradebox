@@ -18,23 +18,18 @@ def create_all_tables():
     cur = conn.cursor()
 
     for table_name, columns in schema.DATABASE_TABLES.items():
-        try:
-            sql_query = (
-                f"CREATE TABLE IF NOT EXISTS {table_name} ("
-            )
+        sql_query = (f"CREATE TABLE IF NOT EXISTS {table_name} (")
 
-            for column, data_type in columns.items():
-                sql_query += f"{column} {data_type}, "
+        for column, data_type in columns.items():
+            sql_query += f"{column} {data_type}, "
 
-            sql_query = sql_query[:-2]
-            sql_query += ");"
+        sql_query = sql_query[:-2]
+        sql_query += ");"
 
-            cur.execute(sql_query)
-            conn.commit()
+        cur.execute(sql_query)
+        conn.commit()
 
-            logger.info(f"Database table {table_name} created.")
-        except Exception as e:
-            logger.exception(f"Issue creating database table {table_name}.")
+        logger.info(f"Database table {table_name} created.")
 
     cur.close()
     conn.close()

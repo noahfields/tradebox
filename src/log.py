@@ -35,12 +35,12 @@ class JSONFormatter(logging.Formatter):
 		return json.dumps(log_data)
 
 
-def create_log_directory() -> None:
-	log_dir = f"{config.LOG_BASE_DIR}"
+def create_log_runners_directory() -> None:
+	log_runners_dir = f"{config.LOG_RUNNERS_DIR}"
 	try:
-		os.makedirs(log_dir)
+		os.makedirs(log_runners_dir)
 	except FileExistsError as e:
-		print(f"{config.LOG_BASE_DIR} directory exists already: {e}")
+		print(f"{config.LOG_RUNNERS_DIR} directory exists already: {e}")
 
 
 def create_log_orders_directory() -> None:
@@ -51,12 +51,14 @@ def create_log_orders_directory() -> None:
 		print(f"{config.LOG_ORDERS_DIR} directory exists already: {e}")
 
 
-def setup_runners_logger(
+def setup_runner_logger(
 	log_name,
 	file_logging_on=config.FILE_LOGGING,
 	stdout_logging_on=config.STDOUT_LOGGING,
 	jsonl_logging_on=config.JSONL_LOGGING,
 ):
+	create_log_runners_directory()
+
 	logger = logging.getLogger(log_name)
 	logger.setLevel(eval(f"logging.{config.LOG_LEVEL}"))
 
@@ -65,19 +67,17 @@ def setup_runners_logger(
 	)
 
 	if file_logging_on:
-		log_dir = create_log_directory()
-		log_file = os.path.join(log_dir, f"{log_name}.log")
+		log_file = os.path.join(f"{config.LOG_RUNNERS_DIR}", f"{log_name}.log")
 		file_handler = logging.handlers.RotatingFileHandler(
-			log_file, mode="a", maxBytes=1000000, backupCount=10
+			log_file, mode="a", maxBytes=10000000, backupCount=10
 		)
 		file_handler.setFormatter(formatter)
 		logger.addHandler(file_handler)
 
 	if jsonl_logging_on:
-		log_dir = create_log_directory()
-		jsonl_file = os.path.join(log_dir, f"{log_name}.jsonl")
+		jsonl_file = os.path.join(f"{config.LOG_RUNNERS_DIR}", f"{log_name}.jsonl")
 		jsonl_handler = logging.handlers.RotatingFileHandler(
-			jsonl_file, mode="a", maxBytes=1000000, backupCount=10
+			jsonl_file, mode="a", maxBytes=10000000, backupCount=10
 		)
 		json_formatter = JSONFormatter()
 		jsonl_handler.setFormatter(json_formatter)
@@ -92,6 +92,8 @@ def setup_runners_logger(
 
 class OrderLogger():
 	def __init__(self, symbol, expiration_date, strike, quantity, buy_or_sell, credit_or_debit, description):
+		create_log_orders_directory()
+
 		self.symbol = symbol
 		self.expiration_date = expiration_date
 		self.strike = strike
