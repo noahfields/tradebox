@@ -88,7 +88,6 @@ def setup_runner_logger(
 		stream_handler.setFormatter(formatter)
 		logger.addHandler(stream_handler)
 
-	return logger
 
 class OrderLogger():
 	def __init__(self, symbol, expiration_date, strike, quantity, buy_or_sell, credit_or_debit, description):

@@ -12,7 +12,7 @@ import log
 import orders
 import schema
 
-logger = logging.getLogger(__name__)
+logger = None
 
 
 API_VERIFICATION_DEFAULT_KEYSETS = {
@@ -593,6 +593,7 @@ def start_data_fetch_runner(runner_dict):
 
 		try:
 			# Get API data
+			logger.info("Attempting to fetch api_data.")
 			api_data = runner.get_data()
 
 			logger.info(
@@ -600,6 +601,7 @@ def start_data_fetch_runner(runner_dict):
 				extra={"runner": runner.status["runner_name_pk"]},
 			)
 		except Exception as e:
+			logger.info("Issue fetching api_data.")
 			logger.exception(
 				f"{e}",
 				stack_info=True,
@@ -642,6 +644,7 @@ def start_data_fetch_runner(runner_dict):
 
 		try:
 			# Store API data
+			logger.info("Attempting to store api_data.")
 			runner.store_data(api_data)
 			
 			runner.status["current_update_success"] = True
@@ -652,10 +655,13 @@ def start_data_fetch_runner(runner_dict):
 			if runner.status["adjusted_interval"] < runner.status["default_interval"]:
 				runner.status["adjusted_interval"] = runner.status["default_interval"]
 
-			time.sleep(runner.status["adjusted_interval"])
+			logger.info(f"api_data stored. entering sleep interval: {runner.status["adjusted_interval"]}")
+
 			runner.write_runner_status()
+			time.sleep(runner.status["adjusted_interval"])
 			continue
 		except Exception as e:
+			logger.info("Issue storing api_data.")
 			logger.exception(
 				f"{e}",
 				stack_info=True,
@@ -723,12 +729,19 @@ def start_monitor_runner(runner_dict):
 			continue
 
 
-def main(runner_name):
+def main(runner):
 	# set up logging
-	log_name = f"runner_{runner_name}"
-	logger = log.setup_runner_logger(log_name)
+	log_name = f"runner_{runner}"
+	log.setup_runner_logger(log_name)
+
+	# set logger for runner name across modules
+	global logger
+	logger = logging.getLogger(log_name)
 	database.logger = logging.getLogger(log_name)
 	orders.logger = logging.getLogger(log_name)
+
+	#database.drop_all_tables()
+	database.create_all_tables()
 
 	r.login(config.ROBINHOOD_USERNAME, config.ROBINHOOD_PASSWORD)
 	orders.robinhood_login()
@@ -830,7 +843,7 @@ def main(runner_name):
 	# 	purchase_price=.02,
 	# )
 
-	runner = RUNNERS[runner_name]
+	runner = RUNNERS[runner]
 	if runner["type"] == "data_fetch":
 		start_data_fetch_runner(runner)
 	if runner["type"] == "order_monitor":
@@ -858,24 +871,26 @@ RUNNERS = {
 			"default_interval": config.MARKET_DATA_REFRESH_INTERVAL,
 			"type": "data_fetch",
 		},
-	# {
-	# 	"runner_name": "open_broker_option_orders",
-	# 	"active": True,
-	# 	"get_data_function": get_data_open_broker_option_orders,
-	# 	"verify_data_keyset": "get_all_open_option_orders",
-	# 	"store_data_function": store_data_open_broker_option_orders,
-	# 	"default_interval": config.BROKER_ORDERS_REFRESH_INTERVAL,
-	# 	"type": "data_fetch",
-	# },
-	# {
-	# 	"runner_name": "open_broker_option_orders_market_data",
-	# 	"active": True,
-	# 	"get_data_function": get_data_open_broker_option_orders_market_data,
-	# 	"verify_data_keyset": "get_option_market_data_by_id",
-	# 	"store_data_function": store_data_open_broker_option_orders_market_data,
-	# 	"default_interval": config.BROKER_ORDERS_REFRESH_INTERVAL,
-	# 	"type": "data_fetch",
-	# },
+	"open_broker_option_orders":
+		{
+			"runner_name": "open_broker_option_orders",
+			"active": True,
+			"get_data_function": get_data_open_broker_option_orders,
+			"verify_data_keyset": "get_all_open_option_orders",
+			"store_data_function": store_data_open_broker_option_orders,
+			"default_interval": config.BROKER_ORDERS_REFRESH_INTERVAL,
+			"type": "data_fetch",
+		},
+	"open_broker_option_orders_market_data":
+		{
+			"runner_name": "open_broker_option_orders_market_data",
+			"active": True,
+			"get_data_function": get_data_open_broker_option_orders_market_data,
+			"verify_data_keyset": "get_option_market_data_by_id",
+			"store_data_function": store_data_open_broker_option_orders_market_data,
+			"default_interval": config.BROKER_ORDERS_REFRESH_INTERVAL,
+			"type": "data_fetch",
+		},
 	# {
 	# 	"runner_name": "trigger_option_orders_market_data",
 	# 	"active": True,
