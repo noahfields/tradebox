@@ -1,4 +1,6 @@
 import time
+import datetime
+import json
 
 from textual.app import App, ComposeResult
 from textual.containers import Container, Horizontal, Grid, ScrollableContainer, VerticalScroll
@@ -80,37 +82,42 @@ class TabPaneSystemManagement(TabPane):
 	@on(Button.Pressed, "#button-start-runners")
 	def handle_button_start_runners_click(self) -> None:
 		self.notify("button-start-runners was clicked!")
-		systemd.start_systemd_services()
-
+		res = systemd.start_systemd_services()
+		self.notify(str(res))
 
 	@on(Button.Pressed, "#button-stop-runners")
 	def handle_button_stop_runners_click(self) -> None:
 		self.notify("button-stop-runners was clicked!")
-		systemd.stop_systemd_services()
+		res = systemd.stop_systemd_services()
+		self.notify(str(res))
 
 
 	@on(Button.Pressed, "#button-install-runners")
 	def handle_button_install_runners_click(self) -> None:
 		self.notify("button-install-runners was clicked!")
-		systemd.install_systemd_services(dest_dir="/etc/systemd/system", overwrite=True)
+		res = systemd.install_systemd_services(dest_dir="/etc/systemd/system", overwrite=True)
+		self.notify(str(res))
 
 
 	@on(Button.Pressed, "#button-remove-runners")
 	def handle_button_remove_runners_click(self) -> None:
 		self.notify("button-remove-runners was clicked!")
-		systemd.remove_systemd_services()
+		res = systemd.remove_systemd_services()
+		self.notify(str(res))
 
 
 	@on(Button.Pressed, "#button-enable-runners")
 	def handle_button_enable_runners_click(self) -> None:
 		self.notify("button-enable-runners was clicked!")
-		systemd.enable_systemd_services()
+		res = systemd.enable_systemd_services()
+		self.notify(str(res))
 
 
 	@on(Button.Pressed, "#button-disable-runners")
 	def handle_button_disable_runners_click(self) -> None:
 		self.notify("button-disable-runners was clicked!")
-		systemd.disable_systemd_services()
+		res = systemd.disable_systemd_services()
+		self.notify(str(res))
 
 
 class RunnerStatus(Static):
@@ -163,7 +170,7 @@ class RunnerStatus(Static):
 			# 	yield Label(" ", id="runner-bracket-orders-market-data-status", classes="status-label")
 
 	def on_mount(self) -> None:
-		self.set_interval(.25, self.refresh_data)
+		self.set_interval(2, self.refresh_data)
 
 	def refresh_data(self) -> None:
 		runners_status_list = database.get_all_runners_status()
@@ -189,20 +196,29 @@ class RunnerStatus(Static):
 
 			if runner_healthy == True:
 				status_label.styles.background = "green"
+				#status_label.refresh()
 			else:
 				status_label.styles.background = "red"
+				#status_label.refresh()
 
-			now = time.time()
-			last_update_limit = (float(runner_status["adjusted_interval"]) / 2) + float(runner_status["epoch_time_previous_success"])
+			now = database.get_rounded_epoch_time()
+			now_est = datetime.datetime.fromtimestamp(now).strftime("%d/%m/%Y, %H:%M:%S")
+			interval = float(runner_status["adjusted_interval"])
+			previous_update_time = float(runner_status["epoch_time_previous_success"])
+			previous_update_est = datetime.datetime.fromtimestamp(previous_update_time).strftime("%d/%m/%Y, %H:%M:%S")
 			epoch_healthy = False
-			if now <= last_update_limit:
+			self.notify(f"now_est: {now_est}\nprev upd est: {previous_update_est}\nprev update: {str(previous_update_time)}\ninterval: {interval}\nnow - previous_update: {str(now - previous_update_time)}")
+			if interval >= (now - previous_update_time):
 				epoch_healthy = True
 
 			if epoch_healthy == True:
 				epoch_label.styles.background = "green"
+				#epoch_label.refresh(recompose=True)
 			else:
 				epoch_label.styles.background = "red"
+				#epoch_label.refresh(recompose=True)
 
+		self.refresh()
 
 
 class DataTablePositions(DataTable):
@@ -213,16 +229,17 @@ class DataTablePositions(DataTable):
 		self.zebra_stripes = True
 
 		# Add columns
-		self.add_column("ID", key="id", width=6)
-		self.add_column("Symbol", key="symbol", width=8)
-		self.add_column("Type", key="type", width=6)
-		self.add_column("Strike", key="strike", width=10)
-		self.add_column("Expiry", key="expiry", width=12)
-		self.add_column("Qty", key="qty", width=6)
-		self.add_column("Avg Price", key="avg_price", width=12)
-		self.add_column("Current", key="current", width=12)
-		self.add_column("P/L", key="pl", width=12)
-		self.add_column("P/L %", key="pl_pct", width=10)
+		self.add_column("ID", key="id", width=2)
+		self.add_column("position_description", width=30)
+		# self.add_column("Symbol", key="symbol", width=8)
+		# self.add_column("Type", key="type", width=6)
+		# self.add_column("Strike", key="strike", width=10)
+		# self.add_column("Expiry", key="expiry", width=12)
+		# self.add_column("Qty", key="qty", width=6)
+		# self.add_column("Avg Price", key="avg_price", width=12)
+		# self.add_column("Current", key="current", width=12)
+		# self.add_column("P/L", key="pl", width=12)
+		# self.add_column("P/L %", key="pl_pct", width=10)
 
 		# Load initial data
 		# self.refresh_data()
@@ -231,7 +248,70 @@ class DataTablePositions(DataTable):
 		# self.set_interval(self.refresh_interval, self.refresh_data)
 
 	def refresh_data(self) -> None:
-		pass
+		positions = database.get_all_from_table("open_option_positions")
+		market_data_list = database.get_all_from_table("open_option_positions_market_data")
+
+		# Build lookup dict for market data by option_id
+		market_data_lookup = {}
+		for market_data in market_data_list:
+			json_data = market_data.get("json_data", {})
+			if isinstance(json_data, str):
+				json_data = json.loads(json_data)
+			option_id = json_data.get("instrument_id", "")
+			if option_id:
+				market_data_lookup[option_id] = json_data
+
+		# Clear existing rows
+		self.clear()
+
+		# Populate table with position data
+		if positions:
+			for position in positions:
+				local_id = position.get("local_id")
+				json_data = position.get("json_data")
+
+				# Parse JSON data if it's a string
+				if isinstance(json_data, str):
+					json_data = json.loads(json_data)
+
+				# Extract position details
+				symbol = json_data.get("chain_symbol")
+				position_type = json_data.get("type")  # long or short
+				option_id = json_data.get("option_id")
+				quantity = float(json_data.get("quantity"))
+				avg_price = float(json_data.get("average_price"))
+				expiry = json_data.get("expiration_date")
+
+				# Get market data for this position
+				current_price = 0.0
+				option_type = ""
+				strike_price = 0.0
+
+				if option_id in market_data_lookup:
+					market_data = market_data_lookup[option_id]
+					current_price = float(market_data.get("mark_price", 0))
+					option_type = market_data.get("type", "")  # call or put
+					strike_price = float(market_data.get("strike_price", 0))
+
+				# Calculate P/L %
+				profit_loss_pct = 0.0
+				if avg_price > 0:
+					profit_loss_pct = ((current_price - avg_price) / avg_price) * 100
+
+				# Format compact description
+				# Format: IWM P 263.0 1/20 x1 @39.00→38.00 +2.5%
+				expiry_short = expiry[-5:] if len(expiry) >= 5 else expiry  # MM/DD format
+				pl_sign = "+" if profit_loss_pct >= 0 else ""
+				position_description = (
+					f"{symbol} {option_type.upper()[0] if option_type else '?'} {strike_price:.2f} "
+					f"{expiry_short} x{int(quantity)} @{avg_price:.2f}→{current_price:.2f} "
+					f"{pl_sign}{profit_loss_pct:.1f}%"
+				)
+
+				# Add row to table
+				self.add_row(str(local_id), position_description, key=str(local_id))
+
+
 
 
 

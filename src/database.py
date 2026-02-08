@@ -133,13 +133,13 @@ def write_runner_status(runner_status: dict) -> None:
         ";"
     )
     values = (
-        runner_status["runner_name_pk"],
-        runner_status["active"],
-        runner_status["adjusted_interval"],
-        runner_status["default_interval"],
-        runner_status["current_update_success"],
-        runner_status["previous_update_success"],
-        runner_status["epoch_time_previous_success"],
+        str(runner_status["runner_name_pk"]),
+        bool(runner_status["active"]),
+        int(runner_status["adjusted_interval"]),
+        int(runner_status["default_interval"]),
+        bool(runner_status["current_update_success"]),
+        bool(runner_status["previous_update_success"]),
+        float(runner_status["epoch_time_previous_success"]),
     )
     conn = get_database_connection()
     cur = conn.cursor()
@@ -147,11 +147,12 @@ def write_runner_status(runner_status: dict) -> None:
         cur.execute(sql_query, values)
         conn.commit()
         logger.info(
-            f"Wrote runner status for {runner_status['runner_name_pk']}.\nStatus details:\n{runner_status}",
+            f"Wrote runner status for {runner_status['runner_name_pk']}.\n"
+            f"Status details:\n{runner_status}",
             extra={"runner": runner_status["runner_name_pk"]}
         )
     except Exception as e:
-        logger.exception(stack_info=True, extra={"runner": runner_status["runner_name_pk"]})
+        logger.exception(f"{e}", stack_info=True, extra={"runner": runner_status["runner_name_pk"]})
     finally:
         cur.close()
         conn.close()
@@ -223,6 +224,39 @@ def update_open_option_positions_market_data(options_market_data: list) -> None:
             conn.close()
         
     delete_rows_from_table_by_value("open_option_positions_market_data", "still_alive", False)
+
+
+def update_open_option_positions_instrument_data(options_instrument_data: list) -> None:
+    set_table_field("open_option_positions_instrument_data", "still_alive", False)
+
+    for option in options_instrument_data:
+        option_uuid_pk = option["id"]
+        json_data = json.dumps(option)
+        last_update_epoch_time = time.time()
+        still_alive = True
+        
+        sql_query = (
+            "INSERT INTO open_option_positions_instrument_data (option_uuid_pk, json_data, last_update_epoch_time, still_alive) "
+            "VALUES (%s, %s, %s, %s) "
+            "ON CONFLICT(option_uuid_pk) DO UPDATE SET "
+            "json_data=excluded.json_data, "
+            "last_update_epoch_time=excluded.last_update_epoch_time, "
+            "still_alive=excluded.still_alive;"
+        )
+        values = (option_uuid_pk, json_data, last_update_epoch_time, still_alive)
+        
+        conn = get_database_connection()
+        cur = conn.cursor()
+        try:
+            cur.execute(sql_query, values)
+            conn.commit()
+        except Exception as e:
+            logger.exception(f"Issue updating open option position instrument data: {e}", stack_info=True)
+        finally:
+            cur.close()
+            conn.close()
+        
+    delete_rows_from_table_by_value("open_option_positions_instrument_data", "still_alive", False)
 
 
 def update_open_broker_option_orders(open_broker_orders: list) -> None:
@@ -949,3 +983,6 @@ def get_executed_status_orders(trigger_order_ids, bracket_order_ids, trailing_or
     conn.close()
 
     return executed_status_list
+
+def get_rounded_epoch_time(significant_figures=2):
+    return round(time.time(), significant_figures)

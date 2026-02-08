@@ -3,6 +3,7 @@ import logging
 import sys
 import time
 import uuid
+import datetime
 
 import robin_stocks.robinhood as r
 
@@ -326,6 +327,26 @@ def store_data_open_option_positions_market_data(api_data):
 	database.update_open_option_positions_market_data(api_data)
 
 
+def get_data_open_option_positions_instrument_data():
+	option_ids = database.get_json_field_from_table_as_list(
+		"open_option_positions", "json_data", "option_id"
+	)
+
+	cleaned_option_ids = []
+	for option_tuple in option_ids:
+		cleaned_option_ids.append(option_tuple)
+
+	api_data = []
+	for option_id in cleaned_option_ids:
+		api_data.append(r.get_option_instrument_data_by_id(option_id)[0])
+
+	return api_data
+
+
+def store_data_open_option_positions_instrument_data(api_data):
+	database.update_open_option_positions_instrument_data(api_data)
+
+
 def get_data_open_broker_option_orders():
 	api_data = r.get_all_open_option_orders()
 	return api_data
@@ -566,9 +587,11 @@ def start_data_fetch_runner(runner_dict):
 	runner.write_runner_status()
 
 	while True:
+		logger.info("START RUNNER LOOP")
+
 		runner.status = runner.get_runner_status()
 		logger.info(
-			f"Runner status: {runner.status}",
+			f"Begin loop runner status: {runner.status}",
 			extra={"runner": runner.status["runner_name_pk"]},
 		)
 
@@ -589,6 +612,7 @@ def start_data_fetch_runner(runner_dict):
 			)
 
 		runner.status["current_update_success"] = False
+		logger.info(f"runner.status: {runner.status}")
 		runner.write_runner_status()
 
 		try:
@@ -614,6 +638,8 @@ def start_data_fetch_runner(runner_dict):
 			if runner.status["adjusted_interval"] > config.MAXIMUM_REFRESH_INTERVAL:
 				runner.status["adjusted_interval"] = config.MAXIMUM_REFRESH_INTERVAL
 
+			logger.info(f"Becuase api_data fetch failed, writing failed runner status and pausing for adjusted interval: {runner.status['adjusted_interval']}")
+			logger.info(f"runner.status: {runner.status}")
 			runner.write_runner_status()
 			time.sleep(runner.status["adjusted_interval"])
 			continue
@@ -649,16 +675,23 @@ def start_data_fetch_runner(runner_dict):
 			
 			runner.status["current_update_success"] = True
 			runner.status["previous_update_success"] = True
-			runner.status["epoch_time_previous_success"] = time.time()
+			runner.status["epoch_time_previous_success"] = database.get_rounded_epoch_time()
+			logger.info(f"New epoch_time_previous_success: {runner.status['epoch_time_previous_success']}")
+			t_f = datetime.datetime.fromtimestamp(runner.status["epoch_time_previous_success"]).strftime("%d/%m/%Y, %H:%M:%S")
+			logger.info(f"Epoch converted: {t_f}")
 			if runner.status["adjusted_interval"] > runner.status["default_interval"]:
 				runner.status["adjusted_interval"] -= config.RUNNER_SUCCESS_ADJUSTMENT
 			if runner.status["adjusted_interval"] < runner.status["default_interval"]:
 				runner.status["adjusted_interval"] = runner.status["default_interval"]
+			logger.info(f"runner adjusted interval after decisions: {runner.status["adjusted_interval"]}")
 
 			logger.info(f"api_data stored. entering sleep interval: {runner.status["adjusted_interval"]}")
-
+			
+			logger.info(f"runner.status: {runner.status}")
 			runner.write_runner_status()
 			time.sleep(runner.status["adjusted_interval"])
+			# runner.status["epoch_time_previous_success"] = database.get_rounded_epoch_time()
+			# runner.write_runner_status()
 			continue
 		except Exception as e:
 			logger.info("Issue storing api_data.")
@@ -712,7 +745,7 @@ def start_monitor_runner(runner_dict):
 
 			runner.status["current_update_success"] = True
 			runner.status["previous_update_success"] = True
-			runner.status["epoch_time_previous_success"] = time.time()
+			runner.status["epoch_time_previous_success"] = database.get_rounded_epoch_time()
 			runner.write_runner_status()
 			time.sleep(runner.status["default_interval"])
 			continue
@@ -740,7 +773,7 @@ def main(runner):
 	database.logger = logging.getLogger(log_name)
 	orders.logger = logging.getLogger(log_name)
 
-	#database.drop_all_tables()
+	database.drop_all_tables()
 	database.create_all_tables()
 
 	r.login(config.ROBINHOOD_USERNAME, config.ROBINHOOD_PASSWORD)
@@ -748,7 +781,7 @@ def main(runner):
 
 	# orders.create_trigger_option_order(
 	# 	active=True,
-	# 	epoch_time_created_at=time.time(),
+	# 	epoch_time_created_at=database.get_rounded_epoch_time(),
 	# 	execute_only_after_trigger_order_ids=[],
 	# 	execute_only_after_bracket_order_ids=[],
 	# 	execute_only_after_trailing_order_ids=[],
@@ -771,7 +804,7 @@ def main(runner):
 
 	# orders.create_trigger_option_order(
 	# 	active=True,
-	# 	epoch_time_created_at=time.time(),
+	# 	epoch_time_created_at=database.get_rounded_epoch_time(),
 	# 	execute_only_after_trigger_order_ids=[],
 	# 	execute_only_after_bracket_order_ids=[],
 	# 	execute_only_after_trailing_order_ids=[],
@@ -795,7 +828,7 @@ def main(runner):
 
 	# orders.create_bracket_option_order(
 	#     active=True,
-    #     epoch_time_created_at=time.time(),
+    #     epoch_time_created_at=database.get_rounded_epoch_time(),
     #     execute_only_after_trigger_order_ids=[],
     #     execute_only_after_bracket_order_ids=[],
     #     execute_only_after_trailing_order_ids=[],
@@ -820,7 +853,7 @@ def main(runner):
 
 	# orders.create_trailing_sell_option_order(
 	# 	active=True, 
-	# 	epoch_time_created_at=time.time(), 
+	# 	epoch_time_created_at=database.get_rounded_epoch_time(), 
 	# 	executed=False, 
 	# 	execute_only_after_trigger_order_ids=[], 
 	# 	execute_only_after_bracket_sell_order_ids=[], 
@@ -869,6 +902,16 @@ RUNNERS = {
 			"verify_data_keyset": "get_option_market_data_by_id",
 			"store_data_function": store_data_open_option_positions_market_data,
 			"default_interval": config.MARKET_DATA_REFRESH_INTERVAL,
+			"type": "data_fetch",
+		},
+	"open_option_positions_instrument_data":
+		{
+			"runner_name": "open_option_positions_instrument_data",
+			"active": True,
+			"get_data_function": get_data_open_option_positions_instrument_data,
+			"verify_data_keyset": "get_option_instrument_data_by_id",
+			"store_data_function": store_data_open_option_positions_instrument_data,
+			"default_interval": config.INSTRUMENT_DATA_REFRESH_INTERVAL,
 			"type": "data_fetch",
 		},
 	"open_broker_option_orders":
