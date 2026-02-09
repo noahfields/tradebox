@@ -66,7 +66,7 @@ def setup_runner_logger(
 		"%(asctime)s | p%(process)s | {%(filename)s:%(lineno)d} | %(levelname)s | runner=%(runner)s \n %(message)s\n\n"
 	)
 
-	if file_logging_on:
+	if file_logging_on == True:
 		log_file = os.path.join(f"{config.LOG_RUNNERS_DIR}", f"{log_name}.log")
 		file_handler = logging.handlers.RotatingFileHandler(
 			log_file, mode="a", maxBytes=10000000, backupCount=10
@@ -74,7 +74,7 @@ def setup_runner_logger(
 		file_handler.setFormatter(formatter)
 		logger.addHandler(file_handler)
 
-	if jsonl_logging_on:
+	if jsonl_logging_on == True:
 		jsonl_file = os.path.join(f"{config.LOG_RUNNERS_DIR}", f"{log_name}.jsonl")
 		jsonl_handler = logging.handlers.RotatingFileHandler(
 			jsonl_file, mode="a", maxBytes=10000000, backupCount=10
@@ -83,7 +83,7 @@ def setup_runner_logger(
 		jsonl_handler.setFormatter(json_formatter)
 		logger.addHandler(jsonl_handler)
 
-	if stdout_logging_on:
+	if stdout_logging_on == True:
 		stream_handler = logging.StreamHandler(stream=sys.stdout)
 		stream_handler.setFormatter(formatter)
 		logger.addHandler(stream_handler)

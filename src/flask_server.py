@@ -9,7 +9,6 @@ import config
 
 app = Flask(__name__)
 
-# some remark
 
 @app.route('/')
 def index() -> str:

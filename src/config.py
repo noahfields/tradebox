@@ -41,9 +41,9 @@ DB_NAME = os.getenv("DB_NAME")
 DB_PORT = os.getenv("DB_PORT")
 DATABASE_URI = f"postgresql://{DB_USER}:{DB_PASSWORD}@localhost:{DB_PORT}/{DB_NAME}"
 
-FILE_LOGGING = bool(os.getenv("FILE_LOGGING"))
-STDOUT_LOGGING = bool(os.getenv("STDOUT_LOGGING"))
-JSONL_LOGGING = bool(os.getenv("JSONL_LOGGING"))
+FILE_LOGGING = bool(str(os.getenv("FILE_LOGGING")))
+STDOUT_LOGGING = bool(str(os.getenv("STDOUT_LOGGING")))
+JSONL_LOGGING = bool(str(os.getenv("JSONL_LOGGING")))
 LOG_LEVEL = os.getenv("LOG_LEVEL")
 
 SRC_DIR = pathlib.Path(__file__).parent.absolute().as_posix()
