@@ -82,7 +82,7 @@ def get_all_runners_status() -> list[dict]:
         for key, value in result.items():
             runner_info[key] = value
 
-    runners_status_list.append(runner_info)
+        runners_status_list.append(runner_info)
 
     return runners_status_list
 
@@ -323,6 +323,39 @@ def update_open_broker_option_orders_market_data(option_market_data: list) -> No
             conn.close()
 
     delete_rows_from_table_by_value("open_broker_option_orders_market_data", "still_alive", False)
+
+
+def update_open_broker_option_orders_instrument_data(options_instrument_data: list) -> None:
+    set_table_field("open_broker_option_orders_instrument_data", "still_alive", False)
+
+    for option in options_instrument_data:
+        option_uuid_pk = option["id"]
+        json_data = json.dumps(option)
+        last_update_epoch_time = time.time()
+        still_alive = True
+        
+        sql_query = (
+            "INSERT INTO open_broker_option_orders_instrument_data (option_uuid_pk, json_data, last_update_epoch_time, still_alive) "
+            "VALUES (%s, %s, %s, %s) "
+            "ON CONFLICT(option_uuid_pk) DO UPDATE SET "
+            "json_data=excluded.json_data, "
+            "last_update_epoch_time=excluded.last_update_epoch_time, "
+            "still_alive=excluded.still_alive;"
+        )
+        values = (option_uuid_pk, json_data, last_update_epoch_time, still_alive)
+        
+        conn = get_database_connection()
+        cur = conn.cursor()
+        try:
+            cur.execute(sql_query, values)
+            conn.commit()
+        except Exception as e:
+            logger.exception(f"Issue updating open broker option orders instrument data: {e}", stack_info=True)
+        finally:
+            cur.close()
+            conn.close()
+        
+    delete_rows_from_table_by_value("open_broker_option_orders_instrument_data", "still_alive", False)
 
 
 def update_trigger_option_orders_market_data(option_market_data: list) -> None:
@@ -984,5 +1017,22 @@ def get_executed_status_orders(trigger_order_ids, bracket_order_ids, trailing_or
 
     return executed_status_list
 
+
 def get_rounded_epoch_time(significant_figures=2):
     return round(time.time(), significant_figures)
+
+
+def clear_all_tables():
+    conn = get_database_connection()
+    cur = conn.cursor()
+
+    for table in schema.DATABASE_TABLES.keys():
+        print(table)
+        sql_query = f"DELETE FROM {table};"
+        cur.execute(sql_query)
+        conn.commit()
+
+    cur.close()
+    conn.close()
+
+

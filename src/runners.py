@@ -338,7 +338,7 @@ def get_data_open_option_positions_instrument_data():
 
 	api_data = []
 	for option_id in cleaned_option_ids:
-		api_data.append(r.get_option_instrument_data_by_id(option_id)[0])
+		api_data.append(r.get_option_instrument_data_by_id(option_id))
 
 	return api_data
 
@@ -391,6 +391,42 @@ def get_data_open_broker_option_orders_market_data():
 
 def store_data_open_broker_option_orders_market_data(api_data):
 	database.update_open_broker_option_orders_market_data(api_data)
+
+
+def get_data_open_broker_option_orders_instrument_data():
+	open_broker_option_order_legs = database.get_json_field_from_table(
+		"open_broker_option_orders", "json_data", "legs"
+	)
+	# SAMPLE DATA open_broker_option_order_legs
+	# [('[{"executions":[],"id":"69443130-4608-43c0-8ce5-1f225c685044","option":"https://api.robinhood.com/options/instruments/4aed1bc4-f8d4-48a7-a5b9-288ee30c63be/","position_effect":"close","ratio_quantity":1,"side":"sell","expiration_date":"2025-12-19","strike_price":"34.0000","option_type":"put","long_strategy_code":"4aed1bc4-f8d4-48a7-a5b9-288ee30c63be_L1","short_strategy_code":"4aed1bc4-f8d4-48a7-a5b9-288ee30c63be_S1"}]',)]
+	logger.info(f"Fetched open_broker_option_orders legs: {open_broker_option_order_legs}")
+
+	cleaned_option_leg_ids = []
+	for leg in open_broker_option_order_legs:
+		# SAMPLE DATA leg
+		# ('[{"executions":[],"id":"69443130-4608-43c0-8ce5-1f225c685044","option":"https://api.robinhood.com/options/instruments/4aed1bc4-f8d4-48a7-a5b9-288ee30c63be/","position_effect":"close","ratio_quantity":1,"side":"sell","expiration_date":"2025-12-19","strike_price":"34.0000","option_type":"put","long_strategy_code":"4aed1bc4-f8d4-48a7-a5b9-288ee30c63be_L1","short_strategy_code":"4aed1bc4-f8d4-48a7-a5b9-288ee30c63be_S1"}]',)
+		logger.info(f"leg: {leg}")
+
+		leg = leg[0][0]
+		# SAMPLE DATA leg
+		# [{'executions': [], 'id': '69443130-4608-43c0-8ce5-1f225c685044', 'option': 'https://api.robinhood.com/options/instruments/4aed1bc4-f8d4-48a7-a5b9-288ee30c63be/', 'position_effect': 'close', 'ratio_quantity': 1, 'side': 'sell', 'expiration_date': '2025-12-19', 'strike_price': '34.0000', 'option_type': 'put', 'long_strategy_code': '4aed1bc4-f8d4-48a7-a5b9-288ee30c63be_L1', 'short_strategy_code': '4aed1bc4-f8d4-48a7-a5b9-288ee30c63be_S1'}]
+		# leg = leg[0]
+		# logger.info(f"Leg after json cleaning: {leg}")
+
+		market_option_id = leg["option"].split("/")[5]
+		cleaned_option_leg_ids.append(market_option_id)
+
+	api_data = []
+	for option_id in cleaned_option_leg_ids:
+		option_instrument_data = r.get_option_instrument_data_by_id(option_id)
+		api_data.append(option_instrument_data)
+
+	logger.info(f"get_data_open_broker_option_orders_instrument_data final instrument market data:\n{api_data}")
+	return api_data
+
+
+def store_data_open_broker_option_orders_instrument_data(api_data):
+	database.update_open_broker_option_orders_instrument_data(api_data)
 
 
 def get_data_trigger_option_orders_market_data():
@@ -773,7 +809,7 @@ def main(runner):
 	database.logger = logging.getLogger(log_name)
 	orders.logger = logging.getLogger(log_name)
 
-	database.drop_all_tables()
+	#database.drop_all_tables()
 	database.create_all_tables()
 
 	r.login(config.ROBINHOOD_USERNAME, config.ROBINHOOD_PASSWORD)
@@ -931,7 +967,17 @@ RUNNERS = {
 			"get_data_function": get_data_open_broker_option_orders_market_data,
 			"verify_data_keyset": "get_option_market_data_by_id",
 			"store_data_function": store_data_open_broker_option_orders_market_data,
-			"default_interval": config.BROKER_ORDERS_REFRESH_INTERVAL,
+			"default_interval": config.MARKET_DATA_REFRESH_INTERVAL,
+			"type": "data_fetch",
+		},
+	"open_broker_option_orders_instrument_data":
+		{
+			"runner_name": "open_broker_option_orders_instrument_data",
+			"active": True,
+			"get_data_function": get_data_open_broker_option_orders_instrument_data,
+			"verify_data_keyset": "get_option_instrument_data_by_id",
+			"store_data_function": store_data_open_broker_option_orders_instrument_data,
+			"default_interval": config.INSTRUMENT_DATA_REFRESH_INTERVAL,
 			"type": "data_fetch",
 		},
 	# {
@@ -961,13 +1007,13 @@ RUNNERS = {
 	# 	"default_interval": config.MARKET_DATA_REFRESH_INTERVAL,
 	# 	"type": "data_fetch",
 	# },
-	# # {
-	# # 	"runner_name": "monitor_bracket_sell_option_orders",
-	# # 	"active": True,
-	# # 	"monitor_function": monitor_bracket_option_orders,
-	# # 	"default_interval": 1,
-	# # 	"type": "order_monitor",
-	# # },
+	# {
+	# 	"runner_name": "monitor_bracket_sell_option_orders",
+	# 	"active": True,
+	# 	"monitor_function": monitor_bracket_option_orders,
+	# 	"default_interval": 1,
+	# 	"type": "order_monitor",
+	# },
 	# {
 	# 	"runner_name": "monitor_trailing_sell_option_orders",
 	# 	"active": True,

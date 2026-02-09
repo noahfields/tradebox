@@ -30,7 +30,6 @@ class Tradebox(App):
 	BINDINGS = [("q", "request_quit", "Quit")]
 
 	def compose(self) -> ComposeResult:
-		yield Header()
 		with TabbedContent():
 			yield TabPaneMain(title="Main", id="tabpane_main")
 			yield TabPaneStatus(title="Status", id="tabpane_status")
@@ -46,18 +45,19 @@ class Tradebox(App):
 
 class TabPaneMain(TabPane):
 	def compose(self) -> ComposeResult:
-		with ScrollableContainer(id="container_positions_datatable"):
+		with Container(id="container_main"):
 			yield DataTablePositions(id="datatable_positions")
 
-			with Horizontal(id="positions_buttons"):
-				yield Button("Sell Market", variant="primary", id="button-position-sell-market", classes="small-button")
-				yield Button("Sell Limit", variant="primary", id="button-position-sell-limit", classes="small-button")
-				yield Button("Buy Market", variant="primary", id="button-position-buy-market", classes="small-button")
-				yield Button("Buy Limit", variant="primary", id="button-position-buy-limit", classes="small-button")
-				yield Button("Sell Trailing", variant="primary", id="button-position-sell-trailing", classes="small-button")
-				yield Button("Sell Bracket", variant="primary", id="button-position-sell-bracket", classes="small-button")
-				yield Button("Sell All @ Market", variant="error", id="button-position-sell-all-market", classes="small-button")
+			# with Horizontal(id="positions_buttons"):
+			# 	yield Button("Sell Market", variant="primary", id="button-position-sell-market", classes="small-button")
+			# 	yield Button("Sell Limit", variant="primary", id="button-position-sell-limit", classes="small-button")
+			# 	yield Button("Buy Market", variant="primary", id="button-position-buy-market", classes="small-button")
+			# 	yield Button("Buy Limit", variant="primary", id="button-position-buy-limit", classes="small-button")
+			# 	yield Button("Sell Trailing", variant="primary", id="button-position-sell-trailing", classes="small-button")
+			# 	yield Button("Sell Bracket", variant="primary", id="button-position-sell-bracket", classes="small-button")
+			# 	yield Button("Sell All @ Market", variant="error", id="button-position-sell-all-market", classes="small-button")
 
+			yield DataTableBrokerOrders(id="datatable_brokerorders")
 
 class TabPaneStatus(TabPane):
 	def compose(self) -> ComposeResult:
@@ -70,13 +70,14 @@ class TabPaneSystemManagement(TabPane):
 			yield Button("Login RH", variant="primary", id="button-login-robinhood", classes="small-button")
 			yield Button("Logout RH", variant="primary", id="button-logout-robinhood", classes="small-button")	
 			yield Button("Start Runners", variant="primary", id="button-start-runners", classes="small-button")
-			yield Button("Stop Runners", variant="primary", id="button-stop-runners", classes="small-button")		
+			yield Button("Stop Runners", variant="primary", id="button-stop-runners", classes="small-button")	
+			yield Button("Enable Runners", variant="primary", id="button-enable-runners", classes="small-button")
+			yield Button("Disable Runners", variant="primary", id="button-disable-runners", classes="small-button")	
 			yield Button("Install Runners", variant="primary", id="button-install-runners", classes="small-button")
 			yield Button("Remove Runners", variant="primary", id="button-remove-runners", classes="small-button")
-			yield Button("Enable Runners", variant="primary", id="button-enable-runners", classes="small-button")
-			yield Button("Disable Runners", variant="primary", id="button-disable-runners", classes="small-button")
 			yield Button("Create Database", variant="primary", id="button-create-database", classes="small-button")
 			yield Button("Delete Database", variant="primary", id="button-delete-database", classes="small-button")
+			yield Button("Clear All Tables", variant="primary", id="button-clear-all-tables", classes="small-button")
 	
 
 	@on(Button.Pressed, "#button-start-runners")
@@ -120,29 +121,50 @@ class TabPaneSystemManagement(TabPane):
 		self.notify(str(res))
 
 
+	@on(Button.Pressed, "#button-clear-all-tables")
+	def handle_button_disable_runners_click(self) -> None:
+		self.notify("button-clear-all-tables was clicked!")
+		database.clear_all_tables()
+
+
 class RunnerStatus(Static):
 	def compose(self) -> ComposeResult:
 		with VerticalScroll():
-			# with Horizontal(classes="runner-status-section"):
-			# 	yield Label("Positions")
-			# 	yield Label(" ", id="runner-update-open-option-positions-active", classes="active-label")
-			# 	yield Label(" ", id="runner-update-open-option-positions-status", classes="status-label")
+			with Horizontal(classes="runner-status-section"):
+				yield Label("Positions")
+				yield Label(" ", id="runner-update-open-option-positions-active", classes="active-label")
+				yield Label(" ", id="runner-update-open-option-positions-status", classes="status-label")
+				yield Label(" ", id="runner-update-open-option-positions-epoch", classes="status-label")
 
-			# with Horizontal(classes="runner-status-section"):
-			# 	yield Label("Market")
-			# 	yield Label(" ", id="runner-update-open-option-positions-market-data-active", classes="active-label")
-			# 	yield Label(" ", id="runner-update-open-option-positions-market-data-status", classes="status-label")
+			with Horizontal(classes="runner-status-section"):
+				yield Label("Market")
+				yield Label(" ", id="runner-update-open-option-positions-market-data-active", classes="active-label")
+				yield Label(" ", id="runner-update-open-option-positions-market-data-status", classes="status-label")
+				yield Label(" ", id="runner-update-open-option-positions-market-data-epoch", classes="status-label")
 
+			with Horizontal(classes="runner-status-section"):
+				yield Label("Market")
+				yield Label(" ", id="runner-update-open-option-positions-instrument-data-active", classes="active-label")
+				yield Label(" ", id="runner-update-open-option-positions-instrument-data-status", classes="status-label")
+				yield Label(" ", id="runner-update-open-option-positions-instrument-data-epoch", classes="status-label")
+			
 			with Horizontal(classes="runner-status-section"):
 				yield Label("Broker Orders")
 				yield Label(" ", id="runner-open-broker-option-orders-active", classes="active-label")
 				yield Label(" ", id="runner-open-broker-option-orders-status", classes="status-label")
 				yield Label(" ", id="runner-open-broker-option-orders-epoch", classes="status-label")
 
-			# with Horizontal(classes="runner-status-section"):
-			# 	yield Label("Broker Orders Market Data")
-			# 	yield Label(" ", id="runner-broker-orders-market-data-active", classes="active-label")
-			# 	yield Label(" ", id="runner-broker-orders-market-data-status", classes="status-label")
+			with Horizontal(classes="runner-status-section"):
+				yield Label("Broker Orders Market Data")
+				yield Label(" ", id="runner-open-broker-option-orders-market-data-active", classes="active-label")
+				yield Label(" ", id="runner-open-broker-option-orders-market-data-status", classes="status-label")
+				yield Label(" ", id="runner-open-broker-option-orders-market-data-epoch", classes="status-label")
+
+			with Horizontal(classes="runner-status-section"):
+				yield Label("Broker Orders Instrument Data")
+				yield Label(" ", id="runner-open-broker-option-orders-instrument-data-active", classes="active-label")
+				yield Label(" ", id="runner-open-broker-option-orders-instrument-data-status", classes="status-label")
+				yield Label(" ", id="runner-open-broker-option-orders-instrument-data-epoch", classes="status-label")
 
 			# with Horizontal(classes="runner-status-section"):
 			# 	yield Label("Trigger Market Data")
@@ -207,16 +229,14 @@ class RunnerStatus(Static):
 			previous_update_time = float(runner_status["epoch_time_previous_success"])
 			previous_update_est = datetime.datetime.fromtimestamp(previous_update_time).strftime("%d/%m/%Y, %H:%M:%S")
 			epoch_healthy = False
-			self.notify(f"now_est: {now_est}\nprev upd est: {previous_update_est}\nprev update: {str(previous_update_time)}\ninterval: {interval}\nnow - previous_update: {str(now - previous_update_time)}")
-			if interval >= (now - previous_update_time):
+			# self.notify(f"now_est: {now_est}\nprev upd est: {previous_update_est}\nprev update: {str(previous_update_time)}\ninterval: {interval}\nnow - previous_update: {str(now - previous_update_time)}")
+			if interval >= ((now - previous_update_time) / 2):
 				epoch_healthy = True
 
 			if epoch_healthy == True:
 				epoch_label.styles.background = "green"
-				#epoch_label.refresh(recompose=True)
 			else:
 				epoch_label.styles.background = "red"
-				#epoch_label.refresh(recompose=True)
 
 		self.refresh()
 
@@ -248,18 +268,30 @@ class DataTablePositions(DataTable):
 		# self.set_interval(self.refresh_interval, self.refresh_data)
 
 	def refresh_data(self) -> None:
+		return None
 		positions = database.get_all_from_table("open_option_positions")
 		market_data_list = database.get_all_from_table("open_option_positions_market_data")
+		instrument_data_list = database.get_all_from_table("open_option_positions_instrument_data")
 
 		# Build lookup dict for market data by option_id
 		market_data_lookup = {}
 		for market_data in market_data_list:
-			json_data = market_data.get("json_data", {})
+			json_data = market_data.get("json_data",)
 			if isinstance(json_data, str):
 				json_data = json.loads(json_data)
-			option_id = json_data.get("instrument_id", "")
+			option_id = json_data.get("instrument_id")
 			if option_id:
 				market_data_lookup[option_id] = json_data
+
+		# Build lookup dict for instrument data by option_id
+		instrument_data_lookup = {}
+		for instrument_data in instrument_data_list:
+			json_data = instrument_data.get("json_data")
+			if isinstance(json_data, str):
+				json_data = json.loads(json_data)
+			option_id = json_data.get("id")
+			if option_id:
+				instrument_data_lookup[option_id] = json_data
 
 		# Clear existing rows
 		self.clear()
@@ -276,7 +308,7 @@ class DataTablePositions(DataTable):
 
 				# Extract position details
 				symbol = json_data.get("chain_symbol")
-				position_type = json_data.get("type")  # long or short
+				# position_type = json_data.get("type") 
 				option_id = json_data.get("option_id")
 				quantity = float(json_data.get("quantity"))
 				avg_price = float(json_data.get("average_price"))
@@ -284,14 +316,19 @@ class DataTablePositions(DataTable):
 
 				# Get market data for this position
 				current_price = 0.0
-				option_type = ""
 				strike_price = 0.0
+
+				# Get instrument data for this position
+				option_type = ""
 
 				if option_id in market_data_lookup:
 					market_data = market_data_lookup[option_id]
 					current_price = float(market_data.get("mark_price", 0))
-					option_type = market_data.get("type", "")  # call or put
 					strike_price = float(market_data.get("strike_price", 0))
+
+				if option_id in instrument_data_lookup:
+					instrument_data = instrument_data_lookup[option_id]
+					option_type = instrument_data.get("type", "")  # call or put
 
 				# Calculate P/L %
 				profit_loss_pct = 0.0
@@ -303,7 +340,7 @@ class DataTablePositions(DataTable):
 				expiry_short = expiry[-5:] if len(expiry) >= 5 else expiry  # MM/DD format
 				pl_sign = "+" if profit_loss_pct >= 0 else ""
 				position_description = (
-					f"{symbol} {option_type.upper()[0] if option_type else '?'} {strike_price:.2f} "
+					f"{symbol} {option_type.upper()[0] if option_type else '?'} {strike_price:.1f} "
 					f"{expiry_short} x{int(quantity)} @{avg_price:.2f}→{current_price:.2f} "
 					f"{pl_sign}{profit_loss_pct:.1f}%"
 				)
@@ -312,8 +349,113 @@ class DataTablePositions(DataTable):
 				self.add_row(str(local_id), position_description, key=str(local_id))
 
 
+class DataTableBrokerOrders(DataTable):
+	def on_mount(self) -> None:
+		"""Set up the data table and start auto-refresh."""
+		# table = self.query_one("#positions-table", DataTable)
+		self.cursor_type = "row"
+		self.zebra_stripes = True
 
+		# Add columns
+		self.add_column("ID", key="id", width=2)
+		self.add_column("order_description", width=30)
+		# self.add_column("Symbol", key="symbol", width=8)
+		# self.add_column("Type", key="type", width=6)
+		# self.add_column("Strike", key="strike", width=10)
+		# self.add_column("Expiry", key="expiry", width=12)
+		# self.add_column("Qty", key="qty", width=6)
+		# self.add_column("Avg Price", key="avg_price", width=12)
+		# self.add_column("Current", key="current", width=12)
+		# self.add_column("P/L", key="pl", width=12)
+		# self.add_column("P/L %", key="pl_pct", width=10)
 
+		# Load initial data
+		# self.refresh_data()
+
+		# Start auto-refresh
+		self.set_interval(2, self.refresh_data)
+
+	def refresh_data(self) -> None:
+		orders = database.get_all_from_table("open_broker_option_orders")
+
+		# Build market data lookup for broker orders (map by instrument/option id)
+		market_data_list = database.get_all_from_table("open_broker_option_orders_market_data")
+		market_data_lookup = {}
+		if market_data_list:
+			for md in market_data_list:
+				md_json = md.get("json_data", {})
+				if isinstance(md_json, str):
+					try:
+						md_json = json.loads(md_json)
+					except:
+						md_json = {}
+
+				md_id = md_json.get("instrument_id")
+				if md_id:
+					market_data_lookup[md_id] = md_json
+
+		# Clear existing rows
+		self.clear()
+
+		# Populate table with broker order data
+		if orders:
+			for order in orders:
+				local_id = order.get("local_id", "")
+				json_data = order.get("json_data", {})
+
+				# Parse JSON data if it's a string
+				if isinstance(json_data, str):
+					json_data = json.loads(json_data)
+
+				# Extract order details
+				symbol = json_data.get("chain_symbol", "")
+				quantity = float(json_data.get("quantity", 0))
+
+				# Parse legs array to get option details
+				legs_data = json_data.get("legs", "")
+				if isinstance(legs_data, str):
+					try:
+						legs_data = json.loads(legs_data)
+					except:
+						legs_data = []
+
+				# Extract from first leg
+				option_type = ""
+				strike_price = 0.0
+				expiry = ""
+				side = ""
+				mark_price = 0.0
+
+				if legs_data and len(legs_data) > 0:
+					leg = legs_data[0]
+					option_type = leg.get("option_type", "")  # call or put
+					strike_price = float(leg.get("strike_price", 0))
+					expiry = leg.get("expiration_date", "")
+					side = leg.get("side", "").upper()  # BUY or SELL
+					# try to locate option/instrument id on the leg
+					raw_leg_id = leg.get("option")
+					leg_id = None
+					if isinstance(raw_leg_id, str):
+						if "/" in raw_leg_id:
+							# extract trailing UUID from URL-formatted id
+							leg_id = raw_leg_id.rstrip("/").split("/")[-1]
+						else:
+							leg_id = raw_leg_id
+					if leg_id and leg_id in market_data_lookup:
+						md = market_data_lookup[leg_id]
+						mark_price = float(md.get("mark_price", 0))
+
+				# Format compact description
+				# Format: IWM P 263.0 01/20 x1 @0.35/$0.40 SELL (limit/mark)
+				limit_price = float(json_data.get("price", 0))
+				expiry_short = expiry[-5:] if len(expiry) >= 5 else expiry  # MM/DD format
+				order_description = (
+					f"{symbol} {option_type.upper()[0] if option_type else '?'} {strike_price:.1f} "
+					f"{expiry_short} x{int(quantity)} @${limit_price:.2f}/${mark_price:.2f} {side}"
+				)
+
+				# Add row to table
+				self.add_row(str(local_id), order_description, key=str(local_id))
 
 
 class ModalScreenQuit(ModalScreen):

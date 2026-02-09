@@ -46,6 +46,13 @@ DATABASE_TABLES = {
         "last_update_epoch_time": "NUMERIC",
     },
 
+    "open_broker_option_orders_instrument_data": {
+        "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
+        "json_data": "JSONB",
+        "still_alive": "BOOLEAN",
+        "last_update_epoch_time": "NUMERIC",
+    },
+
     "trigger_option_orders": {
         "order_id_pk": "SMALLSERIAL PRIMARY KEY",
         "active": "BOOLEAN",
@@ -78,6 +85,13 @@ DATABASE_TABLES = {
     },
 
     "trigger_option_orders_market_data": {
+        "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
+        "json_data": "JSONB",
+        "still_alive": "BOOLEAN",
+        "last_update_epoch_time": "NUMERIC",
+    },
+
+    "trigger_option_orders_instrument_data": {
         "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
         "json_data": "JSONB",
         "still_alive": "BOOLEAN",
@@ -121,6 +135,13 @@ DATABASE_TABLES = {
         "last_update_epoch_time": "NUMERIC",
     },
 
+    "bracket_sell_option_orders_instrument_data": {
+        "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
+        "json_data": "JSONB",
+        "still_alive": "BOOLEAN",
+        "last_update_epoch_time": "NUMERIC",
+    },
+
     "trailing_sell_option_orders": {
         "order_id_pk": "SMALLSERIAL PRIMARY KEY",
         "active": "BOOLEAN",
@@ -154,6 +175,13 @@ DATABASE_TABLES = {
     },
 
     "trailing_sell_option_orders_market_data": {
+        "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
+        "json_data": "JSONB",
+        "still_alive": "BOOLEAN",
+        "last_update_epoch_time": "NUMERIC",
+    },
+
+    "trailing_sell_option_orders_instrument_data": {
         "option_uuid_pk": "VARCHAR(255) PRIMARY KEY",
         "json_data": "JSONB",
         "still_alive": "BOOLEAN",

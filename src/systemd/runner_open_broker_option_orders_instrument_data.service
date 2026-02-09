@@ -1,0 +1,14 @@
+[Unit]
+Description=runner open_broker_option_orders_instrument_data
+After=network.target
+
+[Service]
+Type=simple
+User=nfields
+WorkingDirectory=/home/nfields/app/tradebox/src
+ExecStart=/home/nfields/app/venv/bin/python /home/nfields/app/tradebox/src/runners.py open_broker_option_orders_instrument_data
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target
