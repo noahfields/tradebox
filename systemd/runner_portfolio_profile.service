@@ -1,0 +1,14 @@
+[Unit]
+Description=runner portfolio_profile
+After=network.target
+
+[Service]
+Type=simple
+User=nfields
+WorkingDirectory=/home/nfields/tradebox/tradebox
+ExecStart=/home/nfields/venvs/tradeboxvenv/bin/python /home/nfields/tradebox/tradebox/runners.py portfolio_profile
+Restart=on-failure
+RestartSec=5s
+
+[Install]
+WantedBy=multi-user.target

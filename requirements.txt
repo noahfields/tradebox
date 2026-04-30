@@ -1,6 +1,9 @@
 wheel
 flask
+flask-httpauth
 gunicorn
 pandas
 robin_stocks
 pyinputplus
+psycopg2-binary
+python-dotenv

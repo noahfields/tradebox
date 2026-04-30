@@ -1,0 +1,16 @@
+[Unit]
+Description=runner open_option_positions_market_data
+After=network.target
+
+[Service]
+Type=simple
+User=nfields
+WorkingDirectory=/home/nfields/tradebox/tradebox
+ExecStart=/home/nfields/venvs/tradeboxvenv/bin/python /home/nfields/tradebox/tradebox/runners.py open_option_positions_market_data
+Restart=on-failure
+RestartSec=5s
+StartLimitBurst=2
+StartLimitIntervalSec=0
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<style>
+body {font-family: Arial;}
+
+/* Style the tab */
+.tab {
+  overflow: hidden;
+  border: 1px solid #ccc;
+  background-color: #f1f1f1;
+}
+
+/* Style the buttons inside the tab */
+.tab button {
+  background-color: inherit;
+  float: left;
+  border: none;
+  outline: none;
+  cursor: pointer;
+  padding: 14px 16px;
+  transition: 0.3s;
+  font-size: 14px;
+}
+
+/* Change background color of buttons on hover */
+.tab button:hover {
+  background-color: #ddd;
+}
+
+/* Create an active/current tablink class */
+.tab button.active {
+  background-color: #ccc;
+}
+
+/* Style the tab content */
+.tabcontent {
+  display: none;
+  padding: 6px 6px;
+  border: 1px solid #ccc;
+  border-top: none;
+}
+
+.runner_status {
+  background-color: red;
+  padding: 5px;
+}
+
+.positions-tab-text-style {
+  font-size: 12px;
+}
+</style>
+</head>
+<body>
+
+<div class="tab">
+  <button class="tablinks" onclick="openTab(event, 'positions_tab')">Positions</button>
+  <button class="tablinks" onclick="openTab(event, 'runner_status_tab')">Runners</button>
+  <button class="tablinks" onclick="openTab(event, 'admin_tab')">Admin</button>
+</div>
+
+<div id="positions_tab" class="tabcontent">
+  <h3>Positions</h3>
+  <p>Account info:</p>
+  <p class="positions-tab-text-style" id="portfolio_profile">act info refreshing every 3 seconds</p>
+</div>
+
+<div id="runner_status_tab" class="tabcontent">
+  <h3>Runners</h3>
+  <div>
+    Portfolio profile:
+    <span class="runner_status" id="runner_status_portfolio_profile_active">A</span>
+    <span class="runner_status" id="runner_status_portfolio_profile_current_update_success">C</span>
+    <span class="runner_status" id="runner_status_portfolio_profile_previous_update_success">P</span>
+    <span class="runner_status" id="runner_status_portfolio_profile_timeout">TO</span>
+  </div> 
+</div>
+
+<div id="admin_tab" class="tabcontent">
+  <h3>Admin</h3>
+
+  <button onclick="install_runners();">Install Runners</button>
+  <br/><br/><button onclick="remove_runners();">Remove Runners</button>
+  <br/><br/><button onclick="enable_runners();">Enable Runners</button>
+  <br/><br/><button onclick="disable_runners();">Disable Runners</button>
+  <br/><br/><button onclick="start_runners();">Start Runners</button>
+  <br/><br/><button onclick="stop_runners();">Stop Runners</button>
+  <br/><br/><button onclick="rh_login();">RH Login</button>
+  <br/><br/><button onclick="rh_logout();">RH Logout</button>
+
+</div>
+
+
+
+<script type="text/javascript" src="https://code.jquery.com/jquery-4.0.0.min.js"></script>
+
+<script>
+var refresh_portfolio_profile = setInterval(function(){
+  //$('#portfolio_profile').load('/portfolio_profile');
+
+  $.get("/portfolio_profile", function( data ) {
+    data = JSON.parse(data);
+    updatePortfolioProfileDisplay(data[0]);
+  });
+
+}, 5000); 
+
+var refresh_all_runners_status = setInterval(function(){
+  $.get("/get_all_runners_status", function( data ) {
+    data = JSON.parse(data);
+    data.forEach(updateRunnersStatus);
+  });
+
+}, 5000);
+
+function updatePortfolioProfileDisplay(data) {
+  html = "Value: " + data[1]['equity'] + " " + "Tradeable cash: " + data[1]['withdrawable_amount'];
+  $('#portfolio_profile').html(html);
+}
+
+
+// active
+// : 
+// true
+// adjusted_interval
+// : 
+// 5
+// current_update_success
+// : 
+// true
+// default_interval
+// : 
+// 5
+// epoch_time_previous_success
+// : 
+// 1777395898.09
+// 1777523257042
+// 1777523371.3148096
+// previous_update_success
+// : 
+// true
+// runner_name_pk
+// : 
+// "portfolio_profile"
+function updateRunnersStatus(value, index, array) {
+  if (value['runner_name_pk'] == 'portfolio_profile') {
+
+    if (value['active'] == true) {
+      $('#runner_status_portfolio_profile_active').css('background-color', 'green');
+    } else {
+      $('#runner_status_portfolio_profile_active').css('background-color', 'red');
+    }
+
+
+    if (value['current_update_success'] == true) {
+      $('#runner_status_portfolio_profile_current_update_success').css('background-color', 'green');
+    } else {
+      $('#runner_status_portfolio_profile_current_update_success').css('background-color', 'red');
+    }
+
+    if (value['previous_update_success'] == true) {
+      $('#runner_status_portfolio_profile_previous_update_success').css('background-color', 'green');
+    } else {
+      $('#runner_status_portfolio_profile_previous_update_success').css('background-color', 'red');
+    }
+
+    current_epoch_time = (Date.now() / 1000);
+    runner_epoch_time = value['epoch_time_previous_success'];
+    elapsed_time_since_last_update = current_epoch_time - runner_epoch_time;
+    elapsed_boundary_time = value['adjusted_interval'] + 2;
+    if (elapsed_time_since_last_update <= elapsed_boundary_time) {
+      $('#runner_status_portfolio_profile_timeout').css('background-color', 'green');
+    } else {
+      $('#runner_status_portfolio_profile_timeout').css('background-color', 'red');
+    }
+
+  };
+  // console.log(index);
+  // console.log(value);
+  // console.log(array);
+}
+
+
+function openTab(evt, tabName) {
+  var i, tabcontent, tablinks;
+  tabcontent = document.getElementsByClassName("tabcontent");
+  for (i = 0; i < tabcontent.length; i++) {
+    tabcontent[i].style.display = "none";
+  }
+  tablinks = document.getElementsByClassName("tablinks");
+  for (i = 0; i < tablinks.length; i++) {
+    tablinks[i].className = tablinks[i].className.replace(" active", "");
+  }
+  document.getElementById(tabName).style.display = "block";
+  evt.currentTarget.className += " active";
+}
+
+function install_runners() {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/install_runners');
+  xhr.send(null);
+}
+
+function remove_runners() {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/remove_runners');
+  xhr.send(null);
+}
+
+function enable_runners() {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/enable_runners');
+  xhr.send(null);
+}
+
+function disable_runners() {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/disable_runners');
+  xhr.send(null);
+}
+
+function start_runners() {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/start_runners');
+  xhr.send(null);
+}
+
+function stop_runners() {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/stop_runners');
+  xhr.send(null);
+}
+
+function rh_login() {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/rh_login');
+  xhr.send(null);
+}
+
+function rh_logout() {
+  var xhr = new XMLHttpRequest();
+  xhr.open('GET', '/rh_logout');
+  xhr.send(null);
+}
+</script>
+   
+</body>
+</html>
