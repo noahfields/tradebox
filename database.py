@@ -406,6 +406,40 @@ def get_json_portfolio_profile():
         return('nothing')
 
 
+def get_open_option_positions(return_json=False):
+    sql_query = "SELECT * FROM open_option_positions;"
+
+    conn = get_database_connection()
+    cur = conn.cursor()
+    try:
+        cur.execute(sql_query)
+        open_option_positions = cur.fetchall()
+
+        # try:
+        #     res = {
+        #         "portfolio_profile": json.dumps(portfolio_profile[0][1]), 
+        #         "last_update_epoch_time": json.dumps(float(portfolio_profile[0][2])),
+        #     }
+        # except:
+        #     res = {
+        #         "portfolio_profile": None, 
+        #         "last_update_epoch_time": None,
+        #     }
+
+        cur.close()
+        conn.close()
+        if return_json == True:
+            print(json.dumps(open_option_positions))
+            return json.dumps(open_option_positions)
+        else:
+            print(open_option_positions)
+            return open_option_positions
+    except Exception as e:
+        logger.exception(f"Issue getting open_option_positions: {e}", stack_info=True)
+        cur.close()
+        conn.close()
+        return('nothing')
+
 
 def update_open_broker_option_orders_instrument_data(options_instrument_data: list) -> None:
     set_table_field("open_broker_option_orders_instrument_data", "still_alive", False)

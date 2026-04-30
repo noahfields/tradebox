@@ -92,6 +92,12 @@ def portfolio_profile():
 def get_all_runners_status():
     return(database.get_all_runners_status(return_json=True))
 
+@app.route('/get_open_option_positions')
+@auth.login_required
+def get_open_option_positions():
+    return(database.get_open_option_positions(return_json=True))
+
+
 # @app.route('/')
 # def index() -> str:
 #     current_datetime_string = datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')

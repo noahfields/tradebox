@@ -61,9 +61,10 @@ body {font-family: Arial;}
 </div>
 
 <div id="positions_tab" class="tabcontent">
-  <h3>Positions</h3>
-  <p>Account info:</p>
   <p class="positions-tab-text-style" id="portfolio_profile">act info refreshing every 3 seconds</p>
+
+  <p>Positions</p>
+  <div id="open_positions"></div>
 </div>
 
 <div id="runner_status_tab" class="tabcontent">
@@ -114,9 +115,67 @@ var refresh_all_runners_status = setInterval(function(){
 
 }, 5000);
 
+
+var refresh_open_option_positions = setInterval(function(){
+  $.get("/get_open_option_positions", function( data ) {
+    data = JSON.parse(data);
+    data.forEach(updateOptionPositionsDisplay); //[0]?
+  });
+
+}, 5000);
+
 function updatePortfolioProfileDisplay(data) {
   html = "Value: " + data[1]['equity'] + " " + "Tradeable cash: " + data[1]['withdrawable_amount'];
   $('#portfolio_profile').html(html);
+}
+
+function updateOptionPositionsDisplay(data) {
+  console.log(data);
+        // "account": "https://api.robinhood.com/accounts/5QU45833/",
+        // "account_number": "5QU45833",
+        // "average_price": "77.2500",
+        // "chain_id": "9ee49197-7b3c-46c2-8d83-5d5ad1ed9eaa",
+        // "chain_symbol": "TSLA",
+        // "id": "b772c105-3908-42e4-a741-7bf893465f06",
+        // "option": "https://api.robinhood.com/options/instruments/d14e47f4-8980-4893-a478-fa92f2229c8c/",
+        // "type": "long",
+        // "pending_buy_quantity": "0.0000",
+        // "pending_expired_quantity": "4.0000",
+        // "pending_expiration_quantity": "4.0000",
+        // "pending_exercise_quantity": "0.0000",
+        // "pending_assignment_quantity": "0.0000",
+        // "pending_sell_quantity": "0.0000",
+        // "quantity": "4.0000",
+        // "intraday_quantity": "4.0000",
+        // "intraday_average_open_price": "77.2500",
+        // "created_at": "2026-04-27T15:01:17.378339Z",
+        // "expiration_date": "2026-04-27",
+        // "trade_value_multiplier": "100.0000",
+        // "updated_at": "2026-04-27T20:15:57.364794Z",
+        // "url": "https://api.robinhood.com/options/positions/b772c105-3908-42e4-a741-7bf893465f06/",
+        // "option_id": "d14e47f4-8980-4893-a478-fa92f2229c8c",
+        // "clearing_running_quantity": "0",
+        // "clearing_cost_basis": "0",
+        // "clearing_direction": "debit",
+        // "clearing_intraday_running_quantity": "0",
+        // "clearing_intraday_cost_basis": "0",
+        // "clearing_intraday_direction": "debit",
+        // "opened_at": "2026-04-27T15:01:17.391212Z",
+  position_symbol = 
+  position_avg_price = 
+  position_expiry_date = 
+  position_quantity = 
+  position_option_id = 
+  // get position market data with option_id pk
+  // get position instrument data with option_id pk
+  position_strike = 
+  position_type = 
+  position_bid = 
+  position_bid_qty = 
+  position_ask = 
+  position_ask_qty = 
+
+  position_string = position_symbol + " " + position_type + " " + position_expiry_date +  " " + position_strike + " " 
 }
 
 
