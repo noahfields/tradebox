@@ -381,8 +381,6 @@ def get_json_portfolio_profile():
     try:
         cur.execute(sql_query)
         portfolio_profile = cur.fetchall()
-        print("AAAAAAAAAA\nAAAAAAAAA")
-        print(portfolio_profile)
 
         # try:
         #     res = {
@@ -397,7 +395,6 @@ def get_json_portfolio_profile():
 
         cur.close()
         conn.close()
-        print(json.dumps(portfolio_profile))
         return json.dumps(portfolio_profile)
     except Exception as e:
         logger.exception(f"Issue getting info from table portfolio_profile: {e}", stack_info=True)
@@ -429,10 +426,8 @@ def get_open_option_positions(return_json=False):
         cur.close()
         conn.close()
         if return_json == True:
-            print(json.dumps(open_option_positions))
             return json.dumps(open_option_positions)
         else:
-            print(open_option_positions)
             return open_option_positions
     except Exception as e:
         logger.exception(f"Issue getting open_option_positions: {e}", stack_info=True)
@@ -794,6 +789,23 @@ def get_json_field_from_table(table: str, field: str, key_name: str) -> list:
 
 	return results
 
+
+def get_rows_from_table_select_by_json_field_value(table: str, table_field: str, key_name: str, json_value: str, return_json=False):
+    conn = get_database_connection()
+    cur = conn.cursor()
+
+    sql_query = f"SELECT * FROM {table} WHERE {table_field}->>'{key_name}' = '{json_value}';"
+    cur.execute(sql_query)
+    results = cur.fetchall()
+
+    cur.close()
+    conn.close()
+
+    if return_json == True:
+        return json.dumps(results)
+    else:
+        return results
+
 def insert_trigger_order(
         active: bool,
         epoch_time_created_at: float,
@@ -1143,7 +1155,6 @@ def clear_all_tables():
     cur = conn.cursor()
 
     for table in schema.DATABASE_TABLES.keys():
-        print(table)
         sql_query = f"DELETE FROM {table};"
         cur.execute(sql_query)
         conn.commit()

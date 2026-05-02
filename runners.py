@@ -727,7 +727,7 @@ def start_data_fetch_runner(runner_dict):
 				extra={"runner": runner.status["runner_name_pk"]},
 			)
 			print(api_data)
-			if len(api_data) == 1:
+			if type(api_data) == list and len(api_data) >= 1:
 				api_data_match = runner.verify_data(api_data[0])
 			else:
 				api_data_match = runner.verify_data(api_data)
@@ -853,7 +853,7 @@ def main(runner):
 	database.logger = logging.getLogger(log_name)
 	orders.logger = logging.getLogger(log_name)
 
-	database.drop_all_tables()
+	# database.drop_all_tables()
 	database.create_all_tables()
 
 	r.login(config.ROBINHOOD_USERNAME, config.ROBINHOOD_PASSWORD)

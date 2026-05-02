@@ -97,6 +97,27 @@ def get_all_runners_status():
 def get_open_option_positions():
     return(database.get_open_option_positions(return_json=True))
 
+@app.route('/get_open_option_position_market_data_by_id/<option_id>')
+@auth.login_required
+def get_open_option_position_market_data(option_id):
+    res = database.get_rows_from_table_select_by_json_field_value(
+        'open_option_positions_market_data', 
+        'json_data',
+        'instrument_id',
+        option_id,
+        return_json=False)
+    return res[0][1]
+    
+@app.route('/get_open_option_position_instrument_data_by_id/<option_id>')
+@auth.login_required
+def get_open_option_position_instrument_data(option_id):
+    res = database.get_rows_from_table_select_by_json_field_value(
+        'open_option_positions_instrument_data', 
+        'json_data',
+        'id',
+        option_id,
+        return_json=False)
+    return res[0][1]
 
 # @app.route('/')
 # def index() -> str:
