@@ -2,59 +2,9 @@
 <html>
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-body {font-family: Arial;}
 
-/* Style the tab */
-.tab {
-  overflow: hidden;
-  border: 1px solid #ccc;
-  background-color: #f1f1f1;
-}
+<link rel="stylesheet" href="{{ url_for('static', filename='tradebox.css') }}">
 
-/* Style the buttons inside the tab */
-.tab button {
-  background-color: inherit;
-  float: left;
-  border: none;
-  outline: none;
-  cursor: pointer;
-  padding: 14px 16px;
-  transition: 0.3s;
-  font-size: 14px;
-}
-
-/* Change background color of buttons on hover */
-.tab button:hover {
-  background-color: #ddd;
-}
-
-/* Create an active/current tablink class */
-.tab button.active {
-  background-color: #ccc;
-}
-
-/* Style the tab content */
-.tabcontent {
-  display: none;
-  padding: 6px 6px;
-  border: 1px solid #ccc;
-  border-top: none;
-}
-
-.runner_status_container {
-  padding: 8px;
-}
-
-.runner_status {
-  background-color: red;
-  padding: 5px;
-}
-
-.positions-tab-text-style {
-  font-size: 12px;
-}
-</style>
 </head>
 <body>
 
@@ -68,7 +18,7 @@ body {font-family: Arial;}
   <p class="positions-tab-text-style" id="portfolio_profile">act info refreshing every 3 seconds</p>
 
   <p>Positions</p>
-  <div id="open_positions"></div>
+  <div id="positions_container"></div>
 </div>
 
 <div id="runner_status_tab" class="tabcontent">
@@ -86,6 +36,20 @@ body {font-family: Arial;}
     <span class="runner_status" id="runner_status_open_option_positions_current_update_success">C</span>
     <span class="runner_status" id="runner_status_open_option_positions_previous_update_success">P</span>
     <span class="runner_status" id="runner_status_open_option_positions_timeout">TO</span>
+  </div>
+  <div class="runner_status_container">
+    Position mkt data:
+    <span class="runner_status" id="runner_status_open_option_positions_market_data_active">A</span>
+    <span class="runner_status" id="runner_status_open_option_positions_market_data_current_update_success">C</span>
+    <span class="runner_status" id="runner_status_open_option_positions_market_data_previous_update_success">P</span>
+    <span class="runner_status" id="runner_status_open_option_positions_market_data_timeout">TO</span>
+  </div> 
+  <div class="runner_status_container">
+    Position instr data:
+    <span class="runner_status" id="runner_status_open_option_positions_instrument_data_active">A</span>
+    <span class="runner_status" id="runner_status_open_option_positions_instrument_data_current_update_success">C</span>
+    <span class="runner_status" id="runner_status_open_option_positions_instrument_data_previous_update_success">P</span>
+    <span class="runner_status" id="runner_status_open_option_positions_instrument_data_timeout">TO</span>
   </div> 
 </div>
 
@@ -104,335 +68,9 @@ body {font-family: Arial;}
 </div>
 
 
-
 <script type="text/javascript" src="https://code.jquery.com/jquery-4.0.0.min.js"></script>
+<script src="{{ url_for('static', filename='tradebox.js') }}"></script>
 
-<script>
-option_positions_global_data = {};
-option_positions_global_data = {
-  "2": {
-    "position_data": {},
-    "market_data": {},
-    "instrument_data": {},
-    "keep_alive": true
-  },
-  "59": {
-    "position_data": {},
-    "market_data": {},
-    "instrument_data": {},
-    "keep_alive": true
-  }
-};
-
-// {
-//   "2": {
-//     "position_data": {},
-//     "market_data": {},
-//     "instrument_data": {},
-//     "keep_alive": true
-//   },
-//   "59": {
-//     "position_data": {},
-//     "market_data": {},
-//     "instrument_data": {},
-//     "keep_alive": true
-//   }
-// }
-// local_id
-//   position_json
-//   market_json
-//   instrument_json
-
-
-var refresh_portfolio_profile = setInterval(function(){
-  //$('#portfolio_profile').load('/portfolio_profile');
-
-  $.get("/portfolio_profile", function( data ) {
-    data = JSON.parse(data);
-    updatePortfolioProfileDisplay(data[0]);
-  });
-
-}, 5000); 
-
-var refresh_all_runners_status = setInterval(function(){
-  $.get("/get_all_runners_status", function( data ) {
-    data = JSON.parse(data);
-    data.forEach(updateRunnersStatus);
-  });
-
-}, 5000);
-
-
-var refresh_positions_display = setInterval(function(){
-  refreshPositionsDisplay();
-}, 2000);
-
-var refresh_option_positions_global_data = setInterval(function(){
-  updateOptionPositionsGlobalData();
-}, 5000);
-
-
-
-function updatePortfolioProfileDisplay(data) {
-  html = "Value: " + data[1]['equity'] + " " + "Tradeable cash: " + data[1]['withdrawable_amount'];
-  $('#portfolio_profile').html(html);
-}
-
-function refreshPositionsDisplay() {
-  for (const [key, value] of Object.entries(option_positions_global_data)) {
-    position_unique_id = option_positions_global_data[key]['positions_data']['id']
-    position_local_id = option_positions_global_data[key]
-    position_symbol = option_positions_global_data[key]['position_data']['chain_symbol']
-    position_expiry = option_positions_global_data[key]['position_data']['expiration_date']
-
-    position_type = option_positions_global_data[key]['instrument_data']['type']
-    position_strike = option_positions_global_data[key]['instrument_data']['strike_price']
-
-    position_bid_size = option_positions_global_data[key]['market_data']['bid_size']
-    position_bid_price = option_positions_global_data[key]['market_data']['bid_price']
-    position_ask_size = option_positions_global_data[key]['market_data']['ask_size']
-    position_ask_price = option_positions_global_data[key]['market_data']['ask_price']
-    position_iv = option_positions_global_data[key]['market_data']['implied_volatility']
-
-    position_string = position_local_id + ' ' + position_symbol + ' ' + position_type + ' ' + position_strike + ' ' + position_expiry + ' ' + position_bid_size + 'x' + position_bid_price + ' ' + position_ask_size + 'x' + position_ask_price + ' ' + position_iv;
-    // each div#positions_container
-    // has sub spans
-    // that have data-position-local-id
-    // and data-position-unique-id
-
-    // set all position-row spans
-    // data-keep-alive to false
-    // ??????
-    $(".position-row").attr("data-keep-alive", "false");
-
-    // if div#position_display->span#position_unique_id exists
-    // update that position_unique_id row with above data
-    // each row has a checkbox with position_unique_id
-    // $("[href='default.htm']")
-    p_html_entry = $(`[data-position-row-unique-id=${position_unique_id}]`);
-    if (p_html_entry.length) {
-        p_html_entry.html = position_string;
-        $(`.position-row-unique-id=${position_unique_id}`).attr("data-keep-alive", "true");
-    } else {
-      // otherwise, create new row as span#position_unique_id
-      // with new data
-      $("#positions_container").append(`<span class="position-row" data-position-row-unique-id=${position_unique_id} data-position-row-local-id=${position_local_id} data-keep-alive="true"><input type="checkbox" data-position-checkbox-id=${position_local_id} /><span data-position-html-unique-id=${position_unique_id} data-position-html-local-id=${position_local_id}></span></span>`);
-    }
-
-    // delete all data-position-row spans
-    // where data-keep-alive is false
-    // ??????
-    $(`[data-keep-alive=false]`).remove();
-  }
-}
-
-function updateOptionPositionsGlobalData(positions_data) {
-  console.log('starting update option positions global data');
-  console.log(option_positions_global_data);
-
-  // set keep_alive to false
-  for (const [key, value] of Object.entries(option_positions_global_data)) {
-    option_positions_global_data[key]['keep_alive'] = false;
-  }
-
-  // get open option positions
-  // loop through received option positions
-  // set option_positions_global_data[local_id]
-  // values
-  // if that position exists in sotred global data
-  // set keep_alive = true
-  $.get("/get_open_option_positions", function(positions_data) {
-    data = JSON.parse(positions_data);
-    data.forEach(function(position_data) {
-      local_id_key = position_data[?][?];
-      option_positions_global_data[local_id_key][positions_data] = position[?][?];
-      option_positions_global_data[local_id_key][keep_alive] = true;
-    });
-  });
-
-  // delete unalive option positions from global data
-  for (const [key, value] of Object.entries(option_positions_global_data)) {
-    if (option_positions_global_data[key]['keep_alive'] == false) {
-      delete option_positions_global_data[key];
-    }
-  }
-
-  // get market data for each option in global data
-  // get instrument data for each option in instrument data
-  for (const [key, value] of Object.entries(option_positions_global_data)) {
-    option_uuid = option_positions_global_data[key]['positions_data']['option_id'];
-
-    $.get(`/get_open_option_position_market_data_by_id/${option_uuid}`, function(market_data) {
-      market_data = JSON.parse(market_data);
-      option_positions_global_data[key][market_data] = market_data;
-    });
-
-    $.get(`/get_open_option_position_instrument_data_by_id/${option_uuid}`, function(instrument_data) {
-      instrument_data = JSON.parse(instrument_data);
-      option_positions_global_data[key][instrument_data] = instrument_data;
-    });
-  }
-}
-
-
-// active
-// : 
-// true
-// adjusted_interval
-// : 
-// 5
-// current_update_success
-// : 
-// true
-// default_interval
-// : 
-// 5
-// epoch_time_previous_success
-// : 
-// 1777395898.09
-// 1777523257042
-// 1777523371.3148096
-// previous_update_success
-// : 
-// true
-// runner_name_pk
-// : 
-// "portfolio_profile"
-function updateRunnersStatus(value, index, array) {
-  if (value['runner_name_pk'] == 'portfolio_profile') {
-
-    if (value['active'] == true) {
-      $('#runner_status_portfolio_profile_active').css('background-color', 'green');
-    } else {
-      $('#runner_status_portfolio_profile_active').css('background-color', 'red');
-    }
-
-
-    if (value['current_update_success'] == true) {
-      $('#runner_status_portfolio_profile_current_update_success').css('background-color', 'green');
-    } else {
-      $('#runner_status_portfolio_profile_current_update_success').css('background-color', 'red');
-    }
-
-    if (value['previous_update_success'] == true) {
-      $('#runner_status_portfolio_profile_previous_update_success').css('background-color', 'green');
-    } else {
-      $('#runner_status_portfolio_profile_previous_update_success').css('background-color', 'red');
-    }
-
-    current_epoch_time = (Date.now() / 1000);
-    runner_epoch_time = value['epoch_time_previous_success'];
-    elapsed_time_since_last_update = current_epoch_time - runner_epoch_time;
-    elapsed_boundary_time = value['adjusted_interval'] + 2;
-    if (elapsed_time_since_last_update <= elapsed_boundary_time) {
-      $('#runner_status_portfolio_profile_timeout').css('background-color', 'green');
-    } else {
-      $('#runner_status_portfolio_profile_timeout').css('background-color', 'red');
-    }
-
-  };
-
-  if (value['runner_name_pk'] == 'open_option_positions') {
-
-    if (value['active'] == true) {
-      $('#runner_status_open_option_positions_active').css('background-color', 'green');
-    } else {
-      $('#runner_status_open_option_positions_active').css('background-color', 'red');
-    }
-
-
-    if (value['current_update_success'] == true) {
-      $('#runner_status_open_option_positions_current_update_success').css('background-color', 'green');
-    } else {
-      $('#runner_status_open_option_positions_current_update_success').css('background-color', 'red');
-    }
-
-    if (value['previous_update_success'] == true) {
-      $('#runner_status_open_option_positions_previous_update_success').css('background-color', 'green');
-    } else {
-      $('#runner_status_open_option_positions_previous_update_success').css('background-color', 'red');
-    }
-
-    current_epoch_time = (Date.now() / 1000);
-    runner_epoch_time = value['epoch_time_previous_success'];
-    elapsed_time_since_last_update = current_epoch_time - runner_epoch_time;
-    elapsed_boundary_time = value['adjusted_interval'] + 2;
-    if (elapsed_time_since_last_update <= elapsed_boundary_time) {
-      $('#runner_status_open_option_positions_timeout').css('background-color', 'green');
-    } else {
-      $('#runner_status_open_option_positions_timeout').css('background-color', 'red');
-    }
-
-  };
-
-  // console.log(index);
-  // console.log(value);
-  // console.log(array);
-}
-
-
-function openTab(evt, tabName) {
-  var i, tabcontent, tablinks;
-  tabcontent = document.getElementsByClassName("tabcontent");
-  for (i = 0; i < tabcontent.length; i++) {
-    tabcontent[i].style.display = "none";
-  }
-  tablinks = document.getElementsByClassName("tablinks");
-  for (i = 0; i < tablinks.length; i++) {
-    tablinks[i].className = tablinks[i].className.replace(" active", "");
-  }
-  document.getElementById(tabName).style.display = "block";
-  evt.currentTarget.className += " active";
-}
-
-function install_runners() {
-  var xhr = new XMLHttpRequest();
-  xhr.open('GET', '/install_runners');
-  xhr.send(null);
-}
-
-function remove_runners() {
-  var xhr = new XMLHttpRequest();
-  xhr.open('GET', '/remove_runners');
-  xhr.send(null);
-}
-
-function enable_runners() {
-  var xhr = new XMLHttpRequest();
-  xhr.open('GET', '/enable_runners');
-  xhr.send(null);
-}
-
-function disable_runners() {
-  var xhr = new XMLHttpRequest();
-  xhr.open('GET', '/disable_runners');
-  xhr.send(null);
-}
-
-function start_runners() {
-  var xhr = new XMLHttpRequest();
-  xhr.open('GET', '/start_runners');
-  xhr.send(null);
-}
-
-function stop_runners() {
-  var xhr = new XMLHttpRequest();
-  xhr.open('GET', '/stop_runners');
-  xhr.send(null);
-}
-
-function rh_login() {
-  var xhr = new XMLHttpRequest();
-  xhr.open('GET', '/rh_login');
-  xhr.send(null);
-}
-
-function rh_logout() {
-  var xhr = new XMLHttpRequest();
-  xhr.open('GET', '/rh_logout');
-  xhr.send(null);
-}
-</script>
    
 </body>
 </html>
