@@ -854,7 +854,7 @@ def main(runner):
 	orders.logger = logging.getLogger(log_name)
 
 	# database.drop_all_tables()
-	database.create_all_tables()
+	# database.create_all_tables()
 
 	r.login(config.ROBINHOOD_USERNAME, config.ROBINHOOD_PASSWORD)
 	orders.robinhood_login()

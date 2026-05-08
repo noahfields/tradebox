@@ -1,7 +1,9 @@
 """Flask server for Tradebox API."""
 
 import datetime
+import json
 import sys
+import subprocess
 
 from flask import Flask, render_template
 from flask_httpauth import HTTPBasicAuth
@@ -27,11 +29,22 @@ def verify_password(username, password):
             check_password_hash(users.get(username), password):
         return username
 
-
 @app.route('/')
 @auth.login_required
 def index() -> str:
     return render_template("index.html")
+
+@app.route('/create_all_tables')
+@auth.login_required
+def create_all_tables() -> str:
+    database.create_all_tables()
+    return('1')
+
+@app.route('/drop_all_tables')
+@auth.login_required
+def drop_all_tables() -> str:
+    database.drop_all_tables()
+    return('1')
 
 @app.route('/install_runners')
 @auth.login_required
@@ -65,7 +78,6 @@ def start_runners():
     return('1')
 
 @app.route('/stop_runners')
-@auth.login_required
 def stop_runners():
     systemd.stop_systemd_services()
     return('1')
@@ -82,6 +94,12 @@ def rh_logout():
     robinhood_wrappers.logout_and_remove_token()
     return('1')
 
+@app.route('/restart_server')
+@auth.login_required
+def restart_server():
+    subprocess.run(f"/usr/bin/sudo reboot", shell=True, check=True)
+    return('1')
+
 @app.route('/portfolio_profile')
 @auth.login_required
 def portfolio_profile():
@@ -92,32 +110,43 @@ def portfolio_profile():
 def get_all_runners_status():
     return(database.get_all_runners_status(return_json=True))
 
-@app.route('/get_open_option_positions')
-@auth.login_required
-def get_open_option_positions():
-    return(database.get_open_option_positions(return_json=True))
+# @app.route('/get_open_option_positions')
+# @auth.login_required
+# def get_open_option_positions():
+#     return(database.get_open_option_positions(return_json=True))
 
-@app.route('/get_open_option_position_market_data_by_id/<option_id>')
-@auth.login_required
-def get_open_option_position_market_data(option_id):
-    res = database.get_rows_from_table_select_by_json_field_value(
-        'open_option_positions_market_data', 
-        'json_data',
-        'instrument_id',
-        option_id,
-        return_json=False)
-    return res[0][1]
+# @app.route('/get_open_option_position_market_data_by_id/<option_id>')
+# @auth.login_required
+# def get_open_option_position_market_data(option_id):
+#     res = database.get_rows_from_table_select_by_json_field_value(
+#         'open_option_positions_market_data', 
+#         'json_data',
+#         'instrument_id',
+#         option_id,
+#         return_json=False)
+#     print("market data")
+#     print(res)
+#     return json.dumps(res[0][1])
     
-@app.route('/get_open_option_position_instrument_data_by_id/<option_id>')
+# @app.route('/get_open_option_position_instrument_data_by_id/<option_id>')
+# @auth.login_required
+# def get_open_option_position_instrument_data(option_id):
+#     res = database.get_rows_from_table_select_by_json_field_value(
+#         'open_option_positions_instrument_data', 
+#         'json_data',
+#         'id',
+#         option_id,
+#         return_json=False)
+#     print("instrument data")
+#     print(res)
+#     return json.dumps(res[0][1])
+
+@app.route('/get_mini_position_info')
 @auth.login_required
-def get_open_option_position_instrument_data(option_id):
-    res = database.get_rows_from_table_select_by_json_field_value(
-        'open_option_positions_instrument_data', 
-        'json_data',
-        'id',
-        option_id,
-        return_json=False)
-    return res[0][1]
+def get_mini_position_info():
+    res = database.get_mini_position_info(return_json=True)
+    return res
+
 
 # @app.route('/')
 # def index() -> str:

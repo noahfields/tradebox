@@ -83,6 +83,67 @@ def get_database_connection() -> psycopg2.extensions.connection:
 		logger.exception(f"{e}", stack_info=True)
 
 
+def get_mini_position_info(return_json=False):
+    mini_positions = dict()
+
+    conn = get_database_connection()
+    cur = conn.cursor()
+    sql_query = "SELECT * FROM open_option_positions;"
+    cur.execute(sql_query)
+    pos_res = cur.fetchall()
+
+    for pos in pos_res:
+        p_local_id = pos[4]
+        p_position_unique_id = pos[1]['id']
+        p_option_unique_id = pos[1]['option_id']
+        p_average_price = pos[1]['average_price']
+        p_qty = pos[1]['quantity']
+        p_symbol = pos[1]['chain_symbol']
+        p_expiry = pos[1]['expiration_date']
+        p_position_last_update_epoch_time = pos[3]
+
+        mkt_data = get_single_row_from_table("open_option_positions_market_data", "option_uuid_pk", p_option_unique_id)
+        p_bid_size = mkt_data['json_data']['bid_size']
+        p_bid_price = mkt_data['json_data']['bid_price']
+        p_ask_size = mkt_data['json_data']['ask_size']
+        p_ask_price = mkt_data['json_data']['ask_price']
+        p_iv = mkt_data['json_data']['implied_volatility']
+        p_mkt_last_update_epoch_time = mkt_data['last_update_epoch_time']
+
+        instrument_data = get_single_row_from_table("open_option_positions_instrument_data", "option_uuid_pk", p_option_unique_id)
+        p_strike = instrument_data['json_data']['strike_price']
+        p_type = instrument_data['json_data']['type']
+        p_instrument_last_update_epoch_time = instrument_data['last_update_epoch_time']
+
+        mini_positions[p_local_id] = {
+            "option_unique_id": p_option_unique_id,
+            "position_unique_id": p_position_unique_id,
+            "average_price": round((float(p_average_price) / 100), 2),
+            "qty": int(float(p_qty)),
+            "symbol": p_symbol,
+            "type": p_type,
+            "strike": round(float(str(p_strike)), 1),
+            "expiry": p_expiry,
+            "bid_size": round(float(str(p_bid_size)), 0),
+            "bid_price": round(float(str(p_bid_price)), 2),
+            "ask_size": round(float(str(p_ask_size)), 0),
+            "ask_price": round(float(str(p_ask_price)), 2),
+            "iv": p_iv,
+            "position_last_update_epoch_time": p_position_last_update_epoch_time,
+            "market_last_update_epoch_time": p_mkt_last_update_epoch_time,
+            "instrument_last_update_epoch_time": p_instrument_last_update_epoch_time,
+        }
+
+    # sort by local_id (the dictionary key)
+    ascending_mini_positions = {k: v for k, v in sorted(mini_positions.items(), key=lambda item: item[0])}
+
+    # print(mini_positions)
+    if return_json:
+        return json.dumps(ascending_mini_positions)
+    else:
+        return ascending_mini_positions
+
+
 def get_all_runners_status(return_json=False):
     conn = get_database_connection()
     cur = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)

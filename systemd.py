@@ -3,6 +3,7 @@ import glob
 import shutil
 import subprocess
 import logging
+import getpass
 
 logger = logging.getLogger(__name__)
 
@@ -45,7 +46,7 @@ def install_systemd_services(src_dir=None, dest_dir="/etc/systemd/system", overw
 
 		try:
 			#shutil.copy2(src, dst)
-			subprocess.run(f"sudo cp {src} {dst}", shell=True)
+			subprocess.run(f"/usr/bin/sudo cp {src} {dst}", shell=True)
 			try:
 				os.chmod(dst, 0o644)
 			except Exception:
@@ -100,7 +101,7 @@ def remove_systemd_services(src_dir=None, dest_dir="/etc/systemd/system"):
 
 		try:
 			# Use sudo to attempt removal, mirroring install behavior which used sudo cp
-			subprocess.run(f"sudo rm -f {dst}", shell=True, check=True)
+			subprocess.run(f"/usr/bin/sudo rm -f {dst}", shell=True, check=True)
 			removed.append(dst)
 			logger.info("Removed service: %s", dst)
 		except subprocess.CalledProcessError as e:
@@ -167,7 +168,7 @@ def enable_systemd_services(src_dir=None, dest_dir="/etc/systemd/system", reload
 			continue
 
 		try:
-			subprocess.run(f"sudo systemctl enable {unit}", shell=True, check=True)
+			subprocess.run(f"/usr/bin/sudo systemctl enable {unit}", shell=True, check=True)
 			enabled.append(unit)
 			logger.info("Enabled service: %s", unit)
 		except subprocess.CalledProcessError as e:
@@ -224,7 +225,7 @@ def disable_systemd_services(src_dir=None, dest_dir="/etc/systemd/system"):
 			continue
 
 		try:
-			subprocess.run(f"sudo systemctl disable {unit}", shell=True, check=True)
+			subprocess.run(f"/usr/bin/sudo systemctl disable {unit}", shell=True, check=True)
 			disabled.append(unit)
 			logger.info("Disabled service: %s", unit)
 		except subprocess.CalledProcessError as e:
@@ -286,7 +287,7 @@ def start_systemd_services(src_dir=None, dest_dir="/etc/systemd/system", restart
 
 		try:
 			action = "restart" if restart else "start"
-			subprocess.run(f"sudo systemctl {action} {unit}", shell=True, check=True)
+			subprocess.run(f"/usr/bin/sudo systemctl {action} {unit}", shell=True, check=True)
 			started.append(unit)
 			logger.info("%s service: %s", action.capitalize(), unit)
 		except subprocess.CalledProcessError as e:
@@ -316,6 +317,8 @@ def stop_systemd_services(src_dir=None, dest_dir="/etc/systemd/system"):
 	"""
 	if src_dir is None:
 		src_dir = os.path.join(os.path.dirname(__file__), "systemd")
+		print("SOURCE DIR")
+		print(src_dir)
 
 	if not os.path.isdir(src_dir):
 		raise FileNotFoundError(f"source directory not found: {src_dir}")
@@ -337,7 +340,10 @@ def stop_systemd_services(src_dir=None, dest_dir="/etc/systemd/system"):
 			continue
 
 		try:
-			subprocess.run(f"sudo systemctl stop {unit}", shell=True, check=True)
+			# with open("/home/nfields/all/userlog.txt", "a") as f:
+			# 	# f.write(f"Env thinks the user is {os.getlogin()}\n")
+			# 	f.write(f"Effective user is {getpass.getuser()}\n\n")
+			subprocess.run(f"/usr/bin/sudo systemctl stop {unit}", shell=True, check=True)
 			stopped.append(unit)
 			logger.info("Stopped service: %s", unit)
 		except subprocess.CalledProcessError as e:

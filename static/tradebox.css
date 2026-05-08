@@ -49,3 +49,8 @@ body {font-family: Arial;}
 .positions-tab-text-style {
   font-size: 12px;
 }
+
+.position-row {
+  margin-bottom: 7px;
+  font-size: 16px;
+}
