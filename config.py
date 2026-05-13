@@ -14,6 +14,10 @@ TRADEBOX_PUBLIC_URL = os.getenv("TRADEBOX_PUBLIC_URL")  # must end with '/'
 ROBINHOOD_USERNAME = os.getenv("ROBINHOOD_USERNAME")
 ROBINHOOD_PASSWORD = os.getenv("ROBINHOOD_PASSWORD")
 
+# FLASK CREDENTIALS
+FLASK_USERNAME = os.getenv("FLASK_USERNAME")
+FLASK_PASSWORD = os.getenv("FLASK_PASSWORD")
+
 # PUSHOVER NOTIFICATION SETTINGS # Requires a Pushover account for long term use (pushover.net)
 # Available on desktop, Android, iPhone
 # This allows you to receive real-time notifications of trade statuses
