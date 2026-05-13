@@ -11,9 +11,9 @@ from werkzeug.security import generate_password_hash, check_password_hash
 
 import config
 import database
+import orders
 import robinhood_wrappers
 import systemd
-#import tradeapi
 
 app = Flask(__name__)
 auth = HTTPBasicAuth()
@@ -159,24 +159,22 @@ def get_mini_position_info():
 #     return html
 
 
-# @app.route('/orders/execute/<order_id>', methods=['POST', 'GET'])
-# def execute_order(order_id: int) -> str:
-#     try:
-#         order_id = int(order_id)
-#     except ValueError:
-#         pass
+@app.route('/orders/execute_close_full_position/<position_local_id>', methods=['POST', 'GET'])
+def execute_order(position_local_id: int) -> str:
+    try:
+        position_local_id = int(position_local_id)
+    except ValueError:
+        print("Invalid position_local_id. Must be an integer.")
+        return ("Invalid position_local_id. Must be an integer.")
 
-#     try:
-#         msg = f'tradebox.py: execute_order(): executing order_id {order_id}. \n' \
-#             + f'Entering tradeapi.execute_order({order_id}).'
-#         log.append(msg)
-
-#         tradeapi.execute_order(order_id)
-
-#         html = f'Executed order #{order_id}.'
-#         return html
-#     except Exception as ex:
-#         pass
+    try:
+        orders.execute_market_sell_full_position(position_local_id, maximum_attempts=5, emergency_fill_on_failure=True)
+        html = f'Executed order #{position_local_id}.'
+        return html
+    except Exception as ex:
+        print("Error executing order:")
+        print(ex)
+        pass
 
 
 if __name__ == '__main__':
