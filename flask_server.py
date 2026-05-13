@@ -19,7 +19,7 @@ app = Flask(__name__)
 auth = HTTPBasicAuth()
 
 users = {
-    "nfields2": generate_password_hash("2password2"),
+    config.FLASK_USERNAME: generate_password_hash(config.FLASK_PASSWORD),
 }
 
 
