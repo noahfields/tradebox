@@ -1,6 +1,5 @@
 let global_mini_position_info = {}
 
-
 // REFRESH INTERVALS
 var refresh_portfolio_profile = setInterval(function(){
 
@@ -285,6 +284,10 @@ function restart_server() {
 }
 
 function copyPositionCloseLinkToClipboard() {
+  var getUrl = window.location;
+  var baseUrl = getUrl .protocol + "//" + getUrl.host
+
   pos_local_id = $("input:radio[name='positions']:checked").attr("data-position-radio-local-id");
-  navigator.clipboard.writeText(pos_local_id);
+  url = baseUrl + `/orders/execute_close_full_position/${pos_local_id}`
+  navigator.clipboard.writeText(url);
 }
