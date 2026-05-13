@@ -646,7 +646,7 @@ def execute_market_sell_full_position(order_local_id, maximum_attempts=10, emerg
     # Collect order IDs to cancel at conclusion
     order_cancel_ids = []
 
-    mark_price_run = None
+    # mark_price_run = None
     while (trade_progress_info["current_position_size"] > trade_progress_info["goal_final_position_size"]) and (trade_progress_info["number_of_trades_placed"] < trade_progress_info["max_order_attempts"]):
         msg = (
             "!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!\n"
@@ -666,11 +666,12 @@ def execute_market_sell_full_position(order_local_id, maximum_attempts=10, emerg
         option_market_data = r.options.get_option_market_data_by_id(robinhood_option_uuid)[0]
         order_log.log(f"Current raw market data: {json.dumps(option_market_data)}")
         # try mark price once to see if it works
-        if mark_price_run == None:
-            this_order_sell_price = float(option_market_data["mark_price"])
-            mark_price_run = True
-        else:
-            this_order_sell_price = float(option_market_data["bid_price"])
+        # if mark_price_run == None:
+        #     this_order_sell_price = float(option_market_data["mark_price"])
+        #     mark_price_run = True
+        # else:
+        #     this_order_sell_price = float(option_market_data["bid_price"])
+        this_order_sell_price = float(option_market_data["bid_price"])
         # in case there's no bid, try 1 cent
         if this_order_sell_price == 0.0:
             this_order_sell_price = 0.1
@@ -946,7 +947,7 @@ def execute_sell_emergency_fill(order: dict, quantity_to_sell: int, runner_name:
     logger.info(msg, extra={"runner": runner_name})
 
     msg = (
-        f"ESf{after_emergency_position_quantity}"
+        f"After ES final position QTY{after_emergency_position_quantity}"
     )
     logger.info(msg, extra={"runner": runner_name})
 
